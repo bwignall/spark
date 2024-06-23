@@ -1,3 +1,10 @@
+/**
+ * Copyright (C) 2014-2018. All Rights Reserved.
+ *
+ * E: something@gmail.com
+ *
+ */
+
 // https://typelevel.org/sbt-typelevel/faq.html#what-is-a-base-version-anyway
 ThisBuild / tlBaseVersion := "0.0" // your current series x.y
 
@@ -21,7 +28,7 @@ val Scala3 = "3.3.3"
 ThisBuild / crossScalaVersions := Seq(Scala213, Scala3)
 ThisBuild / scalaVersion := Scala213 // the default Scala
 
-lazy val root = tlCrossRootProject.aggregate(common_tags, core)
+lazy val root = tlCrossRootProject.aggregate(common_tags, common_utils, core)
 
 cancelable := true
 
@@ -302,7 +309,6 @@ lazy val commonJvmSettings = Seq(
     "org.scala-lang.modules" %% "scala-xml" % "2.3.0",
     "org.scalacheck" %% "scalacheck" % "1.18.0" % Test,
     "org.scalanlp" %% "breeze" % "2.1.0",
-    "org.scalatest" %% "scalatest" % "3.1.0" % Test withSources (),
     "org.scalatest" %% "scalatest" % "3.2.18" % Test,
     "org.scalatestplus" %% "mockito-5-10" % "3.2.18.0" % Test,
     "org.scalatestplus" %% "scalacheck-1-18" % "3.2.18.0" % Test,
@@ -321,12 +327,12 @@ lazy val commonJvmSettings = Seq(
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-//licenses += ("CC0", url("https://creativecommons.org/publicdomain/zero/1.0/"))
+// licenses += ("CC0", url("https://creativecommons.org/publicdomain/zero/1.0/"))
 //
-//resolvers ++= Seq(
-//)
+// resolvers ++= Seq(
+// )
 //
-//scalacOptions ++= Seq(
+// scalacOptions ++= Seq(
 //  "-deprecation", // Emit warning and location for usages of deprecated APIs.
 //  "-encoding",
 //  "utf-8", // Specify character encoding used by source files.
@@ -377,21 +383,44 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 //  }.value
 
 lazy val common_tags = crossProject(JVMPlatform)
-  .crossType(CrossType.Pure)
-  .in(file("common/tags"))
+  .crossType(CrossType.Full)
+    .in(file("common/tags"))
+    .settings(
+      name := "common_tags"
+    )
+      .jvmSettings(commonJvmSettings)
+
+lazy val common_utils = crossProject(JVMPlatform)
+  .crossType(CrossType.Full)
+  .in(file("common/utils"))
   .settings(
-    name := "common_tags"
+    name := "common_utils"
   )
-  .jvmSettings(commonJvmSettings)
+  .jvmSettings(commonJvmSettings).dependsOn(common_tags)
+
 
 lazy val core = crossProject(JVMPlatform)
-  .crossType(CrossType.Pure)
+  .crossType(CrossType.Full)
   .in(file("core"))
   .settings(
     name := "core"
   )
   .jvmSettings(commonJvmSettings)
-  .dependsOn(common_tags)
+  .dependsOn(common_tags, common_utils)
+
+//lazy val common_tags project
+//    .in(file("common/tags"))
+//    .settings(
+//      name := "common_tags"
+//    )
+//    .settings(commonJvmSettings)
+//
+//lazy val core = crossProject(JVMPlatform)
+//  .crossType(CrossType.Pure)
+//  .in(file("core"))
+//  .settings(
+//    name := "core"
+//  )
 
 // Java then Scala for main sources
 Compile / compileOrder := CompileOrder.JavaThenScala
