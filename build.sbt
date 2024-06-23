@@ -32,6 +32,8 @@ val Scala3 = "3.3.3"
 ThisBuild / crossScalaVersions := Seq(Scala213)
 ThisBuild / scalaVersion := Scala213 // the default Scala
 
+ThisBuild / tlFatalWarnings := false
+
 lazy val root = tlCrossRootProject.aggregate(common_tags, common_utils, core)
 
 cancelable := true
