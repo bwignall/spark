@@ -1,9 +1,7 @@
-/**
- * Copyright (C) 2014-2018. All Rights Reserved.
- *
- * E: something@gmail.com
- *
- */
+/** Copyright (C) 2014-2018. All Rights Reserved.
+  *
+  * E: something@gmail.com
+  */
 
 // https://typelevel.org/sbt-typelevel/faq.html#what-is-a-base-version-anyway
 ThisBuild / tlBaseVersion := "0.0" // your current series x.y
@@ -41,15 +39,34 @@ developers := List( // TODO replace this with your information
   )
 )
 
+//ThisBuild / javaHome := {
+//  val javaHomePath = System.getProperty("java.home")
+//  Option(file(javaHomePath))
+//}
+
 javacOptions ++= Seq(
   "-Xlint:deprecation",
   "-Xlint:unchecked",
-  "-source",
-  "1.8",
-  "-target",
-  "1.8",
-  "-g:vars"
+  "--enable-preview",
+//  "-source",
+//  "1.16",
+//  "-target",
+//  "1.16",
+  "-g:vars",
+  "--release",
+  "16"
 )
+
+//scalacOptions ++= Seq("-java-output-version", "16")
+scalacOptions ++= Seq(
+  "-source",
+  "16",
+  "-target",
+  "16"
+)
+
+//fork := true
+fork := false
 
 val codehausjacksonV = "1.9.13"
 val fasterxmljacksonV = "2.17.1"
@@ -384,11 +401,11 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 
 lazy val common_tags = crossProject(JVMPlatform)
   .crossType(CrossType.Full)
-    .in(file("common/tags"))
-    .settings(
-      name := "common_tags"
-    )
-      .jvmSettings(commonJvmSettings)
+  .in(file("common/tags"))
+  .settings(
+    name := "common_tags"
+  )
+  .jvmSettings(commonJvmSettings)
 
 lazy val common_utils = crossProject(JVMPlatform)
   .crossType(CrossType.Full)
@@ -396,8 +413,8 @@ lazy val common_utils = crossProject(JVMPlatform)
   .settings(
     name := "common_utils"
   )
-  .jvmSettings(commonJvmSettings).dependsOn(common_tags)
-
+  .jvmSettings(commonJvmSettings)
+  .dependsOn(common_tags)
 
 lazy val core = crossProject(JVMPlatform)
   .crossType(CrossType.Full)
@@ -422,9 +439,13 @@ lazy val core = crossProject(JVMPlatform)
 //    name := "core"
 //  )
 
+//
+
+compileOrder := CompileOrder.JavaThenScala
+
 // Java then Scala for main sources
-Compile / compileOrder := CompileOrder.JavaThenScala
+//Compile / compileOrder := CompileOrder.JavaThenScala
 //Compile / compileOrder := CompileOrder.Mixed
 
 // allow circular dependencies for test sources
-Test / compileOrder := CompileOrder.Mixed
+//Test / compileOrder := CompileOrder.Mixed

@@ -44,7 +44,7 @@ private[spark] trait SparkFileUtils extends Logging {
           uri.getFragment())
       }
     } catch {
-      case e: URISyntaxException =>
+      case _: URISyntaxException =>
     }
     new File(path).getCanonicalFile().toURI()
   }

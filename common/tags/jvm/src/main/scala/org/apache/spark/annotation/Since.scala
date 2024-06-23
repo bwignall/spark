@@ -26,4 +26,4 @@ import scala.annotation.meta._
   * The limitation is that it does not show up in the generated Java API documentation.
   */
 @param @field @getter @setter @beanGetter @beanSetter
-private[spark] class Since(version: String) extends StaticAnnotation
+private[spark] class Since extends StaticAnnotation

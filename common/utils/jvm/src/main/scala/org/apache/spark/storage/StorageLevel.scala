@@ -49,7 +49,7 @@ class StorageLevel private(
     this((flags & 8) != 0, (flags & 4) != 0, (flags & 2) != 0, (flags & 1) != 0, replication)
   }
 
-  def this() = this(false, true, false, false)  // For deserialization
+  def this() = this(_useDisk = false, _useMemory = true, _useOffHeap = false, _deserialized = false)  // For deserialization
 
   def useDisk: Boolean = _useDisk
   def useMemory: Boolean = _useMemory
@@ -146,19 +146,19 @@ class StorageLevel private(
  * new storage levels.
  */
 object StorageLevel {
-  val NONE = new StorageLevel(false, false, false, false)
-  val DISK_ONLY = new StorageLevel(true, false, false, false)
-  val DISK_ONLY_2 = new StorageLevel(true, false, false, false, 2)
-  val DISK_ONLY_3 = new StorageLevel(true, false, false, false, 3)
-  val MEMORY_ONLY = new StorageLevel(false, true, false, true)
-  val MEMORY_ONLY_2 = new StorageLevel(false, true, false, true, 2)
-  val MEMORY_ONLY_SER = new StorageLevel(false, true, false, false)
-  val MEMORY_ONLY_SER_2 = new StorageLevel(false, true, false, false, 2)
-  val MEMORY_AND_DISK = new StorageLevel(true, true, false, true)
-  val MEMORY_AND_DISK_2 = new StorageLevel(true, true, false, true, 2)
-  val MEMORY_AND_DISK_SER = new StorageLevel(true, true, false, false)
-  val MEMORY_AND_DISK_SER_2 = new StorageLevel(true, true, false, false, 2)
-  val OFF_HEAP = new StorageLevel(true, true, true, false, 1)
+  val NONE = new StorageLevel(_useDisk = false, _useMemory = false, _useOffHeap = false, _deserialized = false)
+  val DISK_ONLY = new StorageLevel(_useDisk = true, _useMemory = false, _useOffHeap = false, _deserialized = false)
+  val DISK_ONLY_2 = new StorageLevel(_useDisk = true, _useMemory = false, _useOffHeap = false, _deserialized = false, _replication = 2)
+  val DISK_ONLY_3 = new StorageLevel(_useDisk = true, _useMemory = false, _useOffHeap = false, _deserialized = false, _replication = 3)
+  val MEMORY_ONLY = new StorageLevel(_useDisk = false, _useMemory = true, _useOffHeap = false, _deserialized = true)
+  val MEMORY_ONLY_2 = new StorageLevel(_useDisk = false, _useMemory = true, _useOffHeap = false, _deserialized = true, _replication = 2)
+  val MEMORY_ONLY_SER = new StorageLevel(_useDisk = false, _useMemory = true, _useOffHeap = false, _deserialized = false)
+  val MEMORY_ONLY_SER_2 = new StorageLevel(_useDisk = false, _useMemory = true, _useOffHeap = false, _deserialized = false, _replication = 2)
+  val MEMORY_AND_DISK = new StorageLevel(_useDisk = true, _useMemory = true, _useOffHeap = false, _deserialized = true)
+  val MEMORY_AND_DISK_2 = new StorageLevel(_useDisk = true, _useMemory = true, _useOffHeap = false, _deserialized = true, _replication = 2)
+  val MEMORY_AND_DISK_SER = new StorageLevel(_useDisk = true, _useMemory = true, _useOffHeap = false, _deserialized = false)
+  val MEMORY_AND_DISK_SER_2 = new StorageLevel(_useDisk = true, _useMemory = true, _useOffHeap = false, _deserialized = false, _replication = 2)
+  val OFF_HEAP = new StorageLevel(_useDisk = true, _useMemory = true, _useOffHeap = true, _deserialized = false, _replication = 1)
 
   /**
    * :: DeveloperApi ::
