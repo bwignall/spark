@@ -29,7 +29,7 @@ ThisBuild / githubWorkflowJavaVersions := Seq(PrimaryJava, LTSJava, GraalVM)
 
 val Scala213 = "2.13.13"
 val Scala3 = "3.3.3"
-ThisBuild / crossScalaVersions := Seq(Scala213, Scala3)
+ThisBuild / crossScalaVersions := Seq(Scala213)
 ThisBuild / scalaVersion := Scala213 // the default Scala
 
 lazy val root = tlCrossRootProject.aggregate(common_tags, common_utils, core)

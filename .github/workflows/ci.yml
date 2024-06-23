@@ -28,14 +28,9 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        scala: [2.13, 3]
+        scala: [2.13]
         java: [temurin@21, temurin@17, graalvm@17]
         project: [rootJVM]
-        exclude:
-          - scala: 3
-            java: temurin@17
-          - scala: 3
-            java: graalvm@17
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
