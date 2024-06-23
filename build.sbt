@@ -21,6 +21,12 @@ ThisBuild / tlCiDocCheck := false
 // Not currently bothering to generate/check headers
 ThisBuild / tlCiHeaderCheck := false
 
+val PrimaryJava = JavaSpec.temurin("14")
+val LTSJava = JavaSpec.temurin("17")
+val GraalVM = JavaSpec.graalvm("17")
+
+ThisBuild / githubWorkflowJavaVersions := Seq(PrimaryJava, LTSJava, GraalVM)
+
 val Scala213 = "2.13.13"
 val Scala3 = "3.3.3"
 ThisBuild / crossScalaVersions := Seq(Scala213, Scala3)
