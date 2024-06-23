@@ -21,7 +21,7 @@ ThisBuild / tlCiDocCheck := false
 // Not currently bothering to generate/check headers
 ThisBuild / tlCiHeaderCheck := false
 
-val PrimaryJava = JavaSpec.temurin("14")
+val PrimaryJava = JavaSpec.temurin("21")
 val LTSJava = JavaSpec.temurin("17")
 val GraalVM = JavaSpec.graalvm("17")
 
