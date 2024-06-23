@@ -36,11 +36,15 @@ private[spark] object SparkCuratorUtil extends Logging {
 
   def newClient(
       conf: SparkConf,
-      zkUrlConf: String = ZOOKEEPER_URL.key): CuratorFramework = {
+      zkUrlConf: String = ZOOKEEPER_URL.key
+  ): CuratorFramework = {
     val ZK_URL = conf.get(zkUrlConf)
-    val zk = CuratorFrameworkFactory.newClient(ZK_URL,
-      ZK_SESSION_TIMEOUT_MILLIS, ZK_CONNECTION_TIMEOUT_MILLIS,
-      new ExponentialBackoffRetry(RETRY_WAIT_MILLIS, MAX_RECONNECT_ATTEMPTS))
+    val zk = CuratorFrameworkFactory.newClient(
+      ZK_URL,
+      ZK_SESSION_TIMEOUT_MILLIS,
+      ZK_CONNECTION_TIMEOUT_MILLIS,
+      new ExponentialBackoffRetry(RETRY_WAIT_MILLIS, MAX_RECONNECT_ATTEMPTS)
+    )
     zk.start()
     zk
   }
@@ -51,7 +55,7 @@ private[spark] object SparkCuratorUtil extends Logging {
         zk.create().creatingParentsIfNeeded().forPath(path)
       } catch {
         case nodeExist: KeeperException.NodeExistsException =>
-          // do nothing, ignore node existing exception.
+        // do nothing, ignore node existing exception.
         case e: Exception => throw e
       }
     }

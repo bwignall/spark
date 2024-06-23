@@ -17,11 +17,10 @@
 
 package org.apache.spark.scheduler
 
-/**
- * An interface for sort algorithm
- * FIFO: FIFO algorithm between TaskSetManagers
- * FS: FS algorithm between Pools, and FIFO or FS within Pools
- */
+/** An interface for sort algorithm
+  * FIFO: FIFO algorithm between TaskSetManagers
+  * FS: FS algorithm between Pools, and FIFO or FS within Pools
+  */
 private[spark] trait SchedulingAlgorithm {
   def comparator(s1: Schedulable, s2: Schedulable): Boolean
 }
@@ -72,4 +71,3 @@ private[spark] class FairSchedulingAlgorithm extends SchedulingAlgorithm {
     }
   }
 }
-

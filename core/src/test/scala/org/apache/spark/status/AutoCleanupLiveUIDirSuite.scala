@@ -27,7 +27,9 @@ class AutoCleanupLiveUIDirSuite extends SparkFunSuite {
   test("SPARK-41694: Auto cleanup Spark UI store path") {
     val baseUIDir = Utils.createTempDir()
     try {
-      val conf = new SparkConf().setAppName("ui-dir-cleanup").setMaster("local")
+      val conf = new SparkConf()
+        .setAppName("ui-dir-cleanup")
+        .setMaster("local")
         .set(LIVE_UI_LOCAL_STORE_DIR, baseUIDir.getCanonicalPath)
       val sc = new SparkContext(conf)
       sc.parallelize(0 until 100, 10)

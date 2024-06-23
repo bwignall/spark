@@ -21,20 +21,23 @@ import java.io.File
 
 trait ShuffleChecksumTestHelper {
 
-  /**
-   * Ensure that the checksum values are consistent between write and read side.
-   */
+  /** Ensure that the checksum values are consistent between write and read side.
+    */
   def compareChecksums(
       numPartition: Int,
       algorithm: String,
       checksum: File,
       data: File,
-      index: File): Unit = {
+      index: File
+  ): Unit = {
     assert(checksum.exists(), "Checksum file doesn't exist")
     assert(data.exists(), "Data file doesn't exist")
     assert(index.exists(), "Index file doesn't exist")
 
-    assert(ShuffleChecksumUtils.compareChecksums(numPartition, algorithm, checksum, data, index),
-      "checksum must be consistent at both write and read sides")
+    assert(
+      ShuffleChecksumUtils
+        .compareChecksums(numPartition, algorithm, checksum, data, index),
+      "checksum must be consistent at both write and read sides"
+    )
   }
 }

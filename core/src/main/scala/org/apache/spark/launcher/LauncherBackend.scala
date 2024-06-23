@@ -23,12 +23,11 @@ import org.apache.spark.{SPARK_VERSION, SparkConf}
 import org.apache.spark.launcher.LauncherProtocol._
 import org.apache.spark.util.{ThreadUtils, Utils}
 
-/**
- * A class that can be used to talk to a launcher server. Users should extend this class to
- * provide implementation for the abstract methods.
- *
- * See `LauncherServer` for an explanation of how launcher communication works.
- */
+/** A class that can be used to talk to a launcher server. Users should extend this class to
+  * provide implementation for the abstract methods.
+  *
+  * See `LauncherServer` for an explanation of how launcher communication works.
+  */
 private[spark] abstract class LauncherBackend {
 
   private var clientThread: Thread = _
@@ -39,10 +38,12 @@ private[spark] abstract class LauncherBackend {
   protected def conf: SparkConf
 
   def connect(): Unit = {
-    val port = conf.getOption(LauncherProtocol.CONF_LAUNCHER_PORT)
+    val port = conf
+      .getOption(LauncherProtocol.CONF_LAUNCHER_PORT)
       .orElse(sys.env.get(LauncherProtocol.ENV_LAUNCHER_PORT))
       .map(_.toInt)
-    val secret = conf.getOption(LauncherProtocol.CONF_LAUNCHER_SECRET)
+    val secret = conf
+      .getOption(LauncherProtocol.CONF_LAUNCHER_SECRET)
       .orElse(sys.env.get(LauncherProtocol.ENV_LAUNCHER_SECRET))
     if (port.isDefined && secret.isDefined) {
       val s = new Socket(InetAddress.getLoopbackAddress(), port.get)
@@ -82,20 +83,19 @@ private[spark] abstract class LauncherBackend {
   /** Return whether the launcher handle is still connected to this backend. */
   def isConnected(): Boolean = _isConnected
 
-  /**
-   * Implementations should provide this method, which should try to stop the application
-   * as gracefully as possible.
-   */
+  /** Implementations should provide this method, which should try to stop the application
+    * as gracefully as possible.
+    */
   protected def onStopRequest(): Unit
 
-  /**
-   * Callback for when the launcher handle disconnects from this backend.
-   */
-  protected def onDisconnected() : Unit = { }
+  /** Callback for when the launcher handle disconnects from this backend.
+    */
+  protected def onDisconnected(): Unit = {}
 
   private def fireStopRequest(): Unit = {
-    val thread = LauncherBackend.threadFactory.newThread(
-      () => Utils.tryLogNonFatalError { onStopRequest() })
+    val thread = LauncherBackend.threadFactory.newThread(() =>
+      Utils.tryLogNonFatalError { onStopRequest() }
+    )
     thread.start()
   }
 
@@ -106,7 +106,9 @@ private[spark] abstract class LauncherBackend {
         fireStopRequest()
 
       case _ =>
-        throw new IllegalArgumentException(s"Unexpected message type: ${m.getClass().getName()}")
+        throw new IllegalArgumentException(
+          s"Unexpected message type: ${m.getClass().getName()}"
+        )
     }
 
     override def close(): Unit = {

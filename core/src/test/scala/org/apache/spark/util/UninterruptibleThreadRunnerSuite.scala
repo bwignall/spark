@@ -34,9 +34,13 @@ class UninterruptibleThreadRunnerSuite extends SparkFunSuite {
     assert(!Thread.currentThread().isInstanceOf[UninterruptibleThread])
     var isUninterruptibleThread = false
     runner.runUninterruptibly {
-      isUninterruptibleThread = Thread.currentThread().isInstanceOf[UninterruptibleThread]
+      isUninterruptibleThread =
+        Thread.currentThread().isInstanceOf[UninterruptibleThread]
     }
-    assert(isUninterruptibleThread, "The runner task must run in UninterruptibleThread")
+    assert(
+      isUninterruptibleThread,
+      "The runner task must run in UninterruptibleThread"
+    )
   }
 
   test("runUninterruptibly should not add new UninterruptibleThread") {
@@ -46,10 +50,12 @@ class UninterruptibleThreadRunnerSuite extends SparkFunSuite {
       override def run(): Unit = {
         runUninterruptibly {
           val initialThread = Thread.currentThread()
-          isInitialUninterruptibleThread = initialThread.isInstanceOf[UninterruptibleThread]
+          isInitialUninterruptibleThread =
+            initialThread.isInstanceOf[UninterruptibleThread]
           runner.runUninterruptibly {
             val runnerThread = Thread.currentThread()
-            isRunnerUninterruptibleThread = runnerThread.isInstanceOf[UninterruptibleThread]
+            isRunnerUninterruptibleThread =
+              runnerThread.isInstanceOf[UninterruptibleThread]
             assert(runnerThread.eq(initialThread))
           }
         }
@@ -57,8 +63,13 @@ class UninterruptibleThreadRunnerSuite extends SparkFunSuite {
     }
     t.start()
     t.join()
-    assert(isInitialUninterruptibleThread,
-      "The initiator must already run in UninterruptibleThread")
-    assert(isRunnerUninterruptibleThread, "The runner task must run in UninterruptibleThread")
+    assert(
+      isInitialUninterruptibleThread,
+      "The initiator must already run in UninterruptibleThread"
+    )
+    assert(
+      isRunnerUninterruptibleThread,
+      "The runner task must run in UninterruptibleThread"
+    )
   }
 }

@@ -23,15 +23,18 @@ import org.apache.spark._
 import org.apache.spark.errors.SparkCoreErrors
 import org.apache.spark.storage.{BlockId, BlockManager}
 
-private[spark] class BlockRDDPartition(val blockId: BlockId, idx: Int) extends Partition {
+private[spark] class BlockRDDPartition(val blockId: BlockId, idx: Int)
+    extends Partition {
   val index = idx
 }
 
-private[spark]
-class BlockRDD[T: ClassTag](sc: SparkContext, @transient val blockIds: Array[BlockId])
-  extends RDD[T](sc, Nil) {
+private[spark] class BlockRDD[T: ClassTag](
+    sc: SparkContext,
+    @transient val blockIds: Array[BlockId]
+) extends RDD[T](sc, Nil) {
 
-  @transient lazy val _locations = BlockManager.blockIdsToLocations(blockIds, SparkEnv.get)
+  @transient lazy val _locations =
+    BlockManager.blockIdsToLocations(blockIds, SparkEnv.get)
   @volatile private var _isValid = true
 
   override def getPartitions: Array[Partition] = {
@@ -57,11 +60,10 @@ class BlockRDD[T: ClassTag](sc: SparkContext, @transient val blockIds: Array[Blo
     _locations(split.asInstanceOf[BlockRDDPartition].blockId)
   }
 
-  /**
-   * Remove the data blocks that this BlockRDD is made from. NOTE: This is an
-   * irreversible operation, as the data in the blocks cannot be recovered back
-   * once removed. Use it with caution.
-   */
+  /** Remove the data blocks that this BlockRDD is made from. NOTE: This is an
+    * irreversible operation, as the data in the blocks cannot be recovered back
+    * once removed. Use it with caution.
+    */
   private[spark] def removeBlocks(): Unit = {
     blockIds.foreach { blockId =>
       sparkContext.env.blockManager.master.removeBlock(blockId)
@@ -69,10 +71,9 @@ class BlockRDD[T: ClassTag](sc: SparkContext, @transient val blockIds: Array[Blo
     _isValid = false
   }
 
-  /**
-   * Whether this BlockRDD is actually usable. This will be false if the data blocks have been
-   * removed using `this.removeBlocks`.
-   */
+  /** Whether this BlockRDD is actually usable. This will be false if the data blocks have been
+    * removed using `this.removeBlocks`.
+    */
   private[spark] def isValid: Boolean = {
     _isValid
   }
@@ -88,4 +89,3 @@ class BlockRDD[T: ClassTag](sc: SparkContext, @transient val blockIds: Array[Blo
     _locations
   }
 }
-

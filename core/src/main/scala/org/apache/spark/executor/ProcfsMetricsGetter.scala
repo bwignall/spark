@@ -30,18 +30,19 @@ import org.apache.spark.internal.{config, Logging}
 import org.apache.spark.util.ArrayImplicits._
 import org.apache.spark.util.Utils
 
-
 private[spark] case class ProcfsMetrics(
     jvmVmemTotal: Long,
     jvmRSSTotal: Long,
     pythonVmemTotal: Long,
     pythonRSSTotal: Long,
     otherVmemTotal: Long,
-    otherRSSTotal: Long)
+    otherRSSTotal: Long
+)
 
 // Some of the ideas here are taken from the ProcfsBasedProcessTree class in hadoop
 // project.
-private[spark] class ProcfsMetricsGetter(procfsDir: String = "/proc/") extends Logging {
+private[spark] class ProcfsMetricsGetter(procfsDir: String = "/proc/")
+    extends Logging {
   private val procfsStatFile = "stat"
   private val testing = Utils.isTesting
   private val pageSize = computePageSize()
@@ -50,9 +51,8 @@ private[spark] class ProcfsMetricsGetter(procfsDir: String = "/proc/") extends L
 
   private lazy val isProcfsAvailable: Boolean = {
     if (testing) {
-       true
-    }
-    else {
+      true
+    } else {
       val procDirExists = Try(Files.exists(Paths.get(procfsDir))).recover {
         case ioe: IOException =>
           logWarning("Exception checking for procfs dir", ioe)
@@ -74,8 +74,10 @@ private[spark] class ProcfsMetricsGetter(procfsDir: String = "/proc/") extends L
       Integer.parseInt(out.split("\n")(0))
     } catch {
       case e: Exception =>
-        logDebug("Exception when trying to compute pagesize, as a" +
-          " result reporting of ProcessTree metrics is stopped")
+        logDebug(
+          "Exception when trying to compute pagesize, as a" +
+            " result reporting of ProcessTree metrics is stopped"
+        )
         isAvailable = false
         0
     }
@@ -84,7 +86,8 @@ private[spark] class ProcfsMetricsGetter(procfsDir: String = "/proc/") extends L
   // Exposed for testing
   private[executor] def addProcfsMetricsFromOneProcess(
       allMetrics: ProcfsMetrics,
-      pid: Long): ProcfsMetrics = {
+      pid: Long
+  ): ProcfsMetrics = {
 
     // The computation of RSS and Vmem are based on proc(5):
     // http://man7.org/linux/man-pages/man5/proc.5.html
@@ -104,14 +107,12 @@ private[spark] class ProcfsMetricsGetter(procfsDir: String = "/proc/") extends L
             jvmVmemTotal = allMetrics.jvmVmemTotal + vmem,
             jvmRSSTotal = allMetrics.jvmRSSTotal + (rssMem)
           )
-        }
-        else if (procInfoSplit(1).toLowerCase(Locale.US).contains("python")) {
+        } else if (procInfoSplit(1).toLowerCase(Locale.US).contains("python")) {
           allMetrics.copy(
             pythonVmemTotal = allMetrics.pythonVmemTotal + vmem,
             pythonRSSTotal = allMetrics.pythonRSSTotal + (rssMem)
           )
-        }
-        else {
+        } else {
           allMetrics.copy(
             otherVmemTotal = allMetrics.otherVmemTotal + vmem,
             otherRSSTotal = allMetrics.otherRSSTotal + (rssMem)
@@ -120,8 +121,11 @@ private[spark] class ProcfsMetricsGetter(procfsDir: String = "/proc/") extends L
       }
     } catch {
       case f: IOException =>
-        logDebug("There was a problem with reading" +
-          " the stat file of the process. ", f)
+        logDebug(
+          "There was a problem with reading" +
+            " the stat file of the process. ",
+          f
+        )
         throw f
     }
   }
@@ -130,7 +134,8 @@ private[spark] class ProcfsMetricsGetter(procfsDir: String = "/proc/") extends L
     if (!isAvailable) {
       Set.empty
     } else {
-      val children = currentProcessHandle.descendants().map(_.pid()).toList.asScala.toSet
+      val children =
+        currentProcessHandle.descendants().map(_.pid()).toList.asScala.toSet
       children + currentProcessHandle.pid()
     }
   }

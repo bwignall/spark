@@ -25,18 +25,21 @@ import scala.reflect.ClassTag
 
 import org.apache.spark.{ComplexFutureAction, FutureAction, JobSubmitter}
 import org.apache.spark.internal.Logging
-import org.apache.spark.internal.config.{RDD_LIMIT_INITIAL_NUM_PARTITIONS, RDD_LIMIT_SCALE_UP_FACTOR}
+import org.apache.spark.internal.config.{
+  RDD_LIMIT_INITIAL_NUM_PARTITIONS,
+  RDD_LIMIT_SCALE_UP_FACTOR
+}
 import org.apache.spark.util.ArrayImplicits._
 import org.apache.spark.util.ThreadUtils
 
-/**
- * A set of asynchronous RDD actions available through an implicit conversion.
- */
-class AsyncRDDActions[T: ClassTag](self: RDD[T]) extends Serializable with Logging {
+/** A set of asynchronous RDD actions available through an implicit conversion.
+  */
+class AsyncRDDActions[T: ClassTag](self: RDD[T])
+    extends Serializable
+    with Logging {
 
-  /**
-   * Returns a future for counting the number of elements in the RDD.
-   */
+  /** Returns a future for counting the number of elements in the RDD.
+    */
   def countAsync(): FutureAction[Long] = self.withScope {
     val totalCount = new AtomicLong
     self.context.submitJob(
@@ -51,21 +54,25 @@ class AsyncRDDActions[T: ClassTag](self: RDD[T]) extends Serializable with Loggi
       },
       Range(0, self.partitions.length),
       (index: Int, data: Long) => totalCount.addAndGet(data),
-      totalCount.get())
+      totalCount.get()
+    )
   }
 
-  /**
-   * Returns a future for retrieving all elements of this RDD.
-   */
+  /** Returns a future for retrieving all elements of this RDD.
+    */
   def collectAsync(): FutureAction[Seq[T]] = self.withScope {
     val results = new Array[Array[T]](self.partitions.length)
-    self.context.submitJob[T, Array[T], Seq[T]](self, _.toArray, Range(0, self.partitions.length),
-      (index, data) => results(index) = data, results.flatten.toImmutableArraySeq)
+    self.context.submitJob[T, Array[T], Seq[T]](
+      self,
+      _.toArray,
+      Range(0, self.partitions.length),
+      (index, data) => results(index) = data,
+      results.flatten.toImmutableArraySeq
+    )
   }
 
-  /**
-   * Returns a future for retrieving the first num elements of the RDD.
-   */
+  /** Returns a future for retrieving the first num elements of the RDD.
+    */
   def takeAsync(num: Int): FutureAction[Seq[T]] = self.withScope {
     val callSite = self.context.getCallSite()
     val localProperties = self.context.getLocalProperties
@@ -82,7 +89,9 @@ class AsyncRDDActions[T: ClassTag](self: RDD[T]) extends Serializable with Loggi
       This implementation is non-blocking, asynchronously handling the
       results of each job and triggering the next job using callbacks on futures.
      */
-    def continue(partsScanned: Int)(implicit jobSubmitter: JobSubmitter): Future[Seq[T]] =
+    def continue(partsScanned: Int)(implicit
+        jobSubmitter: JobSubmitter
+    ): Future[Seq[T]] =
       if (results.size >= num || partsScanned >= totalParts) {
         Future.successful(results.toSeq)
       } else {
@@ -97,23 +106,29 @@ class AsyncRDDActions[T: ClassTag](self: RDD[T]) extends Serializable with Loggi
             numPartsToTry = partsScanned * scaleUpFactor
           } else {
             // the left side of max is >=1 whenever partsScanned >= 2
-            numPartsToTry = Math.max(1,
-              (1.5 * num * partsScanned / results.size).toInt - partsScanned)
-            numPartsToTry = Math.min(numPartsToTry, partsScanned * scaleUpFactor)
+            numPartsToTry = Math.max(
+              1,
+              (1.5 * num * partsScanned / results.size).toInt - partsScanned
+            )
+            numPartsToTry =
+              Math.min(numPartsToTry, partsScanned * scaleUpFactor)
           }
         }
 
         val left = num - results.size
-        val p = partsScanned.until(math.min(partsScanned + numPartsToTry, totalParts))
+        val p =
+          partsScanned.until(math.min(partsScanned + numPartsToTry, totalParts))
 
         val buf = new Array[Array[T]](p.size)
         self.context.setCallSite(callSite)
         self.context.setLocalProperties(localProperties)
-        val job = jobSubmitter.submitJob(self,
+        val job = jobSubmitter.submitJob(
+          self,
           (it: Iterator[T]) => it.take(left).toArray,
           p,
           (index: Int, data: Array[T]) => buf(index) = data,
-          ())
+          ()
+        )
         job.flatMap { _ =>
           buf.foreach(results ++= _.take(num - results.size))
           continue(partsScanned + p.size)
@@ -123,25 +138,35 @@ class AsyncRDDActions[T: ClassTag](self: RDD[T]) extends Serializable with Loggi
     new ComplexFutureAction[Seq[T]](continue(0)(_))
   }
 
-  /**
-   * Applies a function f to all elements of this RDD.
-   */
+  /** Applies a function f to all elements of this RDD.
+    */
   def foreachAsync(f: T => Unit): FutureAction[Unit] = self.withScope {
     val cleanF = self.context.clean(f)
-    self.context.submitJob[T, Unit, Unit](self, _.foreach(cleanF), Range(0, self.partitions.length),
-      (index, data) => (), ())
+    self.context.submitJob[T, Unit, Unit](
+      self,
+      _.foreach(cleanF),
+      Range(0, self.partitions.length),
+      (index, data) => (),
+      ()
+    )
   }
 
-  /**
-   * Applies a function f to each partition of this RDD.
-   */
-  def foreachPartitionAsync(f: Iterator[T] => Unit): FutureAction[Unit] = self.withScope {
-    self.context.submitJob[T, Unit, Unit](self, f, Range(0, self.partitions.length),
-      (index, data) => (), ())
-  }
+  /** Applies a function f to each partition of this RDD.
+    */
+  def foreachPartitionAsync(f: Iterator[T] => Unit): FutureAction[Unit] =
+    self.withScope {
+      self.context.submitJob[T, Unit, Unit](
+        self,
+        f,
+        Range(0, self.partitions.length),
+        (index, data) => (),
+        ()
+      )
+    }
 }
 
 private object AsyncRDDActions {
   val futureExecutionContext = ExecutionContext.fromExecutorService(
-    ThreadUtils.newDaemonCachedThreadPool("AsyncRDDActions-future", 128))
+    ThreadUtils.newDaemonCachedThreadPool("AsyncRDDActions-future", 128)
+  )
 }

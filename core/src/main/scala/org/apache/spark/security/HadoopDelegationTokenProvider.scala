@@ -23,34 +23,34 @@ import org.apache.hadoop.security.Credentials
 import org.apache.spark.SparkConf
 import org.apache.spark.annotation.DeveloperApi
 
-/**
- * ::DeveloperApi::
- * Hadoop delegation token provider.
- */
+/** ::DeveloperApi::
+  * Hadoop delegation token provider.
+  */
 @DeveloperApi
 trait HadoopDelegationTokenProvider {
 
-  /**
-   * Name of the service to provide delegation tokens. This name should be unique.  Spark will
-   * internally use this name to differentiate delegation token providers.
-   */
+  /** Name of the service to provide delegation tokens. This name should be unique.  Spark will
+    * internally use this name to differentiate delegation token providers.
+    */
   def serviceName: String
 
-  /**
-   * Returns true if delegation tokens are required for this service. By default, it is based on
-   * whether Hadoop security is enabled.
-   */
-  def delegationTokensRequired(sparkConf: SparkConf, hadoopConf: Configuration): Boolean
+  /** Returns true if delegation tokens are required for this service. By default, it is based on
+    * whether Hadoop security is enabled.
+    */
+  def delegationTokensRequired(
+      sparkConf: SparkConf,
+      hadoopConf: Configuration
+  ): Boolean
 
-  /**
-   * Obtain delegation tokens for this service and get the time of the next renewal.
-   * @param hadoopConf Configuration of current Hadoop Compatible system.
-   * @param creds Credentials to add tokens and security keys to.
-   * @return If the returned tokens are renewable and can be renewed, return the time of the next
-   *         renewal, otherwise None should be returned.
-   */
+  /** Obtain delegation tokens for this service and get the time of the next renewal.
+    * @param hadoopConf Configuration of current Hadoop Compatible system.
+    * @param creds Credentials to add tokens and security keys to.
+    * @return If the returned tokens are renewable and can be renewed, return the time of the next
+    *         renewal, otherwise None should be returned.
+    */
   def obtainDelegationTokens(
-    hadoopConf: Configuration,
-    sparkConf: SparkConf,
-    creds: Credentials): Option[Long]
+      hadoopConf: Configuration,
+      sparkConf: SparkConf,
+      creds: Credentials
+  ): Option[Long]
 }

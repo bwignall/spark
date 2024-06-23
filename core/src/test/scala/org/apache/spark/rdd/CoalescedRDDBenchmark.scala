@@ -22,20 +22,19 @@ import scala.collection.immutable
 import org.apache.spark.SparkContext
 import org.apache.spark.benchmark.{Benchmark, BenchmarkBase}
 
-/**
- * Benchmark for CoalescedRDD.
- * Measures rdd.coalesce performance under various combinations of
- * coalesced partitions and preferred hosts
- * To run this benchmark:
- * {{{
- *   1. without sbt:
- *      bin/spark-submit --class <this class> <spark core test jar>
- *   2. build/sbt "core/Test/runMain <this class>"
- *   3. generate result:
- *      SPARK_GENERATE_BENCHMARK_FILES=1 build/sbt "core/Test/runMain <this class>"
- *      Results will be written to "benchmarks/CoalescedRDDBenchmark-results.txt".
- * }}}
- * */
+/** Benchmark for CoalescedRDD.
+  * Measures rdd.coalesce performance under various combinations of
+  * coalesced partitions and preferred hosts
+  * To run this benchmark:
+  * {{{
+  *   1. without sbt:
+  *      bin/spark-submit --class <this class> <spark core test jar>
+  *   2. build/sbt "core/Test/runMain <this class>"
+  *   3. generate result:
+  *      SPARK_GENERATE_BENCHMARK_FILES=1 build/sbt "core/Test/runMain <this class>"
+  *      Results will be written to "benchmarks/CoalescedRDDBenchmark-results.txt".
+  * }}}
+  */
 object CoalescedRDDBenchmark extends BenchmarkBase {
   val seed = 0x1337
   val sc = new SparkContext(master = "local[4]", appName = "test")
@@ -52,13 +51,15 @@ object CoalescedRDDBenchmark extends BenchmarkBase {
         hosts.length
         val rnd = scala.util.Random
         rnd.setSeed(seed)
-        val blocks: immutable.Seq[(Int, Seq[String])] = (1 to numBlocks).map { i =>
-          (i, hosts(rnd.nextInt(hosts.size)) :: Nil)
+        val blocks: immutable.Seq[(Int, Seq[String])] = (1 to numBlocks).map {
+          i =>
+            (i, hosts(rnd.nextInt(hosts.size)) :: Nil)
         }
 
         benchmark.addCase(
           s"Coalesce Num Partitions: $numPartitions Num Hosts: $numHosts",
-          numIters) { _ =>
+          numIters
+        ) { _ =>
           performCoalesce(blocks, numPartitions)
         }
       }
@@ -67,8 +68,10 @@ object CoalescedRDDBenchmark extends BenchmarkBase {
     benchmark.run()
   }
 
-  private def performCoalesce(blocks: immutable.Seq[(Int, Seq[String])],
-      numPartitions: Int): Unit = {
+  private def performCoalesce(
+      blocks: immutable.Seq[(Int, Seq[String])],
+      numPartitions: Int
+  ): Unit = {
     sc.makeRDD(blocks).coalesce(numPartitions).partitions
   }
 

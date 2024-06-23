@@ -29,20 +29,23 @@ import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.security.HadoopDelegationTokenProvider
 import org.apache.spark.util.Utils
 
-private class ExceptionThrowingDelegationTokenProvider extends HadoopDelegationTokenProvider {
+private class ExceptionThrowingDelegationTokenProvider
+    extends HadoopDelegationTokenProvider {
   ExceptionThrowingDelegationTokenProvider.constructed = true
   throw new IllegalArgumentException
 
   override def serviceName: String = "throw"
 
   override def delegationTokensRequired(
-    sparkConf: SparkConf,
-    hadoopConf: Configuration): Boolean = throw new IllegalArgumentException
+      sparkConf: SparkConf,
+      hadoopConf: Configuration
+  ): Boolean = throw new IllegalArgumentException
 
   override def obtainDelegationTokens(
-    hadoopConf: Configuration,
-    sparkConf: SparkConf,
-    creds: Credentials): Option[Long] = throw new IllegalArgumentException
+      hadoopConf: Configuration,
+      sparkConf: SparkConf,
+      creds: Credentials
+  ): Option[Long] = throw new IllegalArgumentException
 }
 
 private object ExceptionThrowingDelegationTokenProvider {
@@ -54,7 +57,8 @@ class HadoopDelegationTokenManagerSuite extends SparkFunSuite {
 
   test("default configuration") {
     ExceptionThrowingDelegationTokenProvider.constructed = false
-    val manager = new HadoopDelegationTokenManager(new SparkConf(false), hadoopConf, null)
+    val manager =
+      new HadoopDelegationTokenManager(new SparkConf(false), hadoopConf, null)
     assert(manager.isProviderLoaded("hadoopfs"))
     assert(manager.isProviderLoaded("hbase"))
     // This checks that providers are loaded independently and they have no effect on each other
@@ -63,7 +67,8 @@ class HadoopDelegationTokenManagerSuite extends SparkFunSuite {
   }
 
   test("disable hadoopfs credential provider") {
-    val sparkConf = new SparkConf(false).set("spark.security.credentials.hadoopfs.enabled", "false")
+    val sparkConf = new SparkConf(false)
+      .set("spark.security.credentials.hadoopfs.enabled", "false")
     val manager = new HadoopDelegationTokenManager(sparkConf, hadoopConf, null)
     assert(!manager.isProviderLoaded("hadoopfs"))
   }
@@ -95,7 +100,8 @@ class HadoopDelegationTokenManagerSuite extends SparkFunSuite {
       krbConf.set(HADOOP_SECURITY_AUTHENTICATION, "kerberos")
 
       UserGroupInformation.setConfiguration(krbConf)
-      val manager = new HadoopDelegationTokenManager(new SparkConf(false), krbConf, null)
+      val manager =
+        new HadoopDelegationTokenManager(new SparkConf(false), krbConf, null)
       val testImpl = new PrivilegedExceptionAction[Unit] {
         override def run(): Unit = {
           assert(UserGroupInformation.isSecurityEnabled())
@@ -106,11 +112,15 @@ class HadoopDelegationTokenManagerSuite extends SparkFunSuite {
         }
       }
 
-      val realUser = UserGroupInformation.createUserForTesting("realUser", Array.empty)
+      val realUser =
+        UserGroupInformation.createUserForTesting("realUser", Array.empty)
       realUser.doAs(testImpl)
 
-      val proxyUser = UserGroupInformation.createProxyUserForTesting("proxyUser", realUser,
-        Array.empty)
+      val proxyUser = UserGroupInformation.createProxyUserForTesting(
+        "proxyUser",
+        realUser,
+        Array.empty
+      )
       proxyUser.doAs(testImpl)
     } finally {
       if (kdc != null) {

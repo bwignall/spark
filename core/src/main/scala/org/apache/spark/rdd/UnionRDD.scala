@@ -24,51 +24,58 @@ import scala.collection.parallel.ForkJoinTaskSupport
 import scala.collection.parallel.immutable.ParVector
 import scala.reflect.ClassTag
 
-import org.apache.spark.{Dependency, Partition, RangeDependency, SparkContext, TaskContext}
+import org.apache.spark.{
+  Dependency,
+  Partition,
+  RangeDependency,
+  SparkContext,
+  TaskContext
+}
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.internal.config.RDD_PARALLEL_LISTING_THRESHOLD
 import org.apache.spark.util.{ThreadUtils, Utils}
 
-/**
- * Partition for UnionRDD.
- *
- * @param idx index of the partition
- * @param rdd the parent RDD this partition refers to
- * @param parentRddIndex index of the parent RDD this partition refers to
- * @param parentRddPartitionIndex index of the partition within the parent RDD
- *                                this partition refers to
- */
+/** Partition for UnionRDD.
+  *
+  * @param idx index of the partition
+  * @param rdd the parent RDD this partition refers to
+  * @param parentRddIndex index of the parent RDD this partition refers to
+  * @param parentRddPartitionIndex index of the partition within the parent RDD
+  *                                this partition refers to
+  */
 private[spark] class UnionPartition[T: ClassTag](
     idx: Int,
     @transient private val rdd: RDD[T],
     val parentRddIndex: Int,
-    @transient private val parentRddPartitionIndex: Int)
-  extends Partition {
+    @transient private val parentRddPartitionIndex: Int
+) extends Partition {
 
   var parentPartition: Partition = rdd.partitions(parentRddPartitionIndex)
 
-  def preferredLocations(): Seq[String] = rdd.preferredLocations(parentPartition)
+  def preferredLocations(): Seq[String] =
+    rdd.preferredLocations(parentPartition)
 
   override val index: Int = idx
 
   @throws(classOf[IOException])
-  private def writeObject(oos: ObjectOutputStream): Unit = Utils.tryOrIOException {
-    // Update the reference to parent split at the time of task serialization
-    parentPartition = rdd.partitions(parentRddPartitionIndex)
-    oos.defaultWriteObject()
-  }
+  private def writeObject(oos: ObjectOutputStream): Unit =
+    Utils.tryOrIOException {
+      // Update the reference to parent split at the time of task serialization
+      parentPartition = rdd.partitions(parentRddPartitionIndex)
+      oos.defaultWriteObject()
+    }
 }
 
 object UnionRDD {
   private[spark] lazy val partitionEvalTaskSupport =
-    new ForkJoinTaskSupport(ThreadUtils.newForkJoinPool("partition-eval-task-support", 8))
+    new ForkJoinTaskSupport(
+      ThreadUtils.newForkJoinPool("partition-eval-task-support", 8)
+    )
 }
 
 @DeveloperApi
-class UnionRDD[T: ClassTag](
-    sc: SparkContext,
-    var rdds: Seq[RDD[T]])
-  extends RDD[T](sc, Nil) {  // Nil since we implement getDependencies
+class UnionRDD[T: ClassTag](sc: SparkContext, var rdds: Seq[RDD[T]])
+    extends RDD[T](sc, Nil) { // Nil since we implement getDependencies
 
   // visible for testing
   private[spark] val isPartitionListingParallel: Boolean =
@@ -84,7 +91,8 @@ class UnionRDD[T: ClassTag](
     } else {
       rdds
     }
-    val array = new Array[Partition](parRDDs.iterator.map(_.partitions.length).sum)
+    val array =
+      new Array[Partition](parRDDs.iterator.map(_.partitions.length).sum)
     var pos = 0
     for ((rdd, rddIndex) <- rdds.zipWithIndex; split <- rdd.partitions) {
       array(pos) = new UnionPartition(pos, rdd, rddIndex, split.index)

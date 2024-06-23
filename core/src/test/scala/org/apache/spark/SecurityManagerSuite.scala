@@ -74,7 +74,10 @@ class SecurityManagerSuite extends SparkFunSuite with ResetSystemProperties {
     conf2.set(ACLS_ENABLE, true)
     conf2.set(UI_VIEW_ACLS_GROUPS, Seq("group1", "group2"))
     // explicitly specify a custom GroupsMappingServiceProvider
-    conf2.set(USER_GROUPS_MAPPING, "org.apache.spark.DummyGroupMappingServiceProvider")
+    conf2.set(
+      USER_GROUPS_MAPPING,
+      "org.apache.spark.DummyGroupMappingServiceProvider"
+    )
 
     val securityManager2 = new SecurityManager(conf2)
     // group4,group5 do not match
@@ -120,7 +123,10 @@ class SecurityManagerSuite extends SparkFunSuite with ResetSystemProperties {
 
   test("set security with api for groups") {
     val conf = new SparkConf
-    conf.set(USER_GROUPS_MAPPING, "org.apache.spark.DummyGroupMappingServiceProvider")
+    conf.set(
+      USER_GROUPS_MAPPING,
+      "org.apache.spark.DummyGroupMappingServiceProvider"
+    )
 
     val securityManager = new SecurityManager(conf)
     securityManager.setAcls(true)
@@ -178,7 +184,10 @@ class SecurityManagerSuite extends SparkFunSuite with ResetSystemProperties {
 
   test("set security modify acls for groups") {
     val conf = new SparkConf
-    conf.set(USER_GROUPS_MAPPING, "org.apache.spark.DummyGroupMappingServiceProvider")
+    conf.set(
+      USER_GROUPS_MAPPING,
+      "org.apache.spark.DummyGroupMappingServiceProvider"
+    )
 
     val securityManager = new SecurityManager(conf)
     securityManager.setAcls(true)
@@ -247,7 +256,10 @@ class SecurityManagerSuite extends SparkFunSuite with ResetSystemProperties {
     conf.set(ADMIN_ACLS_GROUPS, Seq("group1"))
     conf.set(UI_VIEW_ACLS_GROUPS, Seq("group2"))
     conf.set(MODIFY_ACLS_GROUPS, Seq("group3"))
-    conf.set(USER_GROUPS_MAPPING, "org.apache.spark.DummyGroupMappingServiceProvider")
+    conf.set(
+      USER_GROUPS_MAPPING,
+      "org.apache.spark.DummyGroupMappingServiceProvider"
+    )
 
     val securityManager = new SecurityManager(conf)
     securityManager.setAcls(true)
@@ -397,9 +409,10 @@ class SecurityManagerSuite extends SparkFunSuite with ResetSystemProperties {
     assert(key === new SecurityManager(conf).getSecretKey())
 
     val keyFromEnv = "very secret key from env"
-    val conf2 = new SparkConfWithEnv(Map(SecurityManager.ENV_AUTH_SECRET -> keyFromEnv))
-      .set(SecurityManager.SPARK_AUTH_CONF, "true")
-      .set(SecurityManager.SPARK_AUTH_SECRET_CONF, key)
+    val conf2 =
+      new SparkConfWithEnv(Map(SecurityManager.ENV_AUTH_SECRET -> keyFromEnv))
+        .set(SecurityManager.SPARK_AUTH_CONF, "true")
+        .set(SecurityManager.SPARK_AUTH_SECRET_CONF, key)
     assert(keyFromEnv === new SecurityManager(conf2).getSecretKey())
   }
 
@@ -408,11 +421,22 @@ class SecurityManagerSuite extends SparkFunSuite with ResetSystemProperties {
       withSecretFile("executor-secret") { secretFileFromExecutor =>
         val conf = new SparkConf()
           .setMaster("k8s://127.0.0.1")
-          .set(AUTH_SECRET_FILE_DRIVER, Some(secretFileFromDriver.getAbsolutePath))
-          .set(AUTH_SECRET_FILE_EXECUTOR, Some(secretFileFromExecutor.getAbsolutePath))
+          .set(
+            AUTH_SECRET_FILE_DRIVER,
+            Some(secretFileFromDriver.getAbsolutePath)
+          )
+          .set(
+            AUTH_SECRET_FILE_EXECUTOR,
+            Some(secretFileFromExecutor.getAbsolutePath)
+          )
           .set(SecurityManager.SPARK_AUTH_CONF, "true")
-        val mgr = new SecurityManager(conf, authSecretFileConf = AUTH_SECRET_FILE_EXECUTOR)
-        assert(encodeFileAsBase64(secretFileFromExecutor) === mgr.getSecretKey())
+        val mgr = new SecurityManager(
+          conf,
+          authSecretFileConf = AUTH_SECRET_FILE_EXECUTOR
+        )
+        assert(
+          encodeFileAsBase64(secretFileFromExecutor) === mgr.getSecretKey()
+        )
       }
     }
   }
@@ -473,40 +497,50 @@ class SecurityManagerSuite extends SparkFunSuite with ResetSystemProperties {
         .set(SparkLauncher.SPARK_MASTER, master)
       val mgr = new SecurityManager(conf)
 
-      UserGroupInformation.createUserForTesting("authTest", Array()).doAs(
-        new PrivilegedExceptionAction[Unit]() {
-          override def run(): Unit = {
-            secretType match {
-              case UGI =>
-                mgr.initializeAuth()
-                val creds = UserGroupInformation.getCurrentUser().getCredentials()
-                val secret = creds.getSecretKey(SecurityManager.SECRET_LOOKUP_KEY)
-                assert(secret != null)
-                assert(new String(secret, UTF_8) === mgr.getSecretKey())
-
-              case AUTO =>
-                mgr.initializeAuth()
-                val creds = UserGroupInformation.getCurrentUser().getCredentials()
-                assert(creds.getSecretKey(SecurityManager.SECRET_LOOKUP_KEY) === null)
-
-              case MANUAL =>
-                intercept[IllegalArgumentException] {
+      UserGroupInformation
+        .createUserForTesting("authTest", Array())
+        .doAs(
+          new PrivilegedExceptionAction[Unit]() {
+            override def run(): Unit = {
+              secretType match {
+                case UGI =>
                   mgr.initializeAuth()
-                }
-                intercept[IllegalArgumentException] {
-                  mgr.getSecretKey()
-                }
+                  val creds =
+                    UserGroupInformation.getCurrentUser().getCredentials()
+                  val secret =
+                    creds.getSecretKey(SecurityManager.SECRET_LOOKUP_KEY)
+                  assert(secret != null)
+                  assert(new String(secret, UTF_8) === mgr.getSecretKey())
 
-              case FILE =>
-                withSecretFile() { secretFile =>
-                  conf.set(AUTH_SECRET_FILE, secretFile.getAbsolutePath)
+                case AUTO =>
                   mgr.initializeAuth()
-                  assert(encodeFileAsBase64(secretFile) === mgr.getSecretKey())
-                }
+                  val creds =
+                    UserGroupInformation.getCurrentUser().getCredentials()
+                  assert(
+                    creds
+                      .getSecretKey(SecurityManager.SECRET_LOOKUP_KEY) === null
+                  )
+
+                case MANUAL =>
+                  intercept[IllegalArgumentException] {
+                    mgr.initializeAuth()
+                  }
+                  intercept[IllegalArgumentException] {
+                    mgr.getSecretKey()
+                  }
+
+                case FILE =>
+                  withSecretFile() { secretFile =>
+                    conf.set(AUTH_SECRET_FILE, secretFile.getAbsolutePath)
+                    mgr.initializeAuth()
+                    assert(
+                      encodeFileAsBase64(secretFile) === mgr.getSecretKey()
+                    )
+                  }
+              }
             }
           }
-        }
-      )
+        )
     }
   }
 
@@ -514,4 +548,3 @@ class SecurityManagerSuite extends SparkFunSuite with ResetSystemProperties {
     Base64.getEncoder.encodeToString(Files.readAllBytes(secretFile.toPath))
   }
 }
-

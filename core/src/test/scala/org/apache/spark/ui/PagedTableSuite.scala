@@ -64,26 +64,46 @@ class PagedTableSuite extends SparkFunSuite {
       override def goButtonFormPath: String = ""
     }
 
-    assert((pagedTable.pageNavigation(1, 10, 1).head \\ "li").map(_.text.trim) === Seq("1"))
     assert(
-      (pagedTable.pageNavigation(1, 10, 2).head \\ "li").map(_.text.trim) === Seq("1", "2", ">"))
+      (pagedTable.pageNavigation(1, 10, 1).head \\ "li")
+        .map(_.text.trim) === Seq("1")
+    )
     assert(
-      (pagedTable.pageNavigation(2, 10, 2).head \\ "li").map(_.text.trim) === Seq("<", "1", "2"))
+      (pagedTable.pageNavigation(1, 10, 2).head \\ "li")
+        .map(_.text.trim) === Seq("1", "2", ">")
+    )
+    assert(
+      (pagedTable.pageNavigation(2, 10, 2).head \\ "li")
+        .map(_.text.trim) === Seq("<", "1", "2")
+    )
 
-    assert((pagedTable.pageNavigation(1, 10, 100).head \\ "li").map(_.text.trim) ===
-      (1 to 10).map(_.toString) ++ Seq(">", ">>"))
-    assert((pagedTable.pageNavigation(2, 10, 100).head \\ "li").map(_.text.trim) ===
-      Seq("<") ++ (1 to 10).map(_.toString) ++ Seq(">", ">>"))
+    assert(
+      (pagedTable.pageNavigation(1, 10, 100).head \\ "li").map(_.text.trim) ===
+        (1 to 10).map(_.toString) ++ Seq(">", ">>")
+    )
+    assert(
+      (pagedTable.pageNavigation(2, 10, 100).head \\ "li").map(_.text.trim) ===
+        Seq("<") ++ (1 to 10).map(_.toString) ++ Seq(">", ">>")
+    )
 
-    assert((pagedTable.pageNavigation(100, 10, 100).head \\ "li").map(_.text.trim) ===
-      Seq("<<", "<") ++ (91 to 100).map(_.toString))
-    assert((pagedTable.pageNavigation(99, 10, 100).head \\ "li").map(_.text.trim) ===
-      Seq("<<", "<") ++ (91 to 100).map(_.toString) ++ Seq(">"))
+    assert(
+      (pagedTable.pageNavigation(100, 10, 100).head \\ "li")
+        .map(_.text.trim) ===
+        Seq("<<", "<") ++ (91 to 100).map(_.toString)
+    )
+    assert(
+      (pagedTable.pageNavigation(99, 10, 100).head \\ "li").map(_.text.trim) ===
+        Seq("<<", "<") ++ (91 to 100).map(_.toString) ++ Seq(">")
+    )
 
-    assert((pagedTable.pageNavigation(11, 10, 100).head \\ "li").map(_.text.trim) ===
-      Seq("<<", "<") ++ (11 to 20).map(_.toString) ++ Seq(">", ">>"))
-    assert((pagedTable.pageNavigation(93, 10, 97).head \\ "li").map(_.text.trim) ===
-      Seq("<<", "<") ++ (91 to 97).map(_.toString) ++ Seq(">"))
+    assert(
+      (pagedTable.pageNavigation(11, 10, 100).head \\ "li").map(_.text.trim) ===
+        Seq("<<", "<") ++ (11 to 20).map(_.toString) ++ Seq(">", ">>")
+    )
+    assert(
+      (pagedTable.pageNavigation(93, 10, 97).head \\ "li").map(_.text.trim) ===
+        Seq("<<", "<") ++ (91 to 97).map(_.toString) ++ Seq(">")
+    )
   }
 
   test("pageNavigation with different id") {
@@ -110,16 +130,18 @@ class PagedTableSuite extends SparkFunSuite {
     val defaultIdNavigation = pagedTable.pageNavigation(1, 10, 2).head \\ "form"
     assert(defaultIdNavigation \@ "id" === "form-testTable-page")
 
-    val customIdNavigation = pagedTable.pageNavigation(1, 10, 2, "customIdTable").head \\ "form"
+    val customIdNavigation =
+      pagedTable.pageNavigation(1, 10, 2, "customIdTable").head \\ "form"
     assert(customIdNavigation \@ "id" === "form-customIdTable-page")
     assert(defaultIdNavigation !== customIdNavigation)
   }
 }
 
 private[spark] class SeqPagedDataSource[T](seq: Seq[T], pageSize: Int)
-  extends PagedDataSource[T](pageSize) {
+    extends PagedDataSource[T](pageSize) {
 
   override protected def dataSize: Int = seq.size
 
-  override protected def sliceData(from: Int, to: Int): Seq[T] = seq.slice(from, to)
+  override protected def sliceData(from: Int, to: Int): Seq[T] =
+    seq.slice(from, to)
 }

@@ -22,7 +22,6 @@ import java.util.UUID
 
 import org.apache.spark.util.Utils
 
-
 trait LocalRootDirsTest extends SparkFunSuite with LocalSparkContext {
 
   val conf = new SparkConf(loadDefaults = false)
@@ -40,8 +39,10 @@ trait LocalRootDirsTest extends SparkFunSuite with LocalSparkContext {
   override def beforeEach(): Unit = {
     super.beforeEach()
     tempDir = Utils.createTempDir(namePrefix = "local")
-    conf.set("spark.local.dir",
-      tempDir.getAbsolutePath + File.separator + UUID.randomUUID().toString)
+    conf.set(
+      "spark.local.dir",
+      tempDir.getAbsolutePath + File.separator + UUID.randomUUID().toString
+    )
   }
 
   override def afterEach(): Unit = {

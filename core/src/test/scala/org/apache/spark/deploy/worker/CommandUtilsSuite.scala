@@ -26,14 +26,32 @@ import org.apache.spark.deploy.Command
 import org.apache.spark.network.ssl.SslSampleConfigs
 import org.apache.spark.util.Utils
 
-class CommandUtilsSuite extends SparkFunSuite with Matchers with PrivateMethodTester {
+class CommandUtilsSuite
+    extends SparkFunSuite
+    with Matchers
+    with PrivateMethodTester {
 
   test("set libraryPath correctly") {
     val appId = "12345-worker321-9876"
-    val sparkHome = sys.props.getOrElse("spark.test.home", fail("spark.test.home is not set!"))
-    val cmd = new Command("mainClass", Seq(), Map(), Seq(), Seq("libraryPathToB"), Seq())
+    val sparkHome = sys.props.getOrElse(
+      "spark.test.home",
+      fail("spark.test.home is not set!")
+    )
+    val cmd = new Command(
+      "mainClass",
+      Seq(),
+      Map(),
+      Seq(),
+      Seq("libraryPathToB"),
+      Seq()
+    )
     val builder = CommandUtils.buildProcessBuilder(
-      cmd, new SecurityManager(new SparkConf), 512, sparkHome, t => t)
+      cmd,
+      new SecurityManager(new SparkConf),
+      512,
+      sparkHome,
+      t => t
+    )
     val libraryPath = Utils.libraryPathEnvName
     val env = builder.environment
     env.keySet should contain(libraryPath)
@@ -46,27 +64,60 @@ class CommandUtilsSuite extends SparkFunSuite with Matchers with PrivateMethodTe
     val secret = "This is the secret sauce"
     // set auth secret
     conf.set(SecurityManager.SPARK_AUTH_SECRET_CONF, secret)
-    val command = new Command("mainClass", Seq(), Map(), Seq(), Seq("lib"),
-      Seq("-D" + SecurityManager.SPARK_AUTH_SECRET_CONF + "=" + secret))
+    val command = new Command(
+      "mainClass",
+      Seq(),
+      Map(),
+      Seq(),
+      Seq("lib"),
+      Seq("-D" + SecurityManager.SPARK_AUTH_SECRET_CONF + "=" + secret)
+    )
 
     // auth is not set
     var cmd = CommandUtils invokePrivate buildLocalCommand(
-      command, new SecurityManager(conf), (t: String) => t, Seq(), Map())
-    assert(!cmd.javaOpts.exists(_.startsWith("-D" + SecurityManager.SPARK_AUTH_SECRET_CONF)))
+      command,
+      new SecurityManager(conf),
+      (t: String) => t,
+      Seq(),
+      Map()
+    )
+    assert(
+      !cmd.javaOpts.exists(
+        _.startsWith("-D" + SecurityManager.SPARK_AUTH_SECRET_CONF)
+      )
+    )
     assert(!cmd.environment.contains(SecurityManager.ENV_AUTH_SECRET))
 
     // auth is set to false
     conf.set(SecurityManager.SPARK_AUTH_CONF, "false")
     cmd = CommandUtils invokePrivate buildLocalCommand(
-      command, new SecurityManager(conf), (t: String) => t, Seq(), Map())
-    assert(!cmd.javaOpts.exists(_.startsWith("-D" + SecurityManager.SPARK_AUTH_SECRET_CONF)))
+      command,
+      new SecurityManager(conf),
+      (t: String) => t,
+      Seq(),
+      Map()
+    )
+    assert(
+      !cmd.javaOpts.exists(
+        _.startsWith("-D" + SecurityManager.SPARK_AUTH_SECRET_CONF)
+      )
+    )
     assert(!cmd.environment.contains(SecurityManager.ENV_AUTH_SECRET))
 
     // auth is set to true
     conf.set(SecurityManager.SPARK_AUTH_CONF, "true")
     cmd = CommandUtils invokePrivate buildLocalCommand(
-      command, new SecurityManager(conf), (t: String) => t, Seq(), Map())
-    assert(!cmd.javaOpts.exists(_.startsWith("-D" + SecurityManager.SPARK_AUTH_SECRET_CONF)))
+      command,
+      new SecurityManager(conf),
+      (t: String) => t,
+      Seq(),
+      Map()
+    )
+    assert(
+      !cmd.javaOpts.exists(
+        _.startsWith("-D" + SecurityManager.SPARK_AUTH_SECRET_CONF)
+      )
+    )
     assert(cmd.environment(SecurityManager.ENV_AUTH_SECRET) === secret)
   }
 
@@ -76,22 +127,36 @@ class CommandUtilsSuite extends SparkFunSuite with Matchers with PrivateMethodTe
     conf.set("spark.ssl.rpc.enabled", "true")
 
     // This sets passwords
-    val updatedConfigs = SslSampleConfigs.createDefaultConfigMapForRpcNamespace()
-    updatedConfigs.entrySet().forEach(entry => conf.set(entry.getKey, entry.getValue))
+    val updatedConfigs =
+      SslSampleConfigs.createDefaultConfigMapForRpcNamespace()
+    updatedConfigs
+      .entrySet()
+      .forEach(entry => conf.set(entry.getKey, entry.getValue))
 
     val secret = "This is the secret sauce"
-    val command = Command("mainClass", Seq(), Map(), Seq(), Seq("lib"),
-      SSLOptions.SPARK_RPC_SSL_PASSWORD_FIELDS.map(
-        field => "-D" + field + "=" + secret
-      ))
+    val command = Command(
+      "mainClass",
+      Seq(),
+      Map(),
+      Seq(),
+      Seq("lib"),
+      SSLOptions.SPARK_RPC_SSL_PASSWORD_FIELDS.map(field =>
+        "-D" + field + "=" + secret
+      )
+    )
 
     val cmd = CommandUtils invokePrivate buildLocalCommand(
-      command, new SecurityManager(conf), (t: String) => t, Seq(), Map())
-    SSLOptions.SPARK_RPC_SSL_PASSWORD_FIELDS.foreach(
-      field => assert(!cmd.javaOpts.exists(_.startsWith("-D" + field)))
+      command,
+      new SecurityManager(conf),
+      (t: String) => t,
+      Seq(),
+      Map()
     )
-    SSLOptions.SPARK_RPC_SSL_PASSWORD_ENVS.foreach(
-      env => assert(cmd.environment(env) === "password")
+    SSLOptions.SPARK_RPC_SSL_PASSWORD_FIELDS.foreach(field =>
+      assert(!cmd.javaOpts.exists(_.startsWith("-D" + field)))
+    )
+    SSLOptions.SPARK_RPC_SSL_PASSWORD_ENVS.foreach(env =>
+      assert(cmd.environment(env) === "password")
     )
   }
 }

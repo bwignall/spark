@@ -92,15 +92,21 @@ class MasterSuite extends MasterSuiteBase {
     schedulingWithExecutorLimitAndCoresPerExecutor(spreadOut = true)
   }
 
-  test("scheduling with executor limit AND cores per executor - no spread out") {
+  test(
+    "scheduling with executor limit AND cores per executor - no spread out"
+  ) {
     schedulingWithExecutorLimitAndCoresPerExecutor(spreadOut = false)
   }
 
-  test("scheduling with executor limit AND cores per executor AND max cores - spread out") {
+  test(
+    "scheduling with executor limit AND cores per executor AND max cores - spread out"
+  ) {
     schedulingWithEverything(spreadOut = true)
   }
 
-  test("scheduling with executor limit AND cores per executor AND max cores - no spread out") {
+  test(
+    "scheduling with executor limit AND cores per executor AND max cores - no spread out"
+  ) {
     schedulingWithEverything(spreadOut = false)
   }
 
@@ -114,7 +120,8 @@ class MasterSuite extends MasterSuiteBase {
     master.invokePrivate(_schedule())
     assert(drivers.size === 0 && waitingDrivers.size === 0)
 
-    val command = Command("", Seq.empty, Map.empty, Seq.empty, Seq.empty, Seq.empty)
+    val command =
+      Command("", Seq.empty, Map.empty, Seq.empty, Seq.empty, Seq.empty)
     val desc = DriverDescription("", 1, 1, false, command)
     (1 to 3).foreach { i =>
       val driver = new DriverInfo(0, "driver" + i, desc, new Date())
@@ -142,42 +149,66 @@ class MasterSuite extends MasterSuiteBase {
     verifyDrivers(false, 3, 0, 0)
   }
 
-  test("SPARK-13604: Master should ask Worker kill unknown executors and drivers") {
+  test(
+    "SPARK-13604: Master should ask Worker kill unknown executors and drivers"
+  ) {
     val master = makeAliveMaster()
     val killedExecutors = new ConcurrentLinkedQueue[(String, Int)]()
     val killedDrivers = new ConcurrentLinkedQueue[String]()
-    val fakeWorker = master.rpcEnv.setupEndpoint("worker", new RpcEndpoint {
-      override val rpcEnv: RpcEnv = master.rpcEnv
+    val fakeWorker = master.rpcEnv.setupEndpoint(
+      "worker",
+      new RpcEndpoint {
+        override val rpcEnv: RpcEnv = master.rpcEnv
 
-      override def receive: PartialFunction[Any, Unit] = {
-        case KillExecutor(_, appId, execId) => killedExecutors.add((appId, execId))
-        case KillDriver(driverId) => killedDrivers.add(driverId)
+        override def receive: PartialFunction[Any, Unit] = {
+          case KillExecutor(_, appId, execId) =>
+            killedExecutors.add((appId, execId))
+          case KillDriver(driverId) => killedDrivers.add(driverId)
+        }
       }
-    })
+    )
 
-    master.self.send(RegisterWorker(
-      "1",
-      "localhost",
-      9999,
-      fakeWorker,
-      10,
-      128,
-      "http://localhost:8080",
-      RpcAddress("localhost", 9999)))
+    master.self.send(
+      RegisterWorker(
+        "1",
+        "localhost",
+        9999,
+        fakeWorker,
+        10,
+        128,
+        "http://localhost:8080",
+        RpcAddress("localhost", 9999)
+      )
+    )
     val executors = (0 until 3).map { i =>
-      new ExecutorDescription(appId = i.toString, execId = i,
-        ResourceProfile.DEFAULT_RESOURCE_PROFILE_ID, 2, 128, ExecutorState.RUNNING)
+      new ExecutorDescription(
+        appId = i.toString,
+        execId = i,
+        ResourceProfile.DEFAULT_RESOURCE_PROFILE_ID,
+        2,
+        128,
+        ExecutorState.RUNNING
+      )
     }
-    master.self.send(WorkerLatestState("1", executors, driverIds = Seq("0", "1", "2")))
+    master.self.send(
+      WorkerLatestState("1", executors, driverIds = Seq("0", "1", "2"))
+    )
 
     eventually(timeout(10.seconds)) {
-      assert(killedExecutors.asScala.toList.sorted === List("0" -> 0, "1" -> 1, "2" -> 2))
+      assert(
+        killedExecutors.asScala.toList.sorted === List(
+          "0" -> 0,
+          "1" -> 1,
+          "2" -> 2
+        )
+      )
       assert(killedDrivers.asScala.toList.sorted === List("0", "1", "2"))
     }
   }
 
   test("SPARK-45753: Support driver id pattern") {
-    val master = makeMaster(new SparkConf().set(DRIVER_ID_PATTERN, "my-driver-%2$05d"))
+    val master =
+      makeMaster(new SparkConf().set(DRIVER_ID_PATTERN, "my-driver-%2$05d"))
     val submitDate = new Date()
     assert(master.invokePrivate(_newDriverId(submitDate)) === "my-driver-00000")
     assert(master.invokePrivate(_newDriverId(submitDate)) === "my-driver-00001")
@@ -191,10 +222,15 @@ class MasterSuite extends MasterSuiteBase {
   }
 
   test("SPARK-45754: Support app id pattern") {
-    val master = makeMaster(new SparkConf().set(APP_ID_PATTERN, "my-app-%2$05d"))
+    val master =
+      makeMaster(new SparkConf().set(APP_ID_PATTERN, "my-app-%2$05d"))
     val submitDate = new Date()
-    assert(master.invokePrivate(_newApplicationId(submitDate)) === "my-app-00000")
-    assert(master.invokePrivate(_newApplicationId(submitDate)) === "my-app-00001")
+    assert(
+      master.invokePrivate(_newApplicationId(submitDate)) === "my-app-00000"
+    )
+    assert(
+      master.invokePrivate(_newApplicationId(submitDate)) === "my-app-00001"
+    )
   }
 
   test("SPARK-45754: Prevent invalid app id patterns") {
@@ -205,11 +241,14 @@ class MasterSuite extends MasterSuiteBase {
   }
 
   test("SPARK-45785: Rotate app num with modulo operation") {
-    val conf = new SparkConf().set(APP_ID_PATTERN, "%2$d").set(APP_NUMBER_MODULO, 1000)
+    val conf =
+      new SparkConf().set(APP_ID_PATTERN, "%2$d").set(APP_NUMBER_MODULO, 1000)
     val master = makeMaster(conf)
     val submitDate = new Date()
     (0 to 2000).foreach { i =>
-      assert(master.invokePrivate(_newApplicationId(submitDate)) === s"${i % 1000}")
+      assert(
+        master.invokePrivate(_newApplicationId(submitDate)) === s"${i % 1000}"
+      )
     }
   }
 
@@ -218,13 +257,16 @@ class MasterSuite extends MasterSuiteBase {
       .set(MASTER_USE_APP_NAME_AS_APP_ID, true)
     val master = makeMaster(conf)
     val desc = new ApplicationDescription(
-        name = " spark - 45756 ",
-        maxCores = None,
-        command = null,
-        appUiUrl = "",
-        defaultProfile = DeployTestUtils.defaultResourceProfile,
-        eventLogDir = None,
-        eventLogCodec = None)
-    assert(master.invokePrivate(_createApplication(desc, null)).id === "spark-45756")
+      name = " spark - 45756 ",
+      maxCores = None,
+      command = null,
+      appUiUrl = "",
+      defaultProfile = DeployTestUtils.defaultResourceProfile,
+      eventLogDir = None,
+      eventLogCodec = None
+    )
+    assert(
+      master.invokePrivate(_createApplication(desc, null)).id === "spark-45756"
+    )
   }
 }

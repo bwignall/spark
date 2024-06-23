@@ -31,38 +31,37 @@ import org.apache.spark.serializer.JavaSerializer
 import org.apache.spark.util.{CollectionsUtils, Utils}
 import org.apache.spark.util.random.SamplingUtils
 
-/**
- * An object that defines how the elements in a key-value pair RDD are partitioned by key.
- * Maps each key to a partition ID, from 0 to `numPartitions - 1`.
- *
- * Note that, partitioner must be deterministic, i.e. it must return the same partition id given
- * the same partition key.
- */
+/** An object that defines how the elements in a key-value pair RDD are partitioned by key.
+  * Maps each key to a partition ID, from 0 to `numPartitions - 1`.
+  *
+  * Note that, partitioner must be deterministic, i.e. it must return the same partition id given
+  * the same partition key.
+  */
 abstract class Partitioner extends Serializable {
   def numPartitions: Int
   def getPartition(key: Any): Int
 }
 
 object Partitioner {
-  /**
-   * Choose a partitioner to use for a cogroup-like operation between a number of RDDs.
-   *
-   * If spark.default.parallelism is set, we'll use the value of SparkContext defaultParallelism
-   * as the default partitions number, otherwise we'll use the max number of upstream partitions.
-   *
-   * When available, we choose the partitioner from rdds with maximum number of partitions. If this
-   * partitioner is eligible (number of partitions within an order of maximum number of partitions
-   * in rdds), or has partition number higher than or equal to default partitions number - we use
-   * this partitioner.
-   *
-   * Otherwise, we'll use a new HashPartitioner with the default partitions number.
-   *
-   * Unless spark.default.parallelism is set, the number of partitions will be the same as the
-   * number of partitions in the largest upstream RDD, as this should be least likely to cause
-   * out-of-memory errors.
-   *
-   * We use two method parameters (rdd, others) to enforce callers passing at least 1 RDD.
-   */
+
+  /** Choose a partitioner to use for a cogroup-like operation between a number of RDDs.
+    *
+    * If spark.default.parallelism is set, we'll use the value of SparkContext defaultParallelism
+    * as the default partitions number, otherwise we'll use the max number of upstream partitions.
+    *
+    * When available, we choose the partitioner from rdds with maximum number of partitions. If this
+    * partitioner is eligible (number of partitions within an order of maximum number of partitions
+    * in rdds), or has partition number higher than or equal to default partitions number - we use
+    * this partitioner.
+    *
+    * Otherwise, we'll use a new HashPartitioner with the default partitions number.
+    *
+    * Unless spark.default.parallelism is set, the number of partitions will be the same as the
+    * number of partitions in the largest upstream RDD, as this should be least likely to cause
+    * out-of-memory errors.
+    *
+    * We use two method parameters (rdd, others) to enforce callers passing at least 1 RDD.
+    */
   def defaultPartitioner(rdd: RDD[_], others: RDD[_]*): Partitioner = {
     val rdds = (Seq(rdd) ++ others)
     val hasPartitioner = rdds.filter(_.partitioner.exists(_.numPartitions > 0))
@@ -73,51 +72,59 @@ object Partitioner {
       None
     }
 
-    val defaultNumPartitions = if (rdd.context.conf.contains("spark.default.parallelism")) {
-      rdd.context.defaultParallelism
-    } else {
-      rdds.map(_.partitions.length).max
-    }
+    val defaultNumPartitions =
+      if (rdd.context.conf.contains("spark.default.parallelism")) {
+        rdd.context.defaultParallelism
+      } else {
+        rdds.map(_.partitions.length).max
+      }
 
     // If the existing max partitioner is an eligible one, or its partitions number is larger
     // than or equal to the default number of partitions, use the existing partitioner.
-    if (hasMaxPartitioner.nonEmpty && (isEligiblePartitioner(hasMaxPartitioner.get, rdds) ||
-        defaultNumPartitions <= hasMaxPartitioner.get.getNumPartitions)) {
+    if (
+      hasMaxPartitioner.nonEmpty && (isEligiblePartitioner(
+        hasMaxPartitioner.get,
+        rdds
+      ) ||
+        defaultNumPartitions <= hasMaxPartitioner.get.getNumPartitions)
+    ) {
       hasMaxPartitioner.get.partitioner.get
     } else {
       new HashPartitioner(defaultNumPartitions)
     }
   }
 
-  /**
-   * Returns true if the number of partitions of the RDD is either greater than or is less than and
-   * within a single order of magnitude of the max number of upstream partitions, otherwise returns
-   * false.
-   */
+  /** Returns true if the number of partitions of the RDD is either greater than or is less than and
+    * within a single order of magnitude of the max number of upstream partitions, otherwise returns
+    * false.
+    */
   private def isEligiblePartitioner(
-     hasMaxPartitioner: RDD[_],
-     rdds: Seq[RDD[_]]): Boolean = {
+      hasMaxPartitioner: RDD[_],
+      rdds: Seq[RDD[_]]
+  ): Boolean = {
     val maxPartitions = rdds.map(_.partitions.length).max
     log10(maxPartitions) - log10(hasMaxPartitioner.getNumPartitions) < 1
   }
 }
 
-/**
- * A [[org.apache.spark.Partitioner]] that implements hash-based partitioning using
- * Java's `Object.hashCode`.
- *
- * Java arrays have hashCodes that are based on the arrays' identities rather than their contents,
- * so attempting to partition an RDD[Array[_]] or RDD[(Array[_], _)] using a HashPartitioner will
- * produce an unexpected or incorrect result.
- */
+/** A [[org.apache.spark.Partitioner]] that implements hash-based partitioning using
+  * Java's `Object.hashCode`.
+  *
+  * Java arrays have hashCodes that are based on the arrays' identities rather than their contents,
+  * so attempting to partition an RDD[Array[_]] or RDD[(Array[_], _)] using a HashPartitioner will
+  * produce an unexpected or incorrect result.
+  */
 class HashPartitioner(partitions: Int) extends Partitioner {
-  require(partitions >= 0, s"Number of partitions ($partitions) cannot be negative.")
+  require(
+    partitions >= 0,
+    s"Number of partitions ($partitions) cannot be negative."
+  )
 
   def numPartitions: Int = partitions
 
   def getPartition(key: Any): Int = key match {
     case null => 0
-    case _ => Utils.nonNegativeMod(key.hashCode, numPartitions)
+    case _    => Utils.nonNegativeMod(key.hashCode, numPartitions)
   }
 
   override def equals(other: Any): Boolean = other match {
@@ -130,66 +137,75 @@ class HashPartitioner(partitions: Int) extends Partitioner {
   override def hashCode: Int = numPartitions
 }
 
-/**
- * A dummy partitioner for use with records whose partition ids have been pre-computed (i.e. for
- * use on RDDs of (Int, Row) pairs where the Int is a partition id in the expected range).
- */
-private[spark] class PartitionIdPassthrough(override val numPartitions: Int) extends Partitioner {
+/** A dummy partitioner for use with records whose partition ids have been pre-computed (i.e. for
+  * use on RDDs of (Int, Row) pairs where the Int is a partition id in the expected range).
+  */
+private[spark] class PartitionIdPassthrough(override val numPartitions: Int)
+    extends Partitioner {
   override def getPartition(key: Any): Int = key.asInstanceOf[Int]
 }
 
-/**
- * A [[org.apache.spark.Partitioner]] that partitions all records using partition value map.
- * The `valueMap` is a map that contains tuples of (partition value, partition id). It is generated
- * by [[org.apache.spark.sql.catalyst.plans.physical.KeyGroupedPartitioning]], used to partition
- * the other side of a join to make sure records with same partition value are in the same
- * partition.
- */
+/** A [[org.apache.spark.Partitioner]] that partitions all records using partition value map.
+  * The `valueMap` is a map that contains tuples of (partition value, partition id). It is generated
+  * by [[org.apache.spark.sql.catalyst.plans.physical.KeyGroupedPartitioning]], used to partition
+  * the other side of a join to make sure records with same partition value are in the same
+  * partition.
+  */
 private[spark] class KeyGroupedPartitioner(
     valueMap: mutable.Map[Seq[Any], Int],
-    override val numPartitions: Int) extends Partitioner {
+    override val numPartitions: Int
+) extends Partitioner {
   override def getPartition(key: Any): Int = {
     val keys = key.asInstanceOf[Seq[Any]]
     val normalizedKeys = ArraySeq.from(keys)
-    valueMap.getOrElseUpdate(normalizedKeys,
-      Utils.nonNegativeMod(normalizedKeys.hashCode, numPartitions))
+    valueMap.getOrElseUpdate(
+      normalizedKeys,
+      Utils.nonNegativeMod(normalizedKeys.hashCode, numPartitions)
+    )
   }
 }
 
-/**
- * A [[org.apache.spark.Partitioner]] that partitions all records into a single partition.
- */
+/** A [[org.apache.spark.Partitioner]] that partitions all records into a single partition.
+  */
 private[spark] class ConstantPartitioner extends Partitioner {
   override def numPartitions: Int = 1
   override def getPartition(key: Any): Int = 0
 }
 
-/**
- * A [[org.apache.spark.Partitioner]] that partitions sortable records by range into roughly
- * equal ranges. The ranges are determined by sampling the content of the RDD passed in.
- *
- * @note The actual number of partitions created by the RangePartitioner might not be the same
- * as the `partitions` parameter, in the case where the number of sampled records is less than
- * the value of `partitions`.
- */
-class RangePartitioner[K : Ordering : ClassTag, V](
+/** A [[org.apache.spark.Partitioner]] that partitions sortable records by range into roughly
+  * equal ranges. The ranges are determined by sampling the content of the RDD passed in.
+  *
+  * @note The actual number of partitions created by the RangePartitioner might not be the same
+  * as the `partitions` parameter, in the case where the number of sampled records is less than
+  * the value of `partitions`.
+  */
+class RangePartitioner[K: Ordering: ClassTag, V](
     partitions: Int,
     rdd: RDD[_ <: Product2[K, V]],
     private var ascending: Boolean = true,
-    val samplePointsPerPartitionHint: Int = 20)
-  extends Partitioner {
+    val samplePointsPerPartitionHint: Int = 20
+) extends Partitioner {
 
   // A constructor declared in order to maintain backward compatibility for Java, when we add the
   // 4th constructor parameter samplePointsPerPartitionHint. See SPARK-22160.
   // This is added to make sure from a bytecode point of view, there is still a 3-arg ctor.
-  def this(partitions: Int, rdd: RDD[_ <: Product2[K, V]], ascending: Boolean) = {
+  def this(
+      partitions: Int,
+      rdd: RDD[_ <: Product2[K, V]],
+      ascending: Boolean
+  ) = {
     this(partitions, rdd, ascending, samplePointsPerPartitionHint = 20)
   }
 
   // We allow partitions = 0, which happens when sorting an empty RDD under the default settings.
-  require(partitions >= 0, s"Number of partitions cannot be negative but found $partitions.")
-  require(samplePointsPerPartitionHint > 0,
-    s"Sample points per partition must be greater than 0 but found $samplePointsPerPartitionHint")
+  require(
+    partitions >= 0,
+    s"Number of partitions cannot be negative but found $partitions."
+  )
+  require(
+    samplePointsPerPartitionHint > 0,
+    s"Sample points per partition must be greater than 0 but found $samplePointsPerPartitionHint"
+  )
 
   private var ordering = implicitly[Ordering[K]]
 
@@ -200,10 +216,13 @@ class RangePartitioner[K : Ordering : ClassTag, V](
     } else {
       // This is the sample size we need to have roughly balanced output partitions, capped at 1M.
       // Cast to double to avoid overflowing ints or longs
-      val sampleSize = math.min(samplePointsPerPartitionHint.toDouble * partitions, 1e6)
+      val sampleSize =
+        math.min(samplePointsPerPartitionHint.toDouble * partitions, 1e6)
       // Assume the input partitions are roughly balanced and over-sample a little bit.
-      val sampleSizePerPartition = math.ceil(3.0 * sampleSize / rdd.partitions.length).toInt
-      val (numItems, sketched) = RangePartitioner.sketch(rdd.map(_._1), sampleSizePerPartition)
+      val sampleSizePerPartition =
+        math.ceil(3.0 * sampleSize / rdd.partitions.length).toInt
+      val (numItems, sketched) =
+        RangePartitioner.sketch(rdd.map(_._1), sampleSizePerPartition)
       if (numItems == 0L) {
         Array.empty
       } else {
@@ -225,27 +244,37 @@ class RangePartitioner[K : Ordering : ClassTag, V](
         }
         if (imbalancedPartitions.nonEmpty) {
           // Re-sample imbalanced partitions with the desired sampling probability.
-          val imbalanced = new PartitionPruningRDD(rdd.map(_._1), imbalancedPartitions.contains)
+          val imbalanced = new PartitionPruningRDD(
+            rdd.map(_._1),
+            imbalancedPartitions.contains
+          )
           val seed = byteswap32(-rdd.id - 1)
-          val reSampled = imbalanced.sample(withReplacement = false, fraction, seed).collect()
+          val reSampled =
+            imbalanced.sample(withReplacement = false, fraction, seed).collect()
           val weight = (1.0 / fraction).toFloat
           candidates ++= reSampled.map(x => (x, weight))
         }
-        RangePartitioner.determineBounds(candidates, math.min(partitions, candidates.size))
+        RangePartitioner.determineBounds(
+          candidates,
+          math.min(partitions, candidates.size)
+        )
       }
     }
   }
 
   def numPartitions: Int = rangeBounds.length + 1
 
-  private var binarySearch: ((Array[K], K) => Int) = CollectionsUtils.makeBinarySearch[K]
+  private var binarySearch: ((Array[K], K) => Int) =
+    CollectionsUtils.makeBinarySearch[K]
 
   def getPartition(key: Any): Int = {
     val k = key.asInstanceOf[K]
     var partition = 0
     if (rangeBounds.length <= 128) {
       // If we have less than 128 partitions naive search
-      while (partition < rangeBounds.length && ordering.gt(k, rangeBounds(partition))) {
+      while (
+        partition < rangeBounds.length && ordering.gt(k, rangeBounds(partition))
+      ) {
         partition += 1
       }
     } else {
@@ -253,7 +282,7 @@ class RangePartitioner[K : Ordering : ClassTag, V](
       partition = binarySearch(rangeBounds, k)
       // binarySearch either returns the match location or -[insertion point]-1
       if (partition < 0) {
-        partition = -partition-1
+        partition = -partition - 1
       }
       if (partition > rangeBounds.length) {
         partition = rangeBounds.length
@@ -286,22 +315,23 @@ class RangePartitioner[K : Ordering : ClassTag, V](
   }
 
   @throws(classOf[IOException])
-  private def writeObject(out: ObjectOutputStream): Unit = Utils.tryOrIOException {
-    val sfactory = SparkEnv.get.serializer
-    sfactory match {
-      case js: JavaSerializer => out.defaultWriteObject()
-      case _ =>
-        out.writeBoolean(ascending)
-        out.writeObject(ordering)
-        out.writeObject(binarySearch)
+  private def writeObject(out: ObjectOutputStream): Unit =
+    Utils.tryOrIOException {
+      val sfactory = SparkEnv.get.serializer
+      sfactory match {
+        case js: JavaSerializer => out.defaultWriteObject()
+        case _ =>
+          out.writeBoolean(ascending)
+          out.writeObject(ordering)
+          out.writeObject(binarySearch)
 
-        val ser = sfactory.newInstance()
-        Utils.serializeViaNestedStream(out, ser) { stream =>
-          stream.writeObject(scala.reflect.classTag[Array[K]])
-          stream.writeObject(rangeBounds)
-        }
+          val ser = sfactory.newInstance()
+          Utils.serializeViaNestedStream(out, ser) { stream =>
+            stream.writeObject(scala.reflect.classTag[Array[K]])
+            stream.writeObject(rangeBounds)
+          }
+      }
     }
-  }
 
   @throws(classOf[IOException])
   private def readObject(in: ObjectInputStream): Unit = Utils.tryOrIOException {
@@ -324,39 +354,44 @@ class RangePartitioner[K : Ordering : ClassTag, V](
 
 private[spark] object RangePartitioner {
 
-  /**
-   * Sketches the input RDD via reservoir sampling on each partition.
-   *
-   * @param rdd the input RDD to sketch
-   * @param sampleSizePerPartition max sample size per partition
-   * @return (total number of items, an array of (partitionId, number of items, sample))
-   */
-  def sketch[K : ClassTag](
+  /** Sketches the input RDD via reservoir sampling on each partition.
+    *
+    * @param rdd the input RDD to sketch
+    * @param sampleSizePerPartition max sample size per partition
+    * @return (total number of items, an array of (partitionId, number of items, sample))
+    */
+  def sketch[K: ClassTag](
       rdd: RDD[K],
-      sampleSizePerPartition: Int): (Long, Array[(Int, Long, Array[K])]) = {
+      sampleSizePerPartition: Int
+  ): (Long, Array[(Int, Long, Array[K])]) = {
     val shift = rdd.id
     // val classTagK = classTag[K] // to avoid serializing the entire partitioner object
-    val sketched = rdd.mapPartitionsWithIndex { (idx, iter) =>
-      val seed = byteswap32(idx ^ (shift << 16))
-      val (sample, n) = SamplingUtils.reservoirSampleAndCount(
-        iter, sampleSizePerPartition, seed)
-      Iterator((idx, n, sample))
-    }.collect()
+    val sketched = rdd
+      .mapPartitionsWithIndex { (idx, iter) =>
+        val seed = byteswap32(idx ^ (shift << 16))
+        val (sample, n) = SamplingUtils.reservoirSampleAndCount(
+          iter,
+          sampleSizePerPartition,
+          seed
+        )
+        Iterator((idx, n, sample))
+      }
+      .collect()
     val numItems = sketched.map(_._2).sum
     (numItems, sketched)
   }
 
-  /**
-   * Determines the bounds for range partitioning from candidates with weights indicating how many
-   * items each represents. Usually this is 1 over the probability used to sample this candidate.
-   *
-   * @param candidates unordered candidates with weights
-   * @param partitions number of partitions
-   * @return selected bounds
-   */
-  def determineBounds[K : Ordering : ClassTag](
+  /** Determines the bounds for range partitioning from candidates with weights indicating how many
+    * items each represents. Usually this is 1 over the probability used to sample this candidate.
+    *
+    * @param candidates unordered candidates with weights
+    * @param partitions number of partitions
+    * @return selected bounds
+    */
+  def determineBounds[K: Ordering: ClassTag](
       candidates: ArrayBuffer[(K, Float)],
-      partitions: Int): Array[K] = {
+      partitions: Int
+  ): Array[K] = {
     val ordering = implicitly[Ordering[K]]
     val ordered = candidates.sortBy(_._1)
     val numCandidates = ordered.size

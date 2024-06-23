@@ -19,23 +19,24 @@ package org.apache.spark
 
 import org.apache.spark.annotation.DeveloperApi
 
-/**
- * :: DeveloperApi ::
- * A TaskContext aware iterator.
- *
- * As the Python evaluation consumes the parent iterator in a separate thread,
- * it could consume more data from the parent even after the task ends and the parent is closed.
- * If an off-heap access exists in the parent iterator, it could cause segmentation fault
- * which crashes the executor.
- * Thus, we should use [[ContextAwareIterator]] to stop consuming after the task ends.
- *
- * @since 3.1.0
- * @deprecated since 4.0.0 as its only usage for Python evaluation is now extinct
- */
+/** :: DeveloperApi ::
+  * A TaskContext aware iterator.
+  *
+  * As the Python evaluation consumes the parent iterator in a separate thread,
+  * it could consume more data from the parent even after the task ends and the parent is closed.
+  * If an off-heap access exists in the parent iterator, it could cause segmentation fault
+  * which crashes the executor.
+  * Thus, we should use [[ContextAwareIterator]] to stop consuming after the task ends.
+  *
+  * @since 3.1.0
+  * @deprecated since 4.0.0 as its only usage for Python evaluation is now extinct
+  */
 @DeveloperApi
 @deprecated("Only usage for Python evaluation is now extinct", "4.0.0")
-class ContextAwareIterator[+T](val context: TaskContext, val delegate: Iterator[T])
-  extends Iterator[T] {
+class ContextAwareIterator[+T](
+    val context: TaskContext,
+    val delegate: Iterator[T]
+) extends Iterator[T] {
 
   override def hasNext: Boolean =
     !context.isCompleted() && !context.isInterrupted() && delegate.hasNext

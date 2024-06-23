@@ -44,9 +44,14 @@ class HistoryServerArgumentsSuite extends SparkFunSuite {
 
   test("Properties File Arguments Parsing --properties-file") {
     withTempDir { tmpDir =>
-      val outFile = File.createTempFile("test-load-spark-properties", "test", tmpDir)
-      Files.write("spark.test.CustomPropertyA blah\n" +
-        "spark.test.CustomPropertyB notblah\n", outFile, UTF_8)
+      val outFile =
+        File.createTempFile("test-load-spark-properties", "test", tmpDir)
+      Files.write(
+        "spark.test.CustomPropertyA blah\n" +
+          "spark.test.CustomPropertyB notblah\n",
+        outFile,
+        UTF_8
+      )
       val argStrings = Array("--properties-file", outFile.getAbsolutePath)
       val hsa = new HistoryServerArguments(conf, argStrings)
       assert(conf.get("spark.test.CustomPropertyA") === "blah")
@@ -62,7 +67,10 @@ class HistoryServerArgumentsSuite extends SparkFunSuite {
         f.get(History).asInstanceOf[ConfigEntry[_]]
       }
     configs.foreach { config =>
-      assert(config.doc.nonEmpty, s"Config ${config.key} doesn't have documentation")
+      assert(
+        config.doc.nonEmpty,
+        s"Config ${config.key} doesn't have documentation"
+      )
     }
   }
 }

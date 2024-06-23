@@ -20,7 +20,10 @@ package org.apache.spark.deploy
 import scala.jdk.CollectionConverters._
 
 import org.apache.spark.{SecurityManager, SparkConf, SparkFunSuite}
-import org.apache.spark.internal.config.{SHUFFLE_SERVICE_DB_ENABLED, SHUFFLE_SERVICE_ENABLED}
+import org.apache.spark.internal.config.{
+  SHUFFLE_SERVICE_DB_ENABLED,
+  SHUFFLE_SERVICE_ENABLED
+}
 import org.apache.spark.util.Utils
 
 class ExternalShuffleServiceMetricsSuite extends SparkFunSuite {
@@ -36,7 +39,8 @@ class ExternalShuffleServiceMetricsSuite extends SparkFunSuite {
     sparkConf.set("spark.local.dir", System.getProperty("java.io.tmpdir"))
     Utils.loadDefaultSparkProperties(sparkConf, null)
     val securityManager = new SecurityManager(sparkConf)
-    externalShuffleService = new ExternalShuffleService(sparkConf, securityManager)
+    externalShuffleService =
+      new ExternalShuffleService(sparkConf, securityManager)
     externalShuffleService.start()
   }
 
@@ -48,26 +52,31 @@ class ExternalShuffleServiceMetricsSuite extends SparkFunSuite {
   }
 
   test("SPARK-31646: metrics should be registered") {
-    val sourceRef = classOf[ExternalShuffleService].getDeclaredField("shuffleServiceSource")
+    val sourceRef =
+      classOf[ExternalShuffleService].getDeclaredField("shuffleServiceSource")
     sourceRef.setAccessible(true)
-    val source = sourceRef.get(externalShuffleService).asInstanceOf[ExternalShuffleServiceSource]
+    val source = sourceRef
+      .get(externalShuffleService)
+      .asInstanceOf[ExternalShuffleServiceSource]
     // Use sorted Seq instead of Set for easier comparison when there is a mismatch
-    assert(source.metricRegistry.getMetrics.keySet().asScala.toSeq.sorted ==
-      Seq(
-        "blockTransferRate",
-        "blockTransferMessageRate",
-        "blockTransferRateBytes",
-        "blockTransferAvgSize_1min",
-        "numActiveConnections",
-        "numCaughtExceptions",
-        "numRegisteredConnections",
-        "openBlockRequestLatencyMillis",
-        "registeredExecutorsSize",
-        "registerExecutorRequestLatencyMillis",
-        "shuffle-server.usedDirectMemory",
-        "shuffle-server.usedHeapMemory",
-        "finalizeShuffleMergeLatencyMillis",
-        "fetchMergedBlocksMetaLatencyMillis").sorted
+    assert(
+      source.metricRegistry.getMetrics.keySet().asScala.toSeq.sorted ==
+        Seq(
+          "blockTransferRate",
+          "blockTransferMessageRate",
+          "blockTransferRateBytes",
+          "blockTransferAvgSize_1min",
+          "numActiveConnections",
+          "numCaughtExceptions",
+          "numRegisteredConnections",
+          "openBlockRequestLatencyMillis",
+          "registeredExecutorsSize",
+          "registerExecutorRequestLatencyMillis",
+          "shuffle-server.usedDirectMemory",
+          "shuffle-server.usedHeapMemory",
+          "finalizeShuffleMergeLatencyMillis",
+          "fetchMergedBlocksMetaLatencyMillis"
+        ).sorted
     )
   }
 }

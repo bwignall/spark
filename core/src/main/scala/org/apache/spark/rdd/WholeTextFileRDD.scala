@@ -26,24 +26,31 @@ import org.apache.hadoop.mapreduce.task.JobContextImpl
 import org.apache.spark.{Partition, SparkContext}
 import org.apache.spark.input.WholeTextFileInputFormat
 
-/**
- * An RDD that reads a bunch of text files in, and each text file becomes one record.
- */
+/** An RDD that reads a bunch of text files in, and each text file becomes one record.
+  */
 private[spark] class WholeTextFileRDD(
-    sc : SparkContext,
+    sc: SparkContext,
     inputFormatClass: Class[_ <: WholeTextFileInputFormat],
     keyClass: Class[Text],
     valueClass: Class[Text],
     conf: Configuration,
-    minPartitions: Int)
-  extends NewHadoopRDD[Text, Text](sc, inputFormatClass, keyClass, valueClass, conf) {
+    minPartitions: Int
+) extends NewHadoopRDD[Text, Text](
+      sc,
+      inputFormatClass,
+      keyClass,
+      valueClass,
+      conf
+    ) {
 
   override def getPartitions: Array[Partition] = {
     val conf = getConf
     // setMinPartitions below will call FileInputFormat.listStatus(), which can be quite slow when
     // traversing a large number of directories and files. Parallelize it.
-    conf.setIfUnset(FileInputFormat.LIST_STATUS_NUM_THREADS,
-      Runtime.getRuntime.availableProcessors().toString)
+    conf.setIfUnset(
+      FileInputFormat.LIST_STATUS_NUM_THREADS,
+      Runtime.getRuntime.availableProcessors().toString
+    )
     val inputFormat = inputFormatClass.getConstructor().newInstance()
     inputFormat match {
       case configurable: Configurable =>
@@ -55,7 +62,11 @@ private[spark] class WholeTextFileRDD(
     val rawSplits = inputFormat.getSplits(jobContext).toArray
     val result = new Array[Partition](rawSplits.size)
     for (i <- 0 until rawSplits.size) {
-      result(i) = new NewHadoopPartition(id, i, rawSplits(i).asInstanceOf[InputSplit with Writable])
+      result(i) = new NewHadoopPartition(
+        id,
+        i,
+        rawSplits(i).asInstanceOf[InputSplit with Writable]
+      )
     }
     result
   }

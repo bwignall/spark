@@ -27,7 +27,11 @@ import scala.collection.mutable.HashMap
 import org.mockito.Mockito.{mock, times, verify, when}
 
 import org.apache.spark.{SecurityManager, SparkConf, SparkFunSuite}
-import org.apache.spark.deploy.DeployMessages.{DecommissionWorkersOnHosts, KillDriverResponse, RequestKillDriver}
+import org.apache.spark.deploy.DeployMessages.{
+  DecommissionWorkersOnHosts,
+  KillDriverResponse,
+  RequestKillDriver
+}
 import org.apache.spark.deploy.DeployTestUtils._
 import org.apache.spark.deploy.master._
 import org.apache.spark.internal.config.DECOMMISSION_ENABLED
@@ -65,38 +69,55 @@ class MasterWebUISuite extends SparkFunSuite {
     val appDesc = createAppDesc()
     // use new start date so it isn't filtered by UI
     val activeApp = new ApplicationInfo(
-      new Date().getTime, "app-0", appDesc, new Date(), null, Int.MaxValue)
+      new Date().getTime,
+      "app-0",
+      appDesc,
+      new Date(),
+      null,
+      Int.MaxValue
+    )
 
-    when(master.idToApp).thenReturn(HashMap[String, ApplicationInfo]((activeApp.id, activeApp)))
+    when(master.idToApp).thenReturn(
+      HashMap[String, ApplicationInfo]((activeApp.id, activeApp))
+    )
 
-    val url = s"http://${Utils.localHostNameForURI()}:${masterWebUI.boundPort}/app/kill/"
-    val body = convPostDataToString(Map(("id", activeApp.id), ("terminate", "true")))
+    val url =
+      s"http://${Utils.localHostNameForURI()}:${masterWebUI.boundPort}/app/kill/"
+    val body =
+      convPostDataToString(Map(("id", activeApp.id), ("terminate", "true")))
     val conn = sendHttpRequest(url, "POST", body)
     conn.getResponseCode
 
     // Verify the master was called to remove the active app
-    verify(master, times(1)).removeApplication(activeApp, ApplicationState.KILLED)
+    verify(master, times(1))
+      .removeApplication(activeApp, ApplicationState.KILLED)
   }
 
   test("kill driver") {
     val activeDriverId = "driver-0"
-    val url = s"http://${Utils.localHostNameForURI()}:${masterWebUI.boundPort}/driver/kill/"
-    val body = convPostDataToString(Map(("id", activeDriverId), ("terminate", "true")))
+    val url =
+      s"http://${Utils.localHostNameForURI()}:${masterWebUI.boundPort}/driver/kill/"
+    val body =
+      convPostDataToString(Map(("id", activeDriverId), ("terminate", "true")))
     val conn = sendHttpRequest(url, "POST", body)
     conn.getResponseCode
 
     // Verify that master was asked to kill driver with the correct id
-    verify(masterEndpointRef, times(1)).ask[KillDriverResponse](RequestKillDriver(activeDriverId))
+    verify(masterEndpointRef, times(1))
+      .ask[KillDriverResponse](RequestKillDriver(activeDriverId))
   }
 
   private def testKillWorkers(hostnames: Seq[String]): Unit = {
-    val url = s"http://${Utils.localHostNameForURI()}:${masterWebUI.boundPort}/workers/kill/"
+    val url =
+      s"http://${Utils.localHostNameForURI()}:${masterWebUI.boundPort}/workers/kill/"
     val body = convPostDataToString(hostnames.map(("host", _)))
     val conn = sendHttpRequest(url, "POST", body)
     // The master is mocked here, so cannot assert on the response code
     conn.getResponseCode
     // Verify that master was asked to kill driver with the correct id
-    verify(masterEndpointRef).askSync[Integer](DecommissionWorkersOnHosts(hostnames))
+    verify(masterEndpointRef).askSync[Integer](
+      DecommissionWorkersOnHosts(hostnames)
+    )
   }
 
   test("Kill one host") {
@@ -117,19 +138,22 @@ object MasterWebUISuite {
     convPostDataToString(data.toSeq)
   }
 
-  /**
-   * Send an HTTP request to the given URL using the method and the body specified.
-   * Return the connection object.
-   */
+  /** Send an HTTP request to the given URL using the method and the body specified.
+    * Return the connection object.
+    */
   private[ui] def sendHttpRequest(
       url: String,
       method: String,
-      body: String = ""): HttpURLConnection = {
+      body: String = ""
+  ): HttpURLConnection = {
     val conn = new URL(url).openConnection().asInstanceOf[HttpURLConnection]
     conn.setRequestMethod(method)
     if (body.nonEmpty) {
       conn.setDoOutput(true)
-      conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
+      conn.setRequestProperty(
+        "Content-Type",
+        "application/x-www-form-urlencoded"
+      )
       conn.setRequestProperty("Content-Length", Integer.toString(body.length))
       val out = new DataOutputStream(conn.getOutputStream)
       out.write(body.getBytes(StandardCharsets.UTF_8))

@@ -25,27 +25,32 @@ import org.apache.spark.internal.config._
 import org.apache.spark.internal.config.Streaming.STREAMING_DYN_ALLOCATION_MAX_EXECUTORS
 import org.apache.spark.util.{Clock, SystemClock, Utils}
 
-/**
- * ExecutorFailureTracker is responsible for tracking executor failures both for each host
- * separately and for all hosts altogether.
- */
+/** ExecutorFailureTracker is responsible for tracking executor failures both for each host
+  * separately and for all hosts altogether.
+  */
 private[spark] class ExecutorFailureTracker(
-  sparkConf: SparkConf,
-  val clock: Clock = new SystemClock) extends Logging {
+    sparkConf: SparkConf,
+    val clock: Clock = new SystemClock
+) extends Logging {
 
   private val executorFailuresValidityInterval =
     sparkConf.get(EXECUTOR_ATTEMPT_FAILURE_VALIDITY_INTERVAL_MS).getOrElse(-1L)
 
   // Queue to store the timestamp of failed executors for each host
-  private val failedExecutorsTimeStampsPerHost = mutable.Map[String, mutable.Queue[Long]]()
+  private val failedExecutorsTimeStampsPerHost =
+    mutable.Map[String, mutable.Queue[Long]]()
 
   private val failedExecutorsTimeStamps = new mutable.Queue[Long]()
 
-  private def updateAndCountFailures(failedExecutorsWithTimeStamps: mutable.Queue[Long]): Int = {
+  private def updateAndCountFailures(
+      failedExecutorsWithTimeStamps: mutable.Queue[Long]
+  ): Int = {
     val endTime = clock.getTimeMillis()
-    while (executorFailuresValidityInterval > 0 &&
+    while (
+      executorFailuresValidityInterval > 0 &&
       failedExecutorsWithTimeStamps.nonEmpty &&
-      failedExecutorsWithTimeStamps.head < endTime - executorFailuresValidityInterval) {
+      failedExecutorsWithTimeStamps.head < endTime - executorFailuresValidityInterval
+    ) {
       failedExecutorsWithTimeStamps.dequeue()
     }
     failedExecutorsWithTimeStamps.size
@@ -59,11 +64,13 @@ private[spark] class ExecutorFailureTracker(
     val timeMillis = clock.getTimeMillis()
     failedExecutorsTimeStamps.enqueue(timeMillis)
     val failedExecutorsOnHost =
-      failedExecutorsTimeStampsPerHost.getOrElse(hostname, {
-        val failureOnHost = mutable.Queue[Long]()
-        failedExecutorsTimeStampsPerHost.put(hostname, failureOnHost)
-        failureOnHost
-      })
+      failedExecutorsTimeStampsPerHost.getOrElse(
+        hostname, {
+          val failureOnHost = mutable.Queue[Long]()
+          failedExecutorsTimeStampsPerHost.put(hostname, failureOnHost)
+          failureOnHost
+        }
+      )
     failedExecutorsOnHost.enqueue(timeMillis)
   }
 
@@ -73,9 +80,12 @@ private[spark] class ExecutorFailureTracker(
   }
 
   def numFailuresOnHost(hostname: String): Int = {
-    failedExecutorsTimeStampsPerHost.get(hostname).map { failedExecutorsOnHost =>
-      updateAndCountFailures(failedExecutorsOnHost)
-    }.getOrElse(0)
+    failedExecutorsTimeStampsPerHost
+      .get(hostname)
+      .map { failedExecutorsOnHost =>
+        updateAndCountFailures(failedExecutorsOnHost)
+      }
+      .getOrElse(0)
   }
 }
 
@@ -95,10 +105,15 @@ object ExecutorFailureTracker {
         } else {
           sparkConf.get(EXECUTOR_INSTANCES).getOrElse(0)
         }
-      math.max(3,
-        if (effectiveNumExecutors > Int.MaxValue / 2) Int.MaxValue else 2 * effectiveNumExecutors)
+      math.max(
+        3,
+        if (effectiveNumExecutors > Int.MaxValue / 2) Int.MaxValue
+        else 2 * effectiveNumExecutors
+      )
     }
 
-    sparkConf.get(MAX_EXECUTOR_FAILURES).getOrElse(defaultMaxNumExecutorFailures)
+    sparkConf
+      .get(MAX_EXECUTOR_FAILURES)
+      .getOrElse(defaultMaxNumExecutorFailures)
   }
 }

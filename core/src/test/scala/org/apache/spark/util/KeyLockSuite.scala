@@ -38,7 +38,9 @@ class KeyLockSuite extends SparkFunSuite with TimeLimits {
     val numThreads = 10
     // Create different objects that are equal
     val keys = List.fill(numThreads)(List(1))
-    require(keys.tail.forall(_ ne keys.head) && keys.tail.forall(_ == keys.head))
+    require(
+      keys.tail.forall(_ ne keys.head) && keys.tail.forall(_ == keys.head)
+    )
 
     // A latch to make `withLock` be called almost at the same time
     val latch = new CountDownLatch(1)

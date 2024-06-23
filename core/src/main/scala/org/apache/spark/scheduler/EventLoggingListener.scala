@@ -33,31 +33,41 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.internal.config._
 import org.apache.spark.util.{JsonProtocol, Utils}
 
-/**
- * A SparkListener that logs events to persistent storage.
- *
- * Event logging is specified by the following configurable parameters:
- *   spark.eventLog.enabled - Whether event logging is enabled.
- *   spark.eventLog.dir - Path to the directory in which events are logged.
- *   spark.eventLog.logBlockUpdates.enabled - Whether to log block updates
- *   spark.eventLog.logStageExecutorMetrics - Whether to log stage executor metrics
- *
- * Event log file writer maintains its own parameters: refer the doc of [[EventLogFileWriter]]
- * and its descendant for more details.
- */
+/** A SparkListener that logs events to persistent storage.
+  *
+  * Event logging is specified by the following configurable parameters:
+  *   spark.eventLog.enabled - Whether event logging is enabled.
+  *   spark.eventLog.dir - Path to the directory in which events are logged.
+  *   spark.eventLog.logBlockUpdates.enabled - Whether to log block updates
+  *   spark.eventLog.logStageExecutorMetrics - Whether to log stage executor metrics
+  *
+  * Event log file writer maintains its own parameters: refer the doc of [[EventLogFileWriter]]
+  * and its descendant for more details.
+  */
 private[spark] class EventLoggingListener(
     appId: String,
-    appAttemptId : Option[String],
+    appAttemptId: Option[String],
     logBaseDir: URI,
     sparkConf: SparkConf,
-    hadoopConf: Configuration)
-  extends SparkListener with Logging {
+    hadoopConf: Configuration
+) extends SparkListener
+    with Logging {
 
   import EventLoggingListener._
 
-  def this(appId: String, appAttemptId : Option[String], logBaseDir: URI, sparkConf: SparkConf) =
-    this(appId, appAttemptId, logBaseDir, sparkConf,
-      SparkHadoopUtil.get.newConfiguration(sparkConf))
+  def this(
+      appId: String,
+      appAttemptId: Option[String],
+      logBaseDir: URI,
+      sparkConf: SparkConf
+  ) =
+    this(
+      appId,
+      appAttemptId,
+      logBaseDir,
+      sparkConf,
+      SparkHadoopUtil.get.newConfiguration(sparkConf)
+    )
 
   // For testing.
   private[scheduler] val logWriter: EventLogFileWriter =
@@ -67,16 +77,16 @@ private[spark] class EventLoggingListener(
   private[scheduler] val loggedEvents = new mutable.ArrayBuffer[String]
 
   private val shouldLogBlockUpdates = sparkConf.get(EVENT_LOG_BLOCK_UPDATES)
-  private val shouldLogStageExecutorMetrics = sparkConf.get(EVENT_LOG_STAGE_EXECUTOR_METRICS)
+  private val shouldLogStageExecutorMetrics =
+    sparkConf.get(EVENT_LOG_STAGE_EXECUTOR_METRICS)
   private val testing = sparkConf.get(EVENT_LOG_TESTING)
 
   // map of (stageId, stageAttempt) to executor metric peaks per executor/driver for the stage
   private val liveStageExecutorMetrics =
     mutable.HashMap.empty[(Int, Int), mutable.HashMap[String, ExecutorMetrics]]
 
-  /**
-   * Creates the log file in the configured log directory.
-   */
+  /** Creates the log file in the configured log directory.
+    */
   def start(): Unit = {
     logWriter.start()
     initEventLog()
@@ -92,7 +102,10 @@ private[spark] class EventLoggingListener(
   }
 
   /** Log the event as JSON. */
-  private def logEvent(event: SparkListenerEvent, flushLogger: Boolean = false): Unit = {
+  private def logEvent(
+      event: SparkListenerEvent,
+      flushLogger: Boolean = false
+  ): Unit = {
     val eventJson = JsonProtocol.sparkEventToJsonString(event)
     logWriter.writeEvent(eventJson, flushLogger)
     if (testing) {
@@ -105,28 +118,36 @@ private[spark] class EventLoggingListener(
     logEvent(event.copy(properties = redactProperties(event.properties)))
     if (shouldLogStageExecutorMetrics) {
       // record the peak metrics for the new stage
-      liveStageExecutorMetrics.put((event.stageInfo.stageId, event.stageInfo.attemptNumber()),
-        mutable.HashMap.empty[String, ExecutorMetrics])
+      liveStageExecutorMetrics.put(
+        (event.stageInfo.stageId, event.stageInfo.attemptNumber()),
+        mutable.HashMap.empty[String, ExecutorMetrics]
+      )
     }
   }
 
-  override def onTaskStart(event: SparkListenerTaskStart): Unit = logEvent(event)
+  override def onTaskStart(event: SparkListenerTaskStart): Unit = logEvent(
+    event
+  )
 
-  override def onTaskGettingResult(event: SparkListenerTaskGettingResult): Unit = logEvent(event)
+  override def onTaskGettingResult(
+      event: SparkListenerTaskGettingResult
+  ): Unit = logEvent(event)
 
   override def onTaskEnd(event: SparkListenerTaskEnd): Unit = {
     logEvent(event)
     if (shouldLogStageExecutorMetrics) {
       val stageKey = (event.stageId, event.stageAttemptId)
       liveStageExecutorMetrics.get(stageKey).map { metricsPerExecutor =>
-        val metrics = metricsPerExecutor.getOrElseUpdate(
-          event.taskInfo.executorId, new ExecutorMetrics())
+        val metrics = metricsPerExecutor
+          .getOrElseUpdate(event.taskInfo.executorId, new ExecutorMetrics())
         metrics.compareAndUpdatePeakValues(event.taskExecutorMetrics)
       }
     }
   }
 
-  override def onEnvironmentUpdate(event: SparkListenerEnvironmentUpdate): Unit = {
+  override def onEnvironmentUpdate(
+      event: SparkListenerEnvironmentUpdate
+  ): Unit = {
     logEvent(redactEvent(sparkConf, event))
   }
 
@@ -142,11 +163,18 @@ private[spark] class EventLoggingListener(
       // log the peak executor metrics for the stage, for each live executor,
       // whether or not the executor is running tasks for the stage
       val executorOpt = liveStageExecutorMetrics.remove(
-        (event.stageInfo.stageId, event.stageInfo.attemptNumber()))
+        (event.stageInfo.stageId, event.stageInfo.attemptNumber())
+      )
       executorOpt.foreach { execMap =>
         execMap.foreach { case (executorId, peakExecutorMetrics) =>
-            logEvent(new SparkListenerStageExecutorMetrics(executorId, event.stageInfo.stageId,
-              event.stageInfo.attemptNumber(), peakExecutorMetrics))
+          logEvent(
+            new SparkListenerStageExecutorMetrics(
+              executorId,
+              event.stageInfo.stageId,
+              event.stageInfo.attemptNumber(),
+              peakExecutorMetrics
+            )
+          )
         }
       }
     }
@@ -156,16 +184,24 @@ private[spark] class EventLoggingListener(
   }
 
   override def onJobStart(event: SparkListenerJobStart): Unit = {
-    logEvent(event.copy(properties = redactProperties(event.properties)), flushLogger = true)
+    logEvent(
+      event.copy(properties = redactProperties(event.properties)),
+      flushLogger = true
+    )
   }
 
-  override def onJobEnd(event: SparkListenerJobEnd): Unit = logEvent(event, flushLogger = true)
+  override def onJobEnd(event: SparkListenerJobEnd): Unit =
+    logEvent(event, flushLogger = true)
 
-  override def onBlockManagerAdded(event: SparkListenerBlockManagerAdded): Unit = {
+  override def onBlockManagerAdded(
+      event: SparkListenerBlockManagerAdded
+  ): Unit = {
     logEvent(event, flushLogger = true)
   }
 
-  override def onBlockManagerRemoved(event: SparkListenerBlockManagerRemoved): Unit = {
+  override def onBlockManagerRemoved(
+      event: SparkListenerBlockManagerRemoved
+  ): Unit = {
     logEvent(event, flushLogger = true)
   }
 
@@ -173,7 +209,9 @@ private[spark] class EventLoggingListener(
     logEvent(event, flushLogger = true)
   }
 
-  override def onApplicationStart(event: SparkListenerApplicationStart): Unit = {
+  override def onApplicationStart(
+      event: SparkListenerApplicationStart
+  ): Unit = {
     logEvent(event, flushLogger = true)
   }
 
@@ -188,40 +226,53 @@ private[spark] class EventLoggingListener(
     logEvent(event, flushLogger = true)
   }
 
-  override def onExecutorBlacklisted(event: SparkListenerExecutorBlacklisted): Unit = {
+  override def onExecutorBlacklisted(
+      event: SparkListenerExecutorBlacklisted
+  ): Unit = {
     logEvent(event, flushLogger = true)
   }
 
-  override def onExecutorExcluded(event: SparkListenerExecutorExcluded): Unit = {
+  override def onExecutorExcluded(
+      event: SparkListenerExecutorExcluded
+  ): Unit = {
     logEvent(event, flushLogger = true)
   }
 
   override def onExecutorBlacklistedForStage(
-      event: SparkListenerExecutorBlacklistedForStage): Unit = {
+      event: SparkListenerExecutorBlacklistedForStage
+  ): Unit = {
     logEvent(event, flushLogger = true)
   }
 
   override def onExecutorExcludedForStage(
-      event: SparkListenerExecutorExcludedForStage): Unit = {
+      event: SparkListenerExecutorExcludedForStage
+  ): Unit = {
     logEvent(event, flushLogger = true)
   }
 
-  override def onNodeBlacklistedForStage(event: SparkListenerNodeBlacklistedForStage): Unit = {
+  override def onNodeBlacklistedForStage(
+      event: SparkListenerNodeBlacklistedForStage
+  ): Unit = {
     logEvent(event, flushLogger = true)
   }
 
-  override def onNodeExcludedForStage(event: SparkListenerNodeExcludedForStage): Unit = {
+  override def onNodeExcludedForStage(
+      event: SparkListenerNodeExcludedForStage
+  ): Unit = {
     logEvent(event, flushLogger = true)
   }
 
-  override def onExecutorUnblacklisted(event: SparkListenerExecutorUnblacklisted): Unit = {
+  override def onExecutorUnblacklisted(
+      event: SparkListenerExecutorUnblacklisted
+  ): Unit = {
     logEvent(event, flushLogger = true)
   }
 
-  override def onExecutorUnexcluded(event: SparkListenerExecutorUnexcluded): Unit = {
+  override def onExecutorUnexcluded(
+      event: SparkListenerExecutorUnexcluded
+  ): Unit = {
     logEvent(event, flushLogger = true)
   }
-
 
   override def onNodeBlacklisted(event: SparkListenerNodeBlacklisted): Unit = {
     logEvent(event, flushLogger = true)
@@ -231,7 +282,9 @@ private[spark] class EventLoggingListener(
     logEvent(event, flushLogger = true)
   }
 
-  override def onNodeUnblacklisted(event: SparkListenerNodeUnblacklisted): Unit = {
+  override def onNodeUnblacklisted(
+      event: SparkListenerNodeUnblacklisted
+  ): Unit = {
     logEvent(event, flushLogger = true)
   }
 
@@ -245,27 +298,34 @@ private[spark] class EventLoggingListener(
     }
   }
 
-  override def onExecutorMetricsUpdate(event: SparkListenerExecutorMetricsUpdate): Unit = {
+  override def onExecutorMetricsUpdate(
+      event: SparkListenerExecutorMetricsUpdate
+  ): Unit = {
     if (shouldLogStageExecutorMetrics) {
       if (event.execId == SparkContext.DRIVER_IDENTIFIER) {
         logEvent(event)
       }
       event.executorUpdates.foreach { case (stageKey1, newPeaks) =>
-        liveStageExecutorMetrics.foreach { case (stageKey2, metricsPerExecutor) =>
-          // If the update came from the driver, stageKey1 will be the dummy key (-1, -1),
-          // so record those peaks for all active stages.
-          // Otherwise, record the peaks for the matching stage.
-          if (stageKey1 == DRIVER_STAGE_KEY || stageKey1 == stageKey2) {
-            val metrics = metricsPerExecutor.getOrElseUpdate(
-              event.execId, new ExecutorMetrics())
-            metrics.compareAndUpdatePeakValues(newPeaks)
-          }
+        liveStageExecutorMetrics.foreach {
+          case (stageKey2, metricsPerExecutor) =>
+            // If the update came from the driver, stageKey1 will be the dummy key (-1, -1),
+            // so record those peaks for all active stages.
+            // Otherwise, record the peaks for the matching stage.
+            if (stageKey1 == DRIVER_STAGE_KEY || stageKey1 == stageKey2) {
+              val metrics = metricsPerExecutor.getOrElseUpdate(
+                event.execId,
+                new ExecutorMetrics()
+              )
+              metrics.compareAndUpdatePeakValues(newPeaks)
+            }
         }
       }
     }
   }
 
-  override def onResourceProfileAdded(event: SparkListenerResourceProfileAdded): Unit = {
+  override def onResourceProfileAdded(
+      event: SparkListenerResourceProfileAdded
+  ): Unit = {
     logEvent(event, flushLogger = true)
   }
 
@@ -287,9 +347,10 @@ private[spark] class EventLoggingListener(
     val redactedProperties = new Properties
     // properties may contain some custom local properties such as stage/job description
     // only properties in sparkConf need to be redacted.
-    val (globalProperties, localProperties) = properties.asScala.toSeq.partition {
-      case (key, _) => sparkConf.contains(key)
-    }
+    val (globalProperties, localProperties) =
+      properties.asScala.toSeq.partition { case (key, _) =>
+        sparkConf.contains(key)
+      }
     (Utils.redact(sparkConf, globalProperties) ++ localProperties).foreach {
       case (key, value) => redactedProperties.setProperty(key, value)
     }
@@ -304,7 +365,8 @@ private[spark] object EventLoggingListener extends Logging {
 
   private[spark] def redactEvent(
       sparkConf: SparkConf,
-      event: SparkListenerEnvironmentUpdate): SparkListenerEnvironmentUpdate = {
+      event: SparkListenerEnvironmentUpdate
+  ): SparkListenerEnvironmentUpdate = {
     // environmentDetails maps a string descriptor to a set of properties
     // Similar to:
     // "JVM Information" -> jvmInformation,
@@ -315,7 +377,7 @@ private[spark] object EventLoggingListener extends Logging {
     val noRedactProps = Seq("Classpath Entries")
     val redactedProps = event.environmentDetails.map {
       case (name, props) if noRedactProps.contains(name) => name -> props
-      case (name, props) => name -> Utils.redact(sparkConf, props)
+      case (name, props)                                 => name -> Utils.redact(sparkConf, props)
     }
     SparkListenerEnvironmentUpdate(redactedProps)
   }

@@ -39,7 +39,8 @@ class HadoopFSDelegationTokenProviderSuite extends SparkFunSuite with Matchers {
       new Path(defaultFS).getFileSystem(hadoopConf),
       new Path(statingDir).getFileSystem(hadoopConf)
     )
-    val result = HadoopFSDelegationTokenProvider.hadoopFSsToAccess(sparkConf, hadoopConf)
-    result should be (expected)
+    val result =
+      HadoopFSDelegationTokenProvider.hadoopFSsToAccess(sparkConf, hadoopConf)
+    result should be(expected)
   }
 }

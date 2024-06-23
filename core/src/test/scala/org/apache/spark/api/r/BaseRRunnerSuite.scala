@@ -25,8 +25,10 @@ class BaseRRunnerSuite extends SparkFunSuite {
   test("Retrieve R options from R command") {
     val rCommand = SPARKR_COMMAND.defaultValue.get
     assume(testCommandAvailable(rCommand))
-    assert(BaseRRunner.getROptions(rCommand) === "--no-restore"
-      || BaseRRunner.getROptions(rCommand) === "--vanilla")
+    assert(
+      BaseRRunner.getROptions(rCommand) === "--no-restore"
+        || BaseRRunner.getROptions(rCommand) === "--vanilla"
+    )
   }
 
   test("Should return the default value if the R command does not exist") {

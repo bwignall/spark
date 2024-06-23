@@ -32,7 +32,10 @@ import org.apache.spark.tags.ExtendedLevelDBTest
 import org.apache.spark.util.Utils
 import org.apache.spark.util.kvstore._
 
-abstract class HybridStoreSuite extends SparkFunSuite with BeforeAndAfter with TimeLimits {
+abstract class HybridStoreSuite
+    extends SparkFunSuite
+    with BeforeAndAfter
+    with TimeLimits {
 
   var db: KVStore = _
   var dbpath: File = _
@@ -172,7 +175,11 @@ abstract class HybridStoreSuite extends SparkFunSuite with BeforeAndAfter with T
     failAfter(2.seconds) {
       assert(listener.waitUntilDone())
     }
-    while (!store.getStore().isInstanceOf[LevelDB] && !store.getStore().isInstanceOf[RocksDB]) {
+    while (
+      !store.getStore().isInstanceOf[LevelDB] && !store
+        .getStore()
+        .isInstanceOf[RocksDB]
+    ) {
       Thread.sleep(10)
     }
   }
@@ -187,7 +194,7 @@ abstract class HybridStoreSuite extends SparkFunSuite with BeforeAndAfter with T
         results.put(true)
       } catch {
         case _: InterruptedException =>
-          // no-op
+        // no-op
       }
     }
 
@@ -196,7 +203,7 @@ abstract class HybridStoreSuite extends SparkFunSuite with BeforeAndAfter with T
         results.put(false)
       } catch {
         case _: InterruptedException =>
-          // no-op
+        // no-op
       }
     }
 
@@ -228,7 +235,8 @@ class CustomType1(
     @KVIndexParam("id") var id: String,
     @KVIndexParam(value = "name", copy = true) var name: String,
     @KVIndexParam("int") var num: Int,
-    @KVIndexParam(value = "child", parent = "id") var child: String) {
+    @KVIndexParam(value = "child", parent = "id") var child: String
+) {
 
   override def equals(o: Any): Boolean = {
     o match {

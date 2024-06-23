@@ -70,9 +70,11 @@ class AsyncRDDActionsSuite extends SparkFunSuite with TimeLimits {
     zeroPartRdd.foreachAsync(i => ()).get()
 
     val accum = sc.longAccumulator
-    sc.parallelize(1 to 1000, 3).foreachAsync { i =>
-      accum.add(1)
-    }.get()
+    sc.parallelize(1 to 1000, 3)
+      .foreachAsync { i =>
+        accum.add(1)
+      }
+      .get()
     assert(accum.value === 1000)
   }
 
@@ -80,9 +82,11 @@ class AsyncRDDActionsSuite extends SparkFunSuite with TimeLimits {
     zeroPartRdd.foreachPartitionAsync(iter => ()).get()
 
     val accum = sc.longAccumulator
-    sc.parallelize(1 to 1000, 9).foreachPartitionAsync { iter =>
-      accum.add(1)
-    }.get()
+    sc.parallelize(1 to 1000, 9)
+      .foreachPartitionAsync { iter =>
+        accum.add(1)
+      }
+      .get()
     assert(accum.value === 9)
   }
 
@@ -90,8 +94,11 @@ class AsyncRDDActionsSuite extends SparkFunSuite with TimeLimits {
     def testTake(rdd: RDD[Int], input: Seq[Int], num: Int): Unit = {
       val expected = input.take(num)
       val saw = rdd.takeAsync(num).get()
-      assert(saw == expected, "incorrect result for rdd with %d partitions (expected %s, saw %s)"
-        .format(rdd.partitions.length, expected, saw))
+      assert(
+        saw == expected,
+        "incorrect result for rdd with %d partitions (expected %s, saw %s)"
+          .format(rdd.partitions.length, expected, saw)
+      )
     }
     val input = Range(1, 1000)
 
@@ -116,10 +123,9 @@ class AsyncRDDActionsSuite extends SparkFunSuite with TimeLimits {
     }
   }
 
-  /**
-   * Make sure onComplete, onSuccess, and onFailure are invoked correctly in the case
-   * of a successful job execution.
-   */
+  /** Make sure onComplete, onSuccess, and onFailure are invoked correctly in the case
+    * of a successful job execution.
+    */
   test("async success handling") {
     val f = sc.parallelize(1 to 10, 2).countAsync()
 
@@ -131,7 +137,9 @@ class AsyncRDDActionsSuite extends SparkFunSuite with TimeLimits {
       case scala.util.Success(res) =>
         sem.release()
       case scala.util.Failure(e) =>
-        info("Should not have reached this code path (onComplete matching Failure)")
+        info(
+          "Should not have reached this code path (onComplete matching Failure)"
+        )
         throw new Exception("Task should succeed")
     }
     f.foreach { a =>
@@ -148,14 +156,16 @@ class AsyncRDDActionsSuite extends SparkFunSuite with TimeLimits {
     }
   }
 
-  /**
-   * Make sure onComplete, onSuccess, and onFailure are invoked correctly in the case
-   * of a failed job execution.
-   */
+  /** Make sure onComplete, onSuccess, and onFailure are invoked correctly in the case
+    * of a failed job execution.
+    */
   test("async failure handling") {
-    val f = sc.parallelize(1 to 10, 2).map { i =>
-      throw new Exception("intentional"); i
-    }.countAsync()
+    val f = sc
+      .parallelize(1 to 10, 2)
+      .map { i =>
+        throw new Exception("intentional"); i
+      }
+      .countAsync()
 
     // Use a semaphore to make sure onFailure and onComplete's failure path will be called.
     // If not, the test will hang.
@@ -163,7 +173,9 @@ class AsyncRDDActionsSuite extends SparkFunSuite with TimeLimits {
 
     f.onComplete {
       case scala.util.Success(res) =>
-        info("Should not have reached this code path (onComplete matching Success)")
+        info(
+          "Should not have reached this code path (onComplete matching Success)"
+        )
         throw new Exception("Task should fail")
       case scala.util.Failure(e) =>
         sem.release()
@@ -184,25 +196,27 @@ class AsyncRDDActionsSuite extends SparkFunSuite with TimeLimits {
     }
   }
 
-  /**
-   * Awaiting FutureAction results
-   */
+  /** Awaiting FutureAction results
+    */
   test("FutureAction result, infinite wait") {
-    val f = sc.parallelize(1 to 100, 4)
-              .countAsync()
+    val f = sc
+      .parallelize(1 to 100, 4)
+      .countAsync()
     assert(ThreadUtils.awaitResult(f, Duration.Inf) === 100)
   }
 
   test("FutureAction result, finite wait") {
-    val f = sc.parallelize(1 to 100, 4)
-              .countAsync()
+    val f = sc
+      .parallelize(1 to 100, 4)
+      .countAsync()
     assert(ThreadUtils.awaitResult(f, Duration(30, "seconds")) === 100)
   }
 
   test("FutureAction result, timeout") {
-    val f = sc.parallelize(1 to 100, 4)
-              .mapPartitions(itr => { Thread.sleep(20); itr })
-              .countAsync()
+    val f = sc
+      .parallelize(1 to 100, 4)
+      .mapPartitions(itr => { Thread.sleep(20); itr })
+      .countAsync()
     intercept[TimeoutException] {
       ThreadUtils.awaitResult(f, Duration(20, "milliseconds"))
     }
@@ -218,7 +232,9 @@ class AsyncRDDActionsSuite extends SparkFunSuite with TimeLimits {
     }
     val starter = Smuggle(new Semaphore(0))
     starter.drainPermits()
-    val rdd = sc.parallelize(1 to 100, 4).mapPartitions {itr => starter.acquire(1); itr}
+    val rdd = sc.parallelize(1 to 100, 4).mapPartitions { itr =>
+      starter.acquire(1); itr
+    }
     val f = action(rdd)
     f.onComplete(_ => ())(fakeExecutionContext)
     // Here we verify that registering the callback didn't cause a thread to be consumed.

@@ -22,9 +22,8 @@ import java.io.{File, IOException}
 import org.apache.spark.{LocalRootDirsTest, SparkConf, SparkFunSuite}
 import org.apache.spark.util.{SparkConfWithEnv, Utils}
 
-/**
- * Tests for the spark.local.dir and SPARK_LOCAL_DIRS configuration options.
- */
+/** Tests for the spark.local.dir and SPARK_LOCAL_DIRS configuration options.
+  */
 class LocalDirsSuite extends SparkFunSuite with LocalRootDirsTest {
 
   private def assumeNonExistentAndNotCreatable(f: File): Unit = {
@@ -35,13 +34,18 @@ class LocalDirsSuite extends SparkFunSuite with LocalRootDirsTest {
     }
   }
 
-  test("Utils.getLocalDir() returns a valid directory, even if some local dirs are missing") {
+  test(
+    "Utils.getLocalDir() returns a valid directory, even if some local dirs are missing"
+  ) {
     // Regression test for SPARK-2974
     val f = new File("/NONEXISTENT_PATH")
     assumeNonExistentAndNotCreatable(f)
 
     val conf = new SparkConf(false)
-      .set("spark.local.dir", s"/NONEXISTENT_PATH,${System.getProperty("java.io.tmpdir")}")
+      .set(
+        "spark.local.dir",
+        s"/NONEXISTENT_PATH,${System.getProperty("java.io.tmpdir")}"
+      )
     assert(new File(Utils.getLocalDir(conf)).exists())
 
     // This directory should not be created.
@@ -55,7 +59,9 @@ class LocalDirsSuite extends SparkFunSuite with LocalRootDirsTest {
 
     // spark.local.dir only contains invalid directories, but that's not a problem since
     // SPARK_LOCAL_DIRS will override it on both the driver and workers:
-    val conf = new SparkConfWithEnv(Map("SPARK_LOCAL_DIRS" -> System.getProperty("java.io.tmpdir")))
+    val conf = new SparkConfWithEnv(
+      Map("SPARK_LOCAL_DIRS" -> System.getProperty("java.io.tmpdir"))
+    )
       .set("spark.local.dir", "/NONEXISTENT_PATH")
     assert(new File(Utils.getLocalDir(conf)).exists())
 
@@ -63,7 +69,9 @@ class LocalDirsSuite extends SparkFunSuite with LocalRootDirsTest {
     assert(!f.exists())
   }
 
-  test("Utils.getLocalDir() throws an exception if any temporary directory cannot be retrieved") {
+  test(
+    "Utils.getLocalDir() throws an exception if any temporary directory cannot be retrieved"
+  ) {
     val path1 = "/NONEXISTENT_PATH_ONE"
     val path2 = "/NONEXISTENT_PATH_TWO"
     val f1 = new File(path1)

@@ -22,7 +22,12 @@ import java.nio.ByteBuffer
 
 import com.esotericsoftware.kryo.io.{Input, Output}
 import org.apache.avro.{Schema, SchemaBuilder}
-import org.apache.avro.generic.GenericData.{Array => AvroArray, EnumSymbol, Fixed, Record}
+import org.apache.avro.generic.GenericData.{
+  Array => AvroArray,
+  EnumSymbol,
+  Fixed,
+  Record
+}
 
 import org.apache.spark.{SharedSparkContext, SparkFunSuite}
 import org.apache.spark.internal.config.SERIALIZER
@@ -34,8 +39,9 @@ class GenericAvroSerializerSuite extends SparkFunSuite with SharedSparkContext {
     super.beforeAll()
   }
 
-  val recordSchema : Schema = SchemaBuilder
-    .record("testRecord").fields()
+  val recordSchema: Schema = SchemaBuilder
+    .record("testRecord")
+    .fields()
     .requiredString("data")
     .endRecord()
   val recordDatum = new Record(recordSchema)
@@ -53,8 +59,12 @@ class GenericAvroSerializerSuite extends SparkFunSuite with SharedSparkContext {
 
   test("schema compression and decompression") {
     val genericSer = new GenericAvroSerializer(conf.getAvroSchema)
-    assert(recordSchema ===
-      genericSer.decompress(ByteBuffer.wrap(genericSer.compress(recordSchema))))
+    assert(
+      recordSchema ===
+        genericSer.decompress(
+          ByteBuffer.wrap(genericSer.compress(recordSchema))
+        )
+    )
   }
 
   test("uses schema fingerprint to decrease message size") {
@@ -79,10 +89,15 @@ class GenericAvroSerializerSuite extends SparkFunSuite with SharedSparkContext {
   test("caches previously seen schemas") {
     val genericSer = new GenericAvroSerializer(conf.getAvroSchema)
     val compressedSchema = genericSer.compress(recordSchema)
-    val decompressedSchema = genericSer.decompress(ByteBuffer.wrap(compressedSchema))
+    val decompressedSchema =
+      genericSer.decompress(ByteBuffer.wrap(compressedSchema))
 
     assert(compressedSchema.eq(genericSer.compress(recordSchema)))
-    assert(decompressedSchema.eq(genericSer.decompress(ByteBuffer.wrap(compressedSchema))))
+    assert(
+      decompressedSchema.eq(
+        genericSer.decompress(ByteBuffer.wrap(compressedSchema))
+      )
+    )
   }
 
   Seq(
@@ -104,14 +119,18 @@ class GenericAvroSerializerSuite extends SparkFunSuite with SharedSparkContext {
       assert(genericSer.deserializeDatum(input) === datum)
     }
 
-    test(s"SPARK-34477: GenericData.$name serialization and deserialization" +
-      " through KryoSerializer ") {
+    test(
+      s"SPARK-34477: GenericData.$name serialization and deserialization" +
+        " through KryoSerializer "
+    ) {
       val rdd = sc.parallelize((0 until 10).map(_ => datum), 2)
       assert(rdd.collect() sameElements Array.fill(10)(datum))
     }
   }
 
-  test("SPARK-39775: Disable validate default values when parsing Avro schemas") {
+  test(
+    "SPARK-39775: Disable validate default values when parsing Avro schemas"
+  ) {
     val avroTypeStruct = s"""
       |{
       |  "type": "record",
@@ -121,9 +140,14 @@ class GenericAvroSerializerSuite extends SparkFunSuite with SharedSparkContext {
       |  ]
       |}
     """.stripMargin
-    val schema = new Schema.Parser().setValidateDefaults(false).parse(avroTypeStruct)
+    val schema =
+      new Schema.Parser().setValidateDefaults(false).parse(avroTypeStruct)
 
     val genericSer = new GenericAvroSerializer(conf.getAvroSchema)
-    assert(schema === genericSer.decompress(ByteBuffer.wrap(genericSer.compress(schema))))
+    assert(
+      schema === genericSer.decompress(
+        ByteBuffer.wrap(genericSer.compress(schema))
+      )
+    )
   }
 }

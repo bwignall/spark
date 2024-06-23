@@ -34,9 +34,8 @@ import org.apache.spark.storage.{BlockId, BlockStatus, StorageLevel}
 import org.apache.spark.storage.memory.MemoryStore
 import org.apache.spark.util.ThreadUtils
 
-/**
- * Helper trait for sharing code among [[MemoryManager]] tests.
- */
+/** Helper trait for sharing code among [[MemoryManager]] tests.
+  */
 private[memory] trait MemoryManagerSuite extends SparkFunSuite {
 
   protected val evictedBlocks = new mutable.ArrayBuffer[(BlockId, BlockStatus)]
@@ -47,13 +46,12 @@ private[memory] trait MemoryManagerSuite extends SparkFunSuite {
   // without also resetting stubbed methods. Since our test code relies on the latter,
   // we need to use our own variable to track invocations of `evictBlocksToFreeSpace`.
 
-  /**
-   * The amount of space requested in the last call to [[MemoryStore.evictBlocksToFreeSpace]].
-   *
-   * This set whenever [[MemoryStore.evictBlocksToFreeSpace]] is called, and cleared when the test
-   * code makes explicit assertions on this variable through
-   * [[assertEvictBlocksToFreeSpaceCalled]].
-   */
+  /** The amount of space requested in the last call to [[MemoryStore.evictBlocksToFreeSpace]].
+    *
+    * This set whenever [[MemoryStore.evictBlocksToFreeSpace]] is called, and cleared when the test
+    * code makes explicit assertions on this variable through
+    * [[assertEvictBlocksToFreeSpaceCalled]].
+    */
   private val evictBlocksToFreeSpaceCalled = new AtomicLong(0)
 
   override def beforeEach(): Unit = {
@@ -62,12 +60,11 @@ private[memory] trait MemoryManagerSuite extends SparkFunSuite {
     evictBlocksToFreeSpaceCalled.set(DEFAULT_EVICT_BLOCKS_TO_FREE_SPACE_CALLED)
   }
 
-  /**
-   * Make a mocked [[MemoryStore]] whose [[MemoryStore.evictBlocksToFreeSpace]] method is stubbed.
-   *
-   * This allows our test code to release storage memory when these methods are called
-   * without relying on [[org.apache.spark.storage.BlockManager]] and all of its dependencies.
-   */
+  /** Make a mocked [[MemoryStore]] whose [[MemoryStore.evictBlocksToFreeSpace]] method is stubbed.
+    *
+    * This allows our test code to release storage memory when these methods are called
+    * without relying on [[org.apache.spark.storage.BlockManager]] and all of its dependencies.
+    */
   protected def makeMemoryStore(mm: MemoryManager): MemoryStore = {
     val ms = mock(classOf[MemoryStore], RETURNS_SMART_NULLS)
     when(ms.evictBlocksToFreeSpace(any(), anyLong(), any()))
@@ -76,43 +73,48 @@ private[memory] trait MemoryManagerSuite extends SparkFunSuite {
     ms
   }
 
-  /**
-   * Make a mocked [[MemoryStore]] whose [[MemoryStore.evictBlocksToFreeSpace]] method is
-   * stubbed to always throw [[RuntimeException]].
-   */
+  /** Make a mocked [[MemoryStore]] whose [[MemoryStore.evictBlocksToFreeSpace]] method is
+    * stubbed to always throw [[RuntimeException]].
+    */
   protected def makeBadMemoryStore(mm: MemoryManager): MemoryStore = {
     val ms = mock(classOf[MemoryStore], RETURNS_SMART_NULLS)
     when(ms.evictBlocksToFreeSpace(any(), anyLong(), any())).thenAnswer(
-      (_: InvocationOnMock) => throw new RuntimeException("bad memory store!"))
+      (_: InvocationOnMock) => throw new RuntimeException("bad memory store!")
+    )
     mm.setMemoryStore(ms)
     ms
   }
 
-  /**
-   * Simulate the part of [[MemoryStore.evictBlocksToFreeSpace]] that releases storage memory.
-   *
-   * This is a significant simplification of the real method, which actually drops existing
-   * blocks based on the size of each block. Instead, here we simply release as many bytes
-   * as needed to ensure the requested amount of free space. This allows us to set up the
-   * test without relying on the [[org.apache.spark.storage.BlockManager]], which brings in
-   * many other dependencies.
-   *
-   * Every call to this method will set a global variable, [[evictBlocksToFreeSpaceCalled]], that
-   * records the number of bytes this is called with. This variable is expected to be cleared
-   * by the test code later through [[assertEvictBlocksToFreeSpaceCalled]].
-   */
+  /** Simulate the part of [[MemoryStore.evictBlocksToFreeSpace]] that releases storage memory.
+    *
+    * This is a significant simplification of the real method, which actually drops existing
+    * blocks based on the size of each block. Instead, here we simply release as many bytes
+    * as needed to ensure the requested amount of free space. This allows us to set up the
+    * test without relying on the [[org.apache.spark.storage.BlockManager]], which brings in
+    * many other dependencies.
+    *
+    * Every call to this method will set a global variable, [[evictBlocksToFreeSpaceCalled]], that
+    * records the number of bytes this is called with. This variable is expected to be cleared
+    * by the test code later through [[assertEvictBlocksToFreeSpaceCalled]].
+    */
   private def evictBlocksToFreeSpaceAnswer(mm: MemoryManager): Answer[Long] =
     (invocation: InvocationOnMock) => {
       val args = invocation.getArguments
       val numBytesToFree = args(1).asInstanceOf[Long]
       assert(numBytesToFree > 0)
-      require(evictBlocksToFreeSpaceCalled.get() === DEFAULT_EVICT_BLOCKS_TO_FREE_SPACE_CALLED,
-        "bad test: evictBlocksToFreeSpace() variable was not reset")
+      require(
+        evictBlocksToFreeSpaceCalled
+          .get() === DEFAULT_EVICT_BLOCKS_TO_FREE_SPACE_CALLED,
+        "bad test: evictBlocksToFreeSpace() variable was not reset"
+      )
       evictBlocksToFreeSpaceCalled.set(numBytesToFree)
       if (numBytesToFree <= mm.storageMemoryUsed) {
         // We can evict enough blocks to fulfill the request for space
         mm.releaseStorageMemory(numBytesToFree, mm.tungstenMemoryMode)
-        evictedBlocks += Tuple2(null, BlockStatus(StorageLevel.MEMORY_ONLY, numBytesToFree, 0L))
+        evictedBlocks += Tuple2(
+          null,
+          BlockStatus(StorageLevel.MEMORY_ONLY, numBytesToFree, 0L)
+        )
         numBytesToFree
       } else {
         // No blocks were evicted because eviction would not free enough space.
@@ -120,30 +122,38 @@ private[memory] trait MemoryManagerSuite extends SparkFunSuite {
       }
     }
 
-  /**
-   * Assert that [[MemoryStore.evictBlocksToFreeSpace]] is called with the given parameters.
-   */
-  protected def assertEvictBlocksToFreeSpaceCalled(ms: MemoryStore, numBytes: Long): Unit = {
-    assert(evictBlocksToFreeSpaceCalled.get() === numBytes,
-      s"expected evictBlocksToFreeSpace() to be called with $numBytes")
+  /** Assert that [[MemoryStore.evictBlocksToFreeSpace]] is called with the given parameters.
+    */
+  protected def assertEvictBlocksToFreeSpaceCalled(
+      ms: MemoryStore,
+      numBytes: Long
+  ): Unit = {
+    assert(
+      evictBlocksToFreeSpaceCalled.get() === numBytes,
+      s"expected evictBlocksToFreeSpace() to be called with $numBytes"
+    )
     evictBlocksToFreeSpaceCalled.set(DEFAULT_EVICT_BLOCKS_TO_FREE_SPACE_CALLED)
   }
 
-  /**
-   * Assert that [[MemoryStore.evictBlocksToFreeSpace]] is NOT called.
-   */
-  protected def assertEvictBlocksToFreeSpaceNotCalled[T](ms: MemoryStore): Unit = {
-    assert(evictBlocksToFreeSpaceCalled.get() === DEFAULT_EVICT_BLOCKS_TO_FREE_SPACE_CALLED,
-      "evictBlocksToFreeSpace() should not have been called!")
+  /** Assert that [[MemoryStore.evictBlocksToFreeSpace]] is NOT called.
+    */
+  protected def assertEvictBlocksToFreeSpaceNotCalled[T](
+      ms: MemoryStore
+  ): Unit = {
+    assert(
+      evictBlocksToFreeSpaceCalled
+        .get() === DEFAULT_EVICT_BLOCKS_TO_FREE_SPACE_CALLED,
+      "evictBlocksToFreeSpace() should not have been called!"
+    )
     assert(evictedBlocks.isEmpty)
   }
 
-  /**
-   * Create a MemoryManager with the specified execution memory limits and no storage memory.
-   */
+  /** Create a MemoryManager with the specified execution memory limits and no storage memory.
+    */
   protected def createMemoryManager(
-     maxOnHeapExecutionMemory: Long,
-     maxOffHeapExecutionMemory: Long = 0L): MemoryManager
+      maxOnHeapExecutionMemory: Long,
+      maxOffHeapExecutionMemory: Long = 0L
+  ): MemoryManager
 
   // -- Tests of sharing of execution memory between tasks ----------------------------------------
   // Prior to Spark 1.6, these tests were part of ShuffleMemoryManagerSuite.
@@ -318,7 +328,8 @@ private[memory] trait MemoryManagerSuite extends SparkFunSuite {
   test("off-heap execution allocations cannot exceed limit") {
     val memoryManager = createMemoryManager(
       maxOnHeapExecutionMemory = 2L,
-      maxOffHeapExecutionMemory = 1000L)
+      maxOffHeapExecutionMemory = 1000L
+    )
 
     val tMemManager = new TaskMemoryManager(memoryManager, 1)
     val c = new TestMemoryConsumer(tMemManager, MemoryMode.OFF_HEAP)

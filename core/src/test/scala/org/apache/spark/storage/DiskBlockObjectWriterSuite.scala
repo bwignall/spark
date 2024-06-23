@@ -23,7 +23,14 @@ import scala.reflect.ClassTag
 
 import org.apache.spark.{SparkConf, SparkException, SparkFunSuite}
 import org.apache.spark.executor.ShuffleWriteMetrics
-import org.apache.spark.serializer.{DeserializationStream, JavaSerializer, SerializationStream, Serializer, SerializerInstance, SerializerManager}
+import org.apache.spark.serializer.{
+  DeserializationStream,
+  JavaSerializer,
+  SerializationStream,
+  Serializer,
+  SerializerInstance,
+  SerializerManager
+}
 import org.apache.spark.util.Utils
 
 class DiskBlockObjectWriterSuite extends SparkFunSuite {
@@ -43,10 +50,12 @@ class DiskBlockObjectWriterSuite extends SparkFunSuite {
     }
   }
 
-  private def createWriter(): (DiskBlockObjectWriter, File, ShuffleWriteMetrics) = {
+  private def createWriter()
+      : (DiskBlockObjectWriter, File, ShuffleWriteMetrics) = {
     val file = new File(tempDir, "somefile")
     val conf = new SparkConf()
-    val serializerManager = new CustomSerializerManager(new JavaSerializer(conf), conf, None)
+    val serializerManager =
+      new CustomSerializerManager(new JavaSerializer(conf), conf, None)
     val writeMetrics = new ShuffleWriteMetrics()
     val writer = new DiskBlockObjectWriter(
       file,
@@ -54,7 +63,8 @@ class DiskBlockObjectWriterSuite extends SparkFunSuite {
       new CustomJavaSerializer(new SparkConf()).newInstance(),
       1024,
       true,
-      writeMetrics)
+      writeMetrics
+    )
     (writer, file, writeMetrics)
   }
 
@@ -108,7 +118,9 @@ class DiskBlockObjectWriterSuite extends SparkFunSuite {
     }
   }
 
-  test("calling revertPartialWritesAndClose() on a partial write should truncate up to commit") {
+  test(
+    "calling revertPartialWritesAndClose() on a partial write should truncate up to commit"
+  ) {
     val (writer, file, writeMetrics) = createWriter()
 
     writer.write(Long.box(20), Long.box(30))
@@ -124,7 +136,9 @@ class DiskBlockObjectWriterSuite extends SparkFunSuite {
     assert(writeMetrics.recordsWritten == 1)
   }
 
-  test("calling revertPartialWritesAndClose() after commit() should have no effect") {
+  test(
+    "calling revertPartialWritesAndClose() after commit() should have no effect"
+  ) {
     val (writer, file, writeMetrics) = createWriter()
 
     writer.write(Long.box(20), Long.box(30))
@@ -137,7 +151,9 @@ class DiskBlockObjectWriterSuite extends SparkFunSuite {
     assert(writeMetrics.bytesWritten === file.length())
   }
 
-  test("calling revertPartialWritesAndClose() on a closed block writer should have no effect") {
+  test(
+    "calling revertPartialWritesAndClose() on a closed block writer should have no effect"
+  ) {
     val (writer, file, writeMetrics) = createWriter()
     for (i <- 1 to 1000) {
       writer.write(i, i)
@@ -204,8 +220,10 @@ class DiskBlockObjectWriterSuite extends SparkFunSuite {
       writer.write(i, i)
     }
 
-    val bs = writer.getSerializerWrappedStream.asInstanceOf[OutputStreamWithCloseDetecting]
-    val objOut = writer.getSerializationStream.asInstanceOf[SerializationStreamWithCloseDetecting]
+    val bs = writer.getSerializerWrappedStream
+      .asInstanceOf[OutputStreamWithCloseDetecting]
+    val objOut = writer.getSerializationStream
+      .asInstanceOf[SerializationStreamWithCloseDetecting]
 
     writer.closeAndDelete()
     assert(!file.exists())
@@ -234,10 +252,12 @@ class OutputStreamWithCloseDetecting(outputStream: OutputStream)
 class CustomSerializerManager(
     defaultSerializer: Serializer,
     conf: SparkConf,
-    encryptionKey: Option[Array[Byte]])
-    extends SerializerManager(defaultSerializer, conf, encryptionKey) {
+    encryptionKey: Option[Array[Byte]]
+) extends SerializerManager(defaultSerializer, conf, encryptionKey) {
   override def wrapStream(blockId: BlockId, s: OutputStream): OutputStream = {
-    new OutputStreamWithCloseDetecting(wrapForCompression(blockId, wrapForEncryption(s)))
+    new OutputStreamWithCloseDetecting(
+      wrapForCompression(blockId, wrapForEncryption(s))
+    )
   }
 }
 
@@ -248,8 +268,10 @@ class CustomJavaSerializer(conf: SparkConf) extends JavaSerializer(conf) {
   }
 }
 
-class SerializationStreamWithCloseDetecting(serializationStream: SerializationStream)
-    extends SerializationStream with CloseDetecting {
+class SerializationStreamWithCloseDetecting(
+    serializationStream: SerializationStream
+) extends SerializationStream
+    with CloseDetecting {
 
   override def close(): Unit = {
     isClosed = true
@@ -262,15 +284,20 @@ class SerializationStreamWithCloseDetecting(serializationStream: SerializationSt
   override def flush(): Unit = serializationStream.flush()
 }
 
-class CustomJavaSerializerInstance(instance: SerializerInstance) extends SerializerInstance {
+class CustomJavaSerializerInstance(instance: SerializerInstance)
+    extends SerializerInstance {
   override def serializeStream(s: OutputStream): SerializationStream =
     new SerializationStreamWithCloseDetecting(instance.serializeStream(s))
 
   override def serialize[T: ClassTag](t: T): ByteBuffer = instance.serialize(t)
 
-  override def deserialize[T: ClassTag](bytes: ByteBuffer): T = instance.deserialize(bytes)
+  override def deserialize[T: ClassTag](bytes: ByteBuffer): T =
+    instance.deserialize(bytes)
 
-  override def deserialize[T: ClassTag](bytes: ByteBuffer, loader: ClassLoader): T =
+  override def deserialize[T: ClassTag](
+      bytes: ByteBuffer,
+      loader: ClassLoader
+  ): T =
     instance.deserialize(bytes, loader)
 
   override def deserializeStream(s: InputStream): DeserializationStream =

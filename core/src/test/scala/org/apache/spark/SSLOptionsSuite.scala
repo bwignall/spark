@@ -22,24 +22,30 @@ import java.util.UUID
 import javax.net.ssl.SSLContext
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.security.alias.{CredentialProvider, CredentialProviderFactory}
+import org.apache.hadoop.security.alias.{
+  CredentialProvider,
+  CredentialProviderFactory
+}
 
 import org.apache.spark.util.SparkConfWithEnv
 
 class SSLOptionsSuite extends SparkFunSuite {
 
   test("test resolving property file as spark conf ") {
-    val keyStorePath = new File(this.getClass.getResource("/keystore").toURI).getAbsolutePath
-    val trustStorePath = new File(this.getClass.getResource("/truststore").toURI).getAbsolutePath
-    val privateKeyPath = new File(this.getClass.getResource("/key.pem").toURI).getAbsolutePath
-    val certChainPath = new File(this.getClass.getResource("/certchain.pem").toURI).getAbsolutePath
+    val keyStorePath =
+      new File(this.getClass.getResource("/keystore").toURI).getAbsolutePath
+    val trustStorePath =
+      new File(this.getClass.getResource("/truststore").toURI).getAbsolutePath
+    val privateKeyPath =
+      new File(this.getClass.getResource("/key.pem").toURI).getAbsolutePath
+    val certChainPath = new File(
+      this.getClass.getResource("/certchain.pem").toURI
+    ).getAbsolutePath
 
     // Pick two cipher suites that the provider knows about
     val sslContext = SSLContext.getInstance("TLSv1.2")
     sslContext.init(null, null, null)
-    val algorithms = sslContext
-      .getServerSocketFactory
-      .getDefaultCipherSuites
+    val algorithms = sslContext.getServerSocketFactory.getDefaultCipherSuites
       .take(2)
       .toSet
 
@@ -85,10 +91,15 @@ class SSLOptionsSuite extends SparkFunSuite {
   }
 
   test("test resolving property with defaults specified ") {
-    val keyStorePath = new File(this.getClass.getResource("/keystore").toURI).getAbsolutePath
-    val trustStorePath = new File(this.getClass.getResource("/truststore").toURI).getAbsolutePath
-    val privateKeyPath = new File(this.getClass.getResource("/key.pem").toURI).getAbsolutePath
-    val certChainPath = new File(this.getClass.getResource("/certchain.pem").toURI).getAbsolutePath
+    val keyStorePath =
+      new File(this.getClass.getResource("/keystore").toURI).getAbsolutePath
+    val trustStorePath =
+      new File(this.getClass.getResource("/truststore").toURI).getAbsolutePath
+    val privateKeyPath =
+      new File(this.getClass.getResource("/key.pem").toURI).getAbsolutePath
+    val certChainPath = new File(
+      this.getClass.getResource("/certchain.pem").toURI
+    ).getAbsolutePath
 
     val conf = new SparkConf
     val hadoopConf = new Configuration()
@@ -103,12 +114,20 @@ class SSLOptionsSuite extends SparkFunSuite {
     conf.set("spark.ssl.trustStoreReloadingEnabled", "false")
     conf.set("spark.ssl.trustStoreReloadIntervalMs", "10000")
     conf.set("spark.ssl.openSslEnabled", "false")
-    conf.set("spark.ssl.enabledAlgorithms",
-      "TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA")
+    conf.set(
+      "spark.ssl.enabledAlgorithms",
+      "TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA"
+    )
     conf.set("spark.ssl.protocol", "SSLv3")
 
-    val defaultOpts = SSLOptions.parse(conf, hadoopConf, "spark.ssl", defaults = None)
-    val opts = SSLOptions.parse(conf, hadoopConf, "spark.ssl.ui", defaults = Some(defaultOpts))
+    val defaultOpts =
+      SSLOptions.parse(conf, hadoopConf, "spark.ssl", defaults = None)
+    val opts = SSLOptions.parse(
+      conf,
+      hadoopConf,
+      "spark.ssl.ui",
+      defaults = Some(defaultOpts)
+    )
 
     assert(opts.enabled)
     assert(opts.trustStore.isDefined)
@@ -131,15 +150,22 @@ class SSLOptionsSuite extends SparkFunSuite {
     assert(opts.trustStoreReloadIntervalMs === 10000)
     assert(opts.openSslEnabled === false)
     assert(opts.protocol === Some("SSLv3"))
-    assert(opts.enabledAlgorithms ===
-      Set("TLS_RSA_WITH_AES_128_CBC_SHA", "TLS_RSA_WITH_AES_256_CBC_SHA"))
+    assert(
+      opts.enabledAlgorithms ===
+        Set("TLS_RSA_WITH_AES_128_CBC_SHA", "TLS_RSA_WITH_AES_256_CBC_SHA")
+    )
   }
 
   test("test whether defaults can be overridden ") {
-    val keyStorePath = new File(this.getClass.getResource("/keystore").toURI).getAbsolutePath
-    val trustStorePath = new File(this.getClass.getResource("/truststore").toURI).getAbsolutePath
-    val privateKeyPath = new File(this.getClass.getResource("/key.pem").toURI).getAbsolutePath
-    val certChainPath = new File(this.getClass.getResource("/certchain.pem").toURI).getAbsolutePath
+    val keyStorePath =
+      new File(this.getClass.getResource("/keystore").toURI).getAbsolutePath
+    val trustStorePath =
+      new File(this.getClass.getResource("/truststore").toURI).getAbsolutePath
+    val privateKeyPath =
+      new File(this.getClass.getResource("/key.pem").toURI).getAbsolutePath
+    val certChainPath = new File(
+      this.getClass.getResource("/certchain.pem").toURI
+    ).getAbsolutePath
 
     val conf = new SparkConf
     val hadoopConf = new Configuration()
@@ -157,13 +183,21 @@ class SSLOptionsSuite extends SparkFunSuite {
     conf.set("spark.ssl.ui.trustStoreReloadingEnabled", "true")
     conf.set("spark.ssl.ui.trustStoreReloadIntervalMs", "20000")
     conf.set("spark.ssl.ui.openSslEnabled", "true")
-    conf.set("spark.ssl.enabledAlgorithms",
-      "TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA")
+    conf.set(
+      "spark.ssl.enabledAlgorithms",
+      "TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA"
+    )
     conf.set("spark.ssl.ui.enabledAlgorithms", "ABC, DEF")
     conf.set("spark.ssl.protocol", "SSLv3")
 
-    val defaultOpts = SSLOptions.parse(conf, hadoopConf, "spark.ssl", defaults = None)
-    val opts = SSLOptions.parse(conf, hadoopConf, "spark.ssl.ui", defaults = Some(defaultOpts))
+    val defaultOpts =
+      SSLOptions.parse(conf, hadoopConf, "spark.ssl", defaults = None)
+    val opts = SSLOptions.parse(
+      conf,
+      hadoopConf,
+      "spark.ssl.ui",
+      defaults = Some(defaultOpts)
+    )
 
     assert(opts.enabled === true)
     assert(opts.port === Some(4242))
@@ -190,10 +224,15 @@ class SSLOptionsSuite extends SparkFunSuite {
   }
 
   test("ensure RPC settings don't get enabled via inheritance ") {
-    val keyStorePath = new File(this.getClass.getResource("/keystore").toURI).getAbsolutePath
-    val trustStorePath = new File(this.getClass.getResource("/truststore").toURI).getAbsolutePath
-    val privateKeyPath = new File(this.getClass.getResource("/key.pem").toURI).getAbsolutePath
-    val certChainPath = new File(this.getClass.getResource("/certchain.pem").toURI).getAbsolutePath
+    val keyStorePath =
+      new File(this.getClass.getResource("/keystore").toURI).getAbsolutePath
+    val trustStorePath =
+      new File(this.getClass.getResource("/truststore").toURI).getAbsolutePath
+    val privateKeyPath =
+      new File(this.getClass.getResource("/key.pem").toURI).getAbsolutePath
+    val certChainPath = new File(
+      this.getClass.getResource("/certchain.pem").toURI
+    ).getAbsolutePath
 
     val conf = new SparkConf
     val hadoopConf = new Configuration()
@@ -210,22 +249,35 @@ class SSLOptionsSuite extends SparkFunSuite {
     conf.set("spark.ssl.rpc.trustStoreReloadingEnabled", "true")
     conf.set("spark.ssl.rpc.trustStoreReloadIntervalMs", "20000")
     conf.set("spark.ssl.rpc.openSslEnabled", "true")
-    conf.set("spark.ssl.enabledAlgorithms",
-      "TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA")
+    conf.set(
+      "spark.ssl.enabledAlgorithms",
+      "TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA"
+    )
     conf.set("spark.ssl.rpc.enabledAlgorithms", "ABC, DEF")
     conf.set("spark.ssl.protocol", "SSLv3")
 
-    val disabledDefaults = SSLOptions.parse(conf, hadoopConf, "spark.ssl", defaults = None)
+    val disabledDefaults =
+      SSLOptions.parse(conf, hadoopConf, "spark.ssl", defaults = None)
     val disabledOpts = SSLOptions.parse(
-      conf, hadoopConf, "spark.ssl.rpc", defaults = Some(disabledDefaults))
+      conf,
+      hadoopConf,
+      "spark.ssl.rpc",
+      defaults = Some(disabledDefaults)
+    )
 
     assert(disabledOpts.enabled === false)
     assert(disabledOpts.port.isEmpty)
 
     // Now enable it and test again
     conf.set("spark.ssl.rpc.enabled", "true")
-    val defaultOpts = SSLOptions.parse(conf, hadoopConf, "spark.ssl", defaults = None)
-    val opts = SSLOptions.parse(conf, hadoopConf, "spark.ssl.rpc", defaults = Some(defaultOpts))
+    val defaultOpts =
+      SSLOptions.parse(conf, hadoopConf, "spark.ssl", defaults = None)
+    val opts = SSLOptions.parse(
+      conf,
+      hadoopConf,
+      "spark.ssl.rpc",
+      defaults = Some(defaultOpts)
+    )
 
     assert(opts.enabled === true)
     assert(opts.port === Some(4242))
@@ -251,15 +303,16 @@ class SSLOptionsSuite extends SparkFunSuite {
     assert(opts.enabledAlgorithms === Set("ABC", "DEF"))
   }
 
-
   test("SPARK-41719: Skip ssl sub-settings if ssl is disabled") {
-    val keyStorePath = new File(this.getClass.getResource("/keystore").toURI).getAbsolutePath
+    val keyStorePath =
+      new File(this.getClass.getResource("/keystore").toURI).getAbsolutePath
     val conf = new SparkConf
     val hadoopConf = new Configuration()
     conf.set("spark.ssl.enabled", "false")
     conf.set("spark.ssl.keyStorePassword", "password")
     conf.set("spark.ssl.keyStore", keyStorePath)
-    val sslOpts = SSLOptions.parse(conf, hadoopConf, "spark.ssl", defaults = None)
+    val sslOpts =
+      SSLOptions.parse(conf, hadoopConf, "spark.ssl", defaults = None)
 
     assert(sslOpts.enabled === false)
     assert(sslOpts.keyStorePassword === None)
@@ -267,9 +320,7 @@ class SSLOptionsSuite extends SparkFunSuite {
   }
 
   test("variable substitution") {
-    val conf = new SparkConfWithEnv(Map(
-      "ENV1" -> "val1",
-      "ENV2" -> "val2"))
+    val conf = new SparkConfWithEnv(Map("ENV1" -> "val1", "ENV2" -> "val2"))
     val hadoopConf = new Configuration()
 
     conf.set("spark.ssl.enabled", "true")
@@ -282,11 +333,14 @@ class SSLOptionsSuite extends SparkFunSuite {
   }
 
   test("get passwords from environment") {
-    val conf = new SparkConfWithEnv(Map(
-      SSLOptions.ENV_RPC_SSL_KEY_PASSWORD -> "val1",
-      SSLOptions.ENV_RPC_SSL_PRIVATE_KEY_PASSWORD -> "val4",
-      SSLOptions.ENV_RPC_SSL_KEY_STORE_PASSWORD -> "val2",
-      SSLOptions.ENV_RPC_SSL_TRUST_STORE_PASSWORD -> "val3"))
+    val conf = new SparkConfWithEnv(
+      Map(
+        SSLOptions.ENV_RPC_SSL_KEY_PASSWORD -> "val1",
+        SSLOptions.ENV_RPC_SSL_PRIVATE_KEY_PASSWORD -> "val4",
+        SSLOptions.ENV_RPC_SSL_KEY_STORE_PASSWORD -> "val2",
+        SSLOptions.ENV_RPC_SSL_TRUST_STORE_PASSWORD -> "val3"
+      )
+    )
     val hadoopConf = new Configuration()
 
     conf.set("spark.ssl.enabled", "true")
@@ -299,8 +353,10 @@ class SSLOptionsSuite extends SparkFunSuite {
   }
 
   test("get password from Hadoop credential provider") {
-    val keyStorePath = new File(this.getClass.getResource("/keystore").toURI).getAbsolutePath
-    val trustStorePath = new File(this.getClass.getResource("/truststore").toURI).getAbsolutePath
+    val keyStorePath =
+      new File(this.getClass.getResource("/keystore").toURI).getAbsolutePath
+    val trustStorePath =
+      new File(this.getClass.getResource("/truststore").toURI).getAbsolutePath
 
     val conf = new SparkConf
     val hadoopConf = new Configuration()
@@ -314,12 +370,20 @@ class SSLOptionsSuite extends SparkFunSuite {
     storePassword(provider, "spark.ssl.keyPassword", "password")
     conf.set("spark.ssl.trustStore", trustStorePath)
     storePassword(provider, "spark.ssl.trustStorePassword", "password")
-    conf.set("spark.ssl.enabledAlgorithms",
-      "TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA")
+    conf.set(
+      "spark.ssl.enabledAlgorithms",
+      "TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA"
+    )
     conf.set("spark.ssl.protocol", "SSLv3")
 
-    val defaultOpts = SSLOptions.parse(conf, hadoopConf, "spark.ssl", defaults = None)
-    val opts = SSLOptions.parse(conf, hadoopConf, "spark.ssl.ui", defaults = Some(defaultOpts))
+    val defaultOpts =
+      SSLOptions.parse(conf, hadoopConf, "spark.ssl", defaults = None)
+    val opts = SSLOptions.parse(
+      conf,
+      hadoopConf,
+      "spark.ssl.ui",
+      defaults = Some(defaultOpts)
+    )
 
     assert(opts.enabled)
     assert(opts.trustStore.isDefined)
@@ -332,16 +396,23 @@ class SSLOptionsSuite extends SparkFunSuite {
     assert(opts.keyStorePassword === Some("password"))
     assert(opts.keyPassword === Some("password"))
     assert(opts.protocol === Some("SSLv3"))
-    assert(opts.enabledAlgorithms ===
-      Set("TLS_RSA_WITH_AES_128_CBC_SHA", "TLS_RSA_WITH_AES_256_CBC_SHA"))
+    assert(
+      opts.enabledAlgorithms ===
+        Set("TLS_RSA_WITH_AES_128_CBC_SHA", "TLS_RSA_WITH_AES_256_CBC_SHA")
+    )
   }
 
-  private def createCredentialProvider(tmpPath: String, conf: Configuration): CredentialProvider = {
+  private def createCredentialProvider(
+      tmpPath: String,
+      conf: Configuration
+  ): CredentialProvider = {
     conf.set(CredentialProviderFactory.CREDENTIAL_PROVIDER_PATH, tmpPath)
 
     val provider = CredentialProviderFactory.getProviders(conf).get(0)
     if (provider == null) {
-      throw new IllegalStateException(s"Fail to get credential provider with path $tmpPath")
+      throw new IllegalStateException(
+        s"Fail to get credential provider with path $tmpPath"
+      )
     }
 
     provider
@@ -350,7 +421,8 @@ class SSLOptionsSuite extends SparkFunSuite {
   private def storePassword(
       provider: CredentialProvider,
       passwordKey: String,
-      password: String): Unit = {
+      password: String
+  ): Unit = {
     provider.createCredentialEntry(passwordKey, password.toCharArray)
     provider.flush()
   }

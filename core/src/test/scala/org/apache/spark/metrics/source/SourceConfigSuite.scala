@@ -17,8 +17,16 @@
 
 package org.apache.spark.metrics.source
 
-import org.apache.spark.{LocalSparkContext, SparkConf, SparkContext, SparkFunSuite}
-import org.apache.spark.internal.config.{METRICS_EXECUTORMETRICS_SOURCE_ENABLED, METRICS_STATIC_SOURCES_ENABLED}
+import org.apache.spark.{
+  LocalSparkContext,
+  SparkConf,
+  SparkContext,
+  SparkFunSuite
+}
+import org.apache.spark.internal.config.{
+  METRICS_EXECUTORMETRICS_SOURCE_ENABLED,
+  METRICS_STATIC_SOURCES_ENABLED
+}
 
 class SourceConfigSuite extends SparkFunSuite with LocalSparkContext {
 
@@ -30,8 +38,8 @@ class SourceConfigSuite extends SparkFunSuite with LocalSparkContext {
       val metricsSystem = sc.env.metricsSystem
 
       // Static sources should be registered
-      assert (metricsSystem.getSourcesByName("CodeGenerator").nonEmpty)
-      assert (metricsSystem.getSourcesByName("HiveExternalCatalog").nonEmpty)
+      assert(metricsSystem.getSourcesByName("CodeGenerator").nonEmpty)
+      assert(metricsSystem.getSourcesByName("HiveExternalCatalog").nonEmpty)
     } finally {
       sc.stop()
     }
@@ -45,8 +53,8 @@ class SourceConfigSuite extends SparkFunSuite with LocalSparkContext {
       val metricsSystem = sc.env.metricsSystem
 
       // Static sources should not be registered
-      assert (metricsSystem.getSourcesByName("CodeGenerator").isEmpty)
-      assert (metricsSystem.getSourcesByName("HiveExternalCatalog").isEmpty)
+      assert(metricsSystem.getSourcesByName("CodeGenerator").isEmpty)
+      assert(metricsSystem.getSourcesByName("HiveExternalCatalog").isEmpty)
     } finally {
       sc.stop()
     }
@@ -60,7 +68,7 @@ class SourceConfigSuite extends SparkFunSuite with LocalSparkContext {
       val metricsSystem = sc.env.metricsSystem
 
       // ExecutorMetrics source should be registered
-      assert (metricsSystem.getSourcesByName("ExecutorMetrics").nonEmpty)
+      assert(metricsSystem.getSourcesByName("ExecutorMetrics").nonEmpty)
     } finally {
       sc.stop()
     }
@@ -74,7 +82,7 @@ class SourceConfigSuite extends SparkFunSuite with LocalSparkContext {
       val metricsSystem = sc.env.metricsSystem
 
       // ExecutorMetrics source should not be registered
-      assert (metricsSystem.getSourcesByName("ExecutorMetrics").isEmpty)
+      assert(metricsSystem.getSourcesByName("ExecutorMetrics").isEmpty)
     } finally {
       sc.stop()
     }
@@ -87,7 +95,7 @@ class SourceConfigSuite extends SparkFunSuite with LocalSparkContext {
       val metricsSystem = sc.env.metricsSystem
 
       // Executor source should be registered
-      assert (metricsSystem.getSourcesByName("executor").nonEmpty)
+      assert(metricsSystem.getSourcesByName("executor").nonEmpty)
     } finally {
       sc.stop()
     }

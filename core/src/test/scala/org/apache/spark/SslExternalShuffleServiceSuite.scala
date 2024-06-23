@@ -24,12 +24,11 @@ import org.apache.spark.network.netty.SparkTransportConf
 import org.apache.spark.network.shuffle.ExternalBlockHandler
 import org.apache.spark.util.SslTestUtils
 
-/**
- * This suite creates an external shuffle server and routes all shuffle fetches through it.
- * Note that failures in this suite may arise due to changes in Spark that invalidate expectations
- * set up in `ExternalShuffleBlockHandler`, such as changing the format of shuffle files or how
- * we hash files into folders.
- */
+/** This suite creates an external shuffle server and routes all shuffle fetches through it.
+  * Note that failures in this suite may arise due to changes in Spark that invalidate expectations
+  * set up in `ExternalShuffleBlockHandler`, such as changing the format of shuffle files or how
+  * we hash files into folders.
+  */
 class SslExternalShuffleServiceSuite extends ExternalShuffleServiceSuite {
 
   override def initializeHandlers(): Unit = {
@@ -38,9 +37,17 @@ class SslExternalShuffleServiceSuite extends ExternalShuffleServiceSuite {
     // Show that we can successfully inherit options defined in the `spark.ssl` namespace
     val defaultSslOptions = SSLOptions.parse(conf, hadoopConf, "spark.ssl")
     val sslOptions = SSLOptions.parse(
-      conf, hadoopConf, "spark.ssl.rpc", defaults = Some(defaultSslOptions))
+      conf,
+      hadoopConf,
+      "spark.ssl.rpc",
+      defaults = Some(defaultSslOptions)
+    )
     val transportConf = SparkTransportConf.fromSparkConf(
-      conf, "shuffle", numUsableCores = 2, sslOptions = Some(sslOptions))
+      conf,
+      "shuffle",
+      numUsableCores = 2,
+      sslOptions = Some(sslOptions)
+    )
 
     rpcHandler = new ExternalBlockHandler(transportConf, null)
     transportContext = new TransportContext(transportConf, rpcHandler)

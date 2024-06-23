@@ -28,7 +28,11 @@ import org.apache.spark.internal.config.Status._
 import org.apache.spark.resource.ResourceProfile
 import org.apache.spark.scheduler._
 import org.apache.spark.status.AppStatusStore
-import org.apache.spark.status.api.v1.{AccumulableInfo => UIAccumulableInfo, StageData, StageStatus}
+import org.apache.spark.status.api.v1.{
+  AccumulableInfo => UIAccumulableInfo,
+  StageData,
+  StageStatus
+}
 import org.apache.spark.ui.jobs.{StagePage, StagesTab}
 
 class StagePageSuite extends SparkFunSuite with LocalSparkContext {
@@ -49,12 +53,10 @@ class StagePageSuite extends SparkFunSuite with LocalSparkContext {
         numFailedTasks = 1,
         numKilledTasks = 1,
         numCompletedIndices = 1,
-
         submissionTime = None,
         firstTaskLaunchedTime = None,
         completionTime = None,
         failureReason = None,
-
         executorDeserializeTime = 1L,
         executorDeserializeCpuTime = 1L,
         executorRunTime = 1L,
@@ -90,14 +92,13 @@ class StagePageSuite extends SparkFunSuite with LocalSparkContext {
         shuffleWriteBytes = 1L,
         shuffleWriteTime = 1L,
         shuffleWriteRecords = 1L,
-
         name = "stage1",
         description = Some("description"),
         details = "detail",
         schedulingPool = "pool1",
-
         rddIds = Seq(1),
-        accumulatorUpdates = Seq(new UIAccumulableInfo(0L, "acc", None, "value")),
+        accumulatorUpdates =
+          Seq(new UIAccumulableInfo(0L, "acc", None, "value")),
         tasks = None,
         executorSummary = None,
         speculationSummary = None,
@@ -114,10 +115,9 @@ class StagePageSuite extends SparkFunSuite with LocalSparkContext {
     }
   }
 
-  /**
-   * Render a stage page started with the given conf and return the HTML.
-   * This also runs a dummy stage to populate the page with useful content.
-   */
+  /** Render a stage page started with the given conf and return the HTML.
+    * This also runs a dummy stage to populate the page with useful content.
+    */
   private def renderStagePage(): Seq[Node] = {
     val conf = new SparkConf(false).set(LIVE_ENTITY_UPDATE_PERIOD, 0L)
     val statusStore = AppStatusStore.createLiveStore(conf)
@@ -136,21 +136,46 @@ class StagePageSuite extends SparkFunSuite with LocalSparkContext {
       val page = new StagePage(tab, statusStore)
 
       // Simulate a stage in job progress listener
-      val stageInfo = new StageInfo(0, 0, "dummy", 1, Seq.empty, Seq.empty, "details",
-        resourceProfileId = ResourceProfile.DEFAULT_RESOURCE_PROFILE_ID)
+      val stageInfo = new StageInfo(
+        0,
+        0,
+        "dummy",
+        1,
+        Seq.empty,
+        Seq.empty,
+        "details",
+        resourceProfileId = ResourceProfile.DEFAULT_RESOURCE_PROFILE_ID
+      )
       // Simulate two tasks to test PEAK_EXECUTION_MEMORY correctness
-      (1 to 2).foreach {
-        taskId =>
-          val taskInfo = new TaskInfo(taskId, taskId, 0, taskId, 0,
-            "0", "localhost", TaskLocality.ANY, false)
-          listener.onStageSubmitted(SparkListenerStageSubmitted(stageInfo))
-          listener.onTaskStart(SparkListenerTaskStart(0, 0, taskInfo))
-          taskInfo.markFinished(TaskState.FINISHED, System.currentTimeMillis())
-          val taskMetrics = TaskMetrics.empty
-          val executorMetrics = new ExecutorMetrics
-          taskMetrics.incPeakExecutionMemory(peakExecutionMemory)
-          listener.onTaskEnd(SparkListenerTaskEnd(0, 0, "result", Success, taskInfo,
-            executorMetrics, taskMetrics))
+      (1 to 2).foreach { taskId =>
+        val taskInfo = new TaskInfo(
+          taskId,
+          taskId,
+          0,
+          taskId,
+          0,
+          "0",
+          "localhost",
+          TaskLocality.ANY,
+          false
+        )
+        listener.onStageSubmitted(SparkListenerStageSubmitted(stageInfo))
+        listener.onTaskStart(SparkListenerTaskStart(0, 0, taskInfo))
+        taskInfo.markFinished(TaskState.FINISHED, System.currentTimeMillis())
+        val taskMetrics = TaskMetrics.empty
+        val executorMetrics = new ExecutorMetrics
+        taskMetrics.incPeakExecutionMemory(peakExecutionMemory)
+        listener.onTaskEnd(
+          SparkListenerTaskEnd(
+            0,
+            0,
+            "result",
+            Success,
+            taskInfo,
+            executorMetrics,
+            taskMetrics
+          )
+        )
       }
       listener.onStageCompleted(SparkListenerStageCompleted(stageInfo))
       page.render(request)

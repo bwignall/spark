@@ -25,7 +25,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.storage.BlockId
 
 class TestMemoryManager(conf: SparkConf)
-  extends MemoryManager(conf, numCores = 1, Long.MaxValue, Long.MaxValue) {
+    extends MemoryManager(conf, numCores = 1, Long.MaxValue, Long.MaxValue) {
 
   @GuardedBy("this")
   private var consequentOOM = 0
@@ -37,7 +37,8 @@ class TestMemoryManager(conf: SparkConf)
   override private[memory] def acquireExecutionMemory(
       numBytes: Long,
       taskAttemptId: Long,
-      memoryMode: MemoryMode): Long = synchronized {
+      memoryMode: MemoryMode
+  ): Long = synchronized {
     require(numBytes >= 0)
     val acquired = {
       if (consequentOOM > 0) {
@@ -52,14 +53,16 @@ class TestMemoryManager(conf: SparkConf)
         grant
       }
     }
-    memoryForTask(taskAttemptId) = memoryForTask.getOrElse(taskAttemptId, 0L) + acquired
+    memoryForTask(taskAttemptId) =
+      memoryForTask.getOrElse(taskAttemptId, 0L) + acquired
     acquired
   }
 
   override private[memory] def releaseExecutionMemory(
       numBytes: Long,
       taskAttemptId: Long,
-      memoryMode: MemoryMode): Unit = synchronized {
+      memoryMode: MemoryMode
+  ): Unit = synchronized {
     require(numBytes >= 0)
     available += numBytes
     val existingMemoryUsage = memoryForTask.getOrElse(taskAttemptId, 0L)
@@ -67,22 +70,28 @@ class TestMemoryManager(conf: SparkConf)
     require(
       newMemoryUsage >= 0,
       s"Attempting to free $numBytes of memory for task attempt $taskAttemptId, but it only " +
-      s"allocated $existingMemoryUsage bytes of memory")
+        s"allocated $existingMemoryUsage bytes of memory"
+    )
     memoryForTask(taskAttemptId) = newMemoryUsage
   }
 
-  override private[memory] def releaseAllExecutionMemoryForTask(taskAttemptId: Long): Long = {
+  override private[memory] def releaseAllExecutionMemoryForTask(
+      taskAttemptId: Long
+  ): Long = {
     memoryForTask.remove(taskAttemptId).getOrElse(0L)
   }
 
-  override private[memory] def getExecutionMemoryUsageForTask(taskAttemptId: Long): Long = {
+  override private[memory] def getExecutionMemoryUsageForTask(
+      taskAttemptId: Long
+  ): Long = {
     memoryForTask.getOrElse(taskAttemptId, 0L)
   }
 
   override def acquireStorageMemory(
       blockId: BlockId,
       numBytes: Long,
-      memoryMode: MemoryMode): Boolean = {
+      memoryMode: MemoryMode
+  ): Boolean = {
     require(numBytes >= 0)
     true
   }
@@ -90,12 +99,16 @@ class TestMemoryManager(conf: SparkConf)
   override def acquireUnrollMemory(
       blockId: BlockId,
       numBytes: Long,
-      memoryMode: MemoryMode): Boolean = {
+      memoryMode: MemoryMode
+  ): Boolean = {
     require(numBytes >= 0)
     true
   }
 
-  override def releaseStorageMemory(numBytes: Long, memoryMode: MemoryMode): Unit = {
+  override def releaseStorageMemory(
+      numBytes: Long,
+      memoryMode: MemoryMode
+  ): Unit = {
     require(numBytes >= 0)
   }
 
@@ -103,26 +116,23 @@ class TestMemoryManager(conf: SparkConf)
 
   override def maxOffHeapStorageMemory: Long = 0L
 
-  /**
-   * Causes the next call to [[acquireExecutionMemory()]] to fail to allocate
-   * memory (returning `0`), simulating low-on-memory / out-of-memory conditions.
-   */
+  /** Causes the next call to [[acquireExecutionMemory()]] to fail to allocate
+    * memory (returning `0`), simulating low-on-memory / out-of-memory conditions.
+    */
   def markExecutionAsOutOfMemoryOnce(): Unit = {
     markconsequentOOM(1)
   }
 
-  /**
-   * Causes the next `n` calls to [[acquireExecutionMemory()]] to fail to allocate
-   * memory (returning `0`), simulating low-on-memory / out-of-memory conditions.
-   */
+  /** Causes the next `n` calls to [[acquireExecutionMemory()]] to fail to allocate
+    * memory (returning `0`), simulating low-on-memory / out-of-memory conditions.
+    */
   def markconsequentOOM(n: Int): Unit = synchronized {
     consequentOOM += n
   }
 
-  /**
-   * Undos the effects of [[markExecutionAsOutOfMemoryOnce]] and [[markconsequentOOM]] and lets
-   * calls to [[acquireExecutionMemory()]] (if there is enough memory available).
-   */
+  /** Undos the effects of [[markExecutionAsOutOfMemoryOnce]] and [[markconsequentOOM]] and lets
+    * calls to [[acquireExecutionMemory()]] (if there is enough memory available).
+    */
   def resetConsequentOOM(): Unit = synchronized {
     consequentOOM = 0
   }

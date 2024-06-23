@@ -33,7 +33,8 @@ private[spark] class ParallelCollectionPartition[T: ClassTag](
     var rddId: Long,
     var slice: Int,
     var values: Seq[T]
-  ) extends Partition with Serializable {
+) extends Partition
+    with Serializable {
 
   def iterator: Iterator[T] = values.iterator
 
@@ -48,23 +49,24 @@ private[spark] class ParallelCollectionPartition[T: ClassTag](
   override def index: Int = slice
 
   @throws(classOf[IOException])
-  private def writeObject(out: ObjectOutputStream): Unit = Utils.tryOrIOException {
+  private def writeObject(out: ObjectOutputStream): Unit =
+    Utils.tryOrIOException {
 
-    val sfactory = SparkEnv.get.serializer
+      val sfactory = SparkEnv.get.serializer
 
-    // Treat java serializer with default action rather than going thru serialization, to avoid a
-    // separate serialization header.
+      // Treat java serializer with default action rather than going thru serialization, to avoid a
+      // separate serialization header.
 
-    sfactory match {
-      case js: JavaSerializer => out.defaultWriteObject()
-      case _ =>
-        out.writeLong(rddId)
-        out.writeInt(slice)
+      sfactory match {
+        case js: JavaSerializer => out.defaultWriteObject()
+        case _ =>
+          out.writeLong(rddId)
+          out.writeInt(slice)
 
-        val ser = sfactory.newInstance()
-        Utils.serializeViaNestedStream(out, ser)(_.writeObject(values))
+          val ser = sfactory.newInstance()
+          Utils.serializeViaNestedStream(out, ser)(_.writeObject(values))
+      }
     }
-  }
 
   @throws(classOf[IOException])
   private def readObject(in: ObjectInputStream): Unit = Utils.tryOrIOException {
@@ -77,7 +79,9 @@ private[spark] class ParallelCollectionPartition[T: ClassTag](
         slice = in.readInt()
 
         val ser = sfactory.newInstance()
-        Utils.deserializeViaNestedStream(in, ser)(ds => values = ds.readObject[Seq[T]]())
+        Utils.deserializeViaNestedStream(in, ser)(ds =>
+          values = ds.readObject[Seq[T]]()
+        )
     }
   }
 }
@@ -86,8 +90,8 @@ private[spark] class ParallelCollectionRDD[T: ClassTag](
     sc: SparkContext,
     @transient private val data: Seq[T],
     numSlices: Int,
-    locationPrefs: Map[Int, Seq[String]])
-    extends RDD[T](sc, Nil) {
+    locationPrefs: Map[Int, Seq[String]]
+) extends RDD[T](sc, Nil) {
   // TODO: Right now, each split sends along its full data, even if later down the RDD chain it gets
   // cached. It might be worthwhile to write the data to a file in the DFS and read it in the split
   // instead.
@@ -95,11 +99,16 @@ private[spark] class ParallelCollectionRDD[T: ClassTag](
 
   override def getPartitions: Array[Partition] = {
     val slices = ParallelCollectionRDD.slice(data, numSlices).toArray
-    slices.indices.map(i => new ParallelCollectionPartition(id, i, slices(i))).toArray
+    slices.indices
+      .map(i => new ParallelCollectionPartition(id, i, slices(i)))
+      .toArray
   }
 
   override def compute(s: Partition, context: TaskContext): Iterator[T] = {
-    new InterruptibleIterator(context, s.asInstanceOf[ParallelCollectionPartition[T]].iterator)
+    new InterruptibleIterator(
+      context,
+      s.asInstanceOf[ParallelCollectionPartition[T]].iterator
+    )
   }
 
   override def getPreferredLocations(s: Partition): Seq[String] = {
@@ -108,15 +117,17 @@ private[spark] class ParallelCollectionRDD[T: ClassTag](
 }
 
 private object ParallelCollectionRDD {
-  /**
-   * Slice a collection into numSlices sub-collections. One extra thing we do here is to treat Range
-   * collections specially, encoding the slices as other Ranges to minimize memory cost. This makes
-   * it efficient to run Spark over RDDs representing large sets of numbers. And if the collection
-   * is an inclusive Range, we use inclusive range for the last slice.
-   */
+
+  /** Slice a collection into numSlices sub-collections. One extra thing we do here is to treat Range
+    * collections specially, encoding the slices as other Ranges to minimize memory cost. This makes
+    * it efficient to run Spark over RDDs representing large sets of numbers. And if the collection
+    * is an inclusive Range, we use inclusive range for the last slice.
+    */
   def slice[T: ClassTag](seq: Seq[T], numSlices: Int): Seq[Seq[T]] = {
     if (numSlices < 1) {
-      throw new IllegalArgumentException("Positive number of partitions required")
+      throw new IllegalArgumentException(
+        "Positive number of partitions required"
+      )
     }
     // Sequences need to be sliced at the same set of index positions for operations
     // like RDD.zip() to behave as expected
@@ -129,14 +140,21 @@ private object ParallelCollectionRDD {
     }
     seq match {
       case r: Range =>
-        positions(r.length, numSlices).zipWithIndex.map { case ((start, end), index) =>
-          // If the range is inclusive, use inclusive range for the last slice
-          if (r.isInclusive && index == numSlices - 1) {
-            new Range.Inclusive(r.start + start * r.step, r.end, r.step)
-          } else {
-            new Range.Inclusive(r.start + start * r.step, r.start + (end - 1) * r.step, r.step)
+        positions(r.length, numSlices).zipWithIndex
+          .map { case ((start, end), index) =>
+            // If the range is inclusive, use inclusive range for the last slice
+            if (r.isInclusive && index == numSlices - 1) {
+              new Range.Inclusive(r.start + start * r.step, r.end, r.step)
+            } else {
+              new Range.Inclusive(
+                r.start + start * r.step,
+                r.start + (end - 1) * r.step,
+                r.step
+              )
+            }
           }
-        }.toSeq.asInstanceOf[Seq[Seq[T]]]
+          .toSeq
+          .asInstanceOf[Seq[Seq[T]]]
       case nr: NumericRange[T] =>
         // For ranges of Long, Double, BigInteger, etc
         val slices = new ArrayBuffer[Seq[T]](numSlices)
@@ -150,7 +168,7 @@ private object ParallelCollectionRDD {
       case _ =>
         val array = seq.toArray // To prevent O(n^2) operations for List etc
         positions(array.length, numSlices).map { case (start, end) =>
-            array.slice(start, end).toImmutableArraySeq
+          array.slice(start, end).toImmutableArraySeq
         }.toSeq
     }
   }

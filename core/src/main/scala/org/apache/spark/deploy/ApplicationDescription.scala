@@ -19,7 +19,11 @@ package org.apache.spark.deploy
 
 import java.net.URI
 
-import org.apache.spark.resource.{ResourceProfile, ResourceRequirement, ResourceUtils}
+import org.apache.spark.resource.{
+  ResourceProfile,
+  ResourceRequirement,
+  ResourceUtils
+}
 
 private[spark] case class ApplicationDescription(
     name: String,
@@ -33,13 +37,20 @@ private[spark] case class ApplicationDescription(
     // number of executors this application wants to start with,
     // only used if dynamic allocation is enabled
     initialExecutorLimit: Option[Int] = None,
-    user: String = System.getProperty("user.name", "<unknown>")) {
+    user: String = System.getProperty("user.name", "<unknown>")
+) {
 
-  def memoryPerExecutorMB: Int = defaultProfile.getExecutorMemory.map(_.toInt).getOrElse(1024)
+  def memoryPerExecutorMB: Int =
+    defaultProfile.getExecutorMemory.map(_.toInt).getOrElse(1024)
   def coresPerExecutor: Option[Int] = defaultProfile.getExecutorCores
   def resourceReqsPerExecutor: Seq[ResourceRequirement] =
     ResourceUtils.executorResourceRequestToRequirement(
-      defaultProfile.getCustomExecutorResources().values.toSeq.sortBy(_.resourceName))
+      defaultProfile
+        .getCustomExecutorResources()
+        .values
+        .toSeq
+        .sortBy(_.resourceName)
+    )
 
   override def toString: String = "ApplicationDescription(" + name + ")"
 }

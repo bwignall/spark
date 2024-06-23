@@ -23,10 +23,9 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.scheduler.SchedulingMode.SchedulingMode
 
-/**
- * An interface for schedulable entities.
- * there are two type of Schedulable entities(Pools and TaskSetManagers)
- */
+/** An interface for schedulable entities.
+  * there are two type of Schedulable entities(Pools and TaskSetManagers)
+  */
 private[spark] trait Schedulable {
   var parent: Pool
   // child queues
@@ -43,7 +42,11 @@ private[spark] trait Schedulable {
   def addSchedulable(schedulable: Schedulable): Unit
   def removeSchedulable(schedulable: Schedulable): Unit
   def getSchedulableByName(name: String): Schedulable
-  def executorLost(executorId: String, host: String, reason: ExecutorLossReason): Unit
+  def executorLost(
+      executorId: String,
+      host: String,
+      reason: ExecutorLossReason
+  ): Unit
   def executorDecommission(executorId: String): Unit
   def checkSpeculatableTasks(minTimeToSpeculation: Long): Boolean
   def getSortedTaskSetQueue: ArrayBuffer[TaskSetManager]

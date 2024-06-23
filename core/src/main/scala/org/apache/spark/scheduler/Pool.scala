@@ -25,15 +25,15 @@ import scala.jdk.CollectionConverters._
 import org.apache.spark.internal.Logging
 import org.apache.spark.scheduler.SchedulingMode.SchedulingMode
 
-/**
- * A Schedulable entity that represents collection of Pools or TaskSetManagers
- */
+/** A Schedulable entity that represents collection of Pools or TaskSetManagers
+  */
 private[spark] class Pool(
     val poolName: String,
     val schedulingMode: SchedulingMode,
     initMinShare: Int,
-    initWeight: Int)
-  extends Schedulable with Logging {
+    initWeight: Int
+) extends Schedulable
+    with Logging {
 
   val schedulableQueue = new ConcurrentLinkedQueue[Schedulable]
   val schedulableNameToSchedulable = new ConcurrentHashMap[String, Schedulable]
@@ -54,7 +54,8 @@ private[spark] class Pool(
       case SchedulingMode.FIFO =>
         new FIFOSchedulingAlgorithm()
       case _ =>
-        val msg = s"Unsupported scheduling mode: $schedulingMode. Use FAIR or FIFO instead."
+        val msg =
+          s"Unsupported scheduling mode: $schedulingMode. Use FAIR or FIFO instead."
         throw new IllegalArgumentException(msg)
     }
   }
@@ -86,7 +87,11 @@ private[spark] class Pool(
     null
   }
 
-  override def executorLost(executorId: String, host: String, reason: ExecutorLossReason): Unit = {
+  override def executorLost(
+      executorId: String,
+      host: String,
+      reason: ExecutorLossReason
+  ): Unit = {
     schedulableQueue.asScala.foreach(_.executorLost(executorId, host, reason))
   }
 
@@ -105,9 +110,13 @@ private[spark] class Pool(
   override def getSortedTaskSetQueue: ArrayBuffer[TaskSetManager] = {
     val sortedTaskSetQueue = new ArrayBuffer[TaskSetManager]
     val sortedSchedulableQueue =
-      schedulableQueue.asScala.toSeq.sortWith(taskSetSchedulingAlgorithm.comparator)
+      schedulableQueue.asScala.toSeq.sortWith(
+        taskSetSchedulingAlgorithm.comparator
+      )
     for (schedulable <- sortedSchedulableQueue) {
-      sortedTaskSetQueue ++= schedulable.getSortedTaskSetQueue.filter(_.isSchedulable)
+      sortedTaskSetQueue ++= schedulable.getSortedTaskSetQueue.filter(
+        _.isSchedulable
+      )
     }
     sortedTaskSetQueue
   }

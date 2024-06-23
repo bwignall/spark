@@ -23,32 +23,42 @@ import org.apache.spark._
 import org.apache.spark.internal.{config, Logging}
 import org.apache.spark.io.CompressionCodec
 import org.apache.spark.serializer.SerializerManager
-import org.apache.spark.storage.{BlockId, BlockManager, BlockManagerId, ShuffleBlockFetcherIterator}
+import org.apache.spark.storage.{
+  BlockId,
+  BlockManager,
+  BlockManagerId,
+  ShuffleBlockFetcherIterator
+}
 import org.apache.spark.util.CompletionIterator
 import org.apache.spark.util.collection.ExternalSorter
 
-/**
- * Fetches and reads the blocks from a shuffle by requesting them from other nodes' block stores.
- */
+/** Fetches and reads the blocks from a shuffle by requesting them from other nodes' block stores.
+  */
 private[spark] class BlockStoreShuffleReader[K, C](
     handle: BaseShuffleHandle[K, _, C],
-    blocksByAddress: Iterator[(BlockManagerId, collection.Seq[(BlockId, Long, Int)])],
+    blocksByAddress: Iterator[
+      (BlockManagerId, collection.Seq[(BlockId, Long, Int)])
+    ],
     context: TaskContext,
     readMetrics: ShuffleReadMetricsReporter,
     serializerManager: SerializerManager = SparkEnv.get.serializerManager,
     blockManager: BlockManager = SparkEnv.get.blockManager,
     mapOutputTracker: MapOutputTracker = SparkEnv.get.mapOutputTracker,
-    shouldBatchFetch: Boolean = false)
-  extends ShuffleReader[K, C] with Logging {
+    shouldBatchFetch: Boolean = false
+) extends ShuffleReader[K, C]
+    with Logging {
 
   private val dep = handle.dependency
 
   private def fetchContinuousBlocksInBatch: Boolean = {
     val conf = SparkEnv.get.conf
-    val serializerRelocatable = dep.serializer.supportsRelocationOfSerializedObjects
+    val serializerRelocatable =
+      dep.serializer.supportsRelocationOfSerializedObjects
     val compressed = conf.get(config.SHUFFLE_COMPRESS)
     val codecConcatenation = if (compressed) {
-      CompressionCodec.supportsConcatenationOfSerializedStreams(CompressionCodec.createCodec(conf))
+      CompressionCodec.supportsConcatenationOfSerializedStreams(
+        CompressionCodec.createCodec(conf)
+      )
     } else {
       true
     }
@@ -59,11 +69,13 @@ private[spark] class BlockStoreShuffleReader[K, C](
     val doBatchFetch = shouldBatchFetch && serializerRelocatable &&
       (!compressed || codecConcatenation) && !useOldFetchProtocol && !ioEncryption
     if (shouldBatchFetch && !doBatchFetch) {
-      logDebug("The feature tag of continuous shuffle block fetching is set to true, but " +
-        "we can not enable the feature because other conditions are not satisfied. " +
-        s"Shuffle compress: $compressed, serializer relocatable: $serializerRelocatable, " +
-        s"codec concatenation: $codecConcatenation, use old shuffle fetch protocol: " +
-        s"$useOldFetchProtocol, io encryption: $ioEncryption.")
+      logDebug(
+        "The feature tag of continuous shuffle block fetching is set to true, but " +
+          "we can not enable the feature because other conditions are not satisfied. " +
+          s"Shuffle compress: $compressed, serializer relocatable: $serializerRelocatable, " +
+          s"codec concatenation: $codecConcatenation, use old shuffle fetch protocol: " +
+          s"$useOldFetchProtocol, io encryption: $ioEncryption."
+      )
     }
     doBatchFetch
   }
@@ -88,7 +100,8 @@ private[spark] class BlockStoreShuffleReader[K, C](
       SparkEnv.get.conf.get(config.SHUFFLE_CHECKSUM_ENABLED),
       SparkEnv.get.conf.get(config.SHUFFLE_CHECKSUM_ALGORITHM),
       readMetrics,
-      fetchContinuousBlocksInBatch).toCompletionIterator
+      fetchContinuousBlocksInBatch
+    ).toCompletionIterator
 
     val serializerInstance = dep.serializer.newInstance()
 
@@ -106,10 +119,12 @@ private[spark] class BlockStoreShuffleReader[K, C](
         readMetrics.incRecordsRead(1)
         record
       },
-      context.taskMetrics().mergeShuffleReadMetrics())
+      context.taskMetrics().mergeShuffleReadMetrics()
+    )
 
     // An interruptible iterator must be used here in order to support task cancellation
-    val interruptibleIter = new InterruptibleIterator[(Any, Any)](context, metricIter)
+    val interruptibleIter =
+      new InterruptibleIterator[(Any, Any)](context, metricIter)
 
     val resultIter: Iterator[Product2[K, C]] = {
       // Sort the output if there is a sort ordering defined.
@@ -117,31 +132,49 @@ private[spark] class BlockStoreShuffleReader[K, C](
         // Create an ExternalSorter to sort the data.
         val sorter: ExternalSorter[K, _, C] = if (dep.aggregator.isDefined) {
           if (dep.mapSideCombine) {
-            new ExternalSorter[K, C, C](context,
-              Option(new Aggregator[K, C, C](identity,
-                dep.aggregator.get.mergeCombiners,
-                dep.aggregator.get.mergeCombiners)),
-              ordering = Some(dep.keyOrdering.get), serializer = dep.serializer)
+            new ExternalSorter[K, C, C](
+              context,
+              Option(
+                new Aggregator[K, C, C](
+                  identity,
+                  dep.aggregator.get.mergeCombiners,
+                  dep.aggregator.get.mergeCombiners
+                )
+              ),
+              ordering = Some(dep.keyOrdering.get),
+              serializer = dep.serializer
+            )
           } else {
-            new ExternalSorter[K, Nothing, C](context,
+            new ExternalSorter[K, Nothing, C](
+              context,
               dep.aggregator.asInstanceOf[Option[Aggregator[K, Nothing, C]]],
-              ordering = Some(dep.keyOrdering.get), serializer = dep.serializer)
+              ordering = Some(dep.keyOrdering.get),
+              serializer = dep.serializer
+            )
           }
         } else {
-          new ExternalSorter[K, C, C](context, ordering = Some(dep.keyOrdering.get),
-            serializer = dep.serializer)
+          new ExternalSorter[K, C, C](
+            context,
+            ordering = Some(dep.keyOrdering.get),
+            serializer = dep.serializer
+          )
         }
-        sorter.insertAllAndUpdateMetrics(interruptibleIter.asInstanceOf[Iterator[(K, Nothing)]])
+        sorter.insertAllAndUpdateMetrics(
+          interruptibleIter.asInstanceOf[Iterator[(K, Nothing)]]
+        )
       } else if (dep.aggregator.isDefined) {
         if (dep.mapSideCombine) {
           // We are reading values that are already combined
-          val combinedKeyValuesIterator = interruptibleIter.asInstanceOf[Iterator[(K, C)]]
-          dep.aggregator.get.combineCombinersByKey(combinedKeyValuesIterator, context)
+          val combinedKeyValuesIterator =
+            interruptibleIter.asInstanceOf[Iterator[(K, C)]]
+          dep.aggregator.get
+            .combineCombinersByKey(combinedKeyValuesIterator, context)
         } else {
           // We don't know the value type, but also don't care -- the dependency *should*
           // have made sure its compatible w/ this aggregator, which will convert the value
           // type to the combined type C
-          val keyValuesIterator = interruptibleIter.asInstanceOf[Iterator[(K, Nothing)]]
+          val keyValuesIterator =
+            interruptibleIter.asInstanceOf[Iterator[(K, Nothing)]]
           dep.aggregator.get.combineValuesByKey(keyValuesIterator, context)
         }
       } else {
@@ -151,7 +184,7 @@ private[spark] class BlockStoreShuffleReader[K, C](
 
     resultIter match {
       case _: InterruptibleIterator[Product2[K, C]] => resultIter
-      case _ =>
+      case _                                        =>
         // Use another interruptible iterator here to support task cancellation as aggregator
         // or(and) sorter may have consumed previous interruptible iterator.
         new InterruptibleIterator[Product2[K, C]](context, resultIter)

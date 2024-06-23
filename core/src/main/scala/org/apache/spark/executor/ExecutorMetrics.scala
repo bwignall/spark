@@ -22,12 +22,11 @@ import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.memory.MemoryManager
 import org.apache.spark.metrics.ExecutorMetricType
 
-/**
- * :: DeveloperApi ::
- * Metrics tracked for executors and the driver.
- *
- * Executor-level metrics are sent from each executor to the driver as part of the Heartbeat.
- */
+/** :: DeveloperApi ::
+  * Metrics tracked for executors and the driver.
+  *
+  * Executor-level metrics are sent from each executor to the driver as part of the Heartbeat.
+  */
 @DeveloperApi
 class ExecutorMetrics private[spark] extends Serializable {
   // Metrics are indexed by ExecutorMetricType.metricToOffset
@@ -46,7 +45,13 @@ class ExecutorMetrics private[spark] extends Serializable {
 
   private[spark] def this(metrics: Array[Long]) = {
     this()
-    Array.copy(metrics, 0, this.metrics, 0, Math.min(metrics.length, this.metrics.length))
+    Array.copy(
+      metrics,
+      0,
+      this.metrics,
+      0,
+      Math.min(metrics.length, this.metrics.length)
+    )
   }
 
   private[spark] def this(metrics: AtomicLongArray) = {
@@ -56,11 +61,10 @@ class ExecutorMetrics private[spark] extends Serializable {
     }
   }
 
-  /**
-   * Constructor: create the ExecutorMetrics using a given map.
-   *
-   * @param executorMetrics map of executor metric name to value
-   */
+  /** Constructor: create the ExecutorMetrics using a given map.
+    *
+    * @param executorMetrics map of executor metric name to value
+    */
   private[spark] def this(executorMetrics: Map[String, Long]) = {
     this()
     ExecutorMetricType.metricToOffset.foreach { case (name, idx) =>
@@ -68,14 +72,15 @@ class ExecutorMetrics private[spark] extends Serializable {
     }
   }
 
-  /**
-   * Compare the specified executor metrics values with the current executor metric values,
-   * and update the value for any metrics where the new value for the metric is larger.
-   *
-   * @param executorMetrics the executor metrics to compare
-   * @return if there is a new peak value for any metric
-   */
-  private[spark] def compareAndUpdatePeakValues(executorMetrics: ExecutorMetrics): Boolean = {
+  /** Compare the specified executor metrics values with the current executor metric values,
+    * and update the value for any metrics where the new value for the metric is larger.
+    *
+    * @param executorMetrics the executor metrics to compare
+    * @return if there is a new peak value for any metric
+    */
+  private[spark] def compareAndUpdatePeakValues(
+      executorMetrics: ExecutorMetrics
+  ): Boolean = {
     var updated = false
     (0 until ExecutorMetricType.numMetrics).foreach { idx =>
       if (executorMetrics.metrics(idx) > metrics(idx)) {
@@ -89,13 +94,12 @@ class ExecutorMetrics private[spark] extends Serializable {
 
 private[spark] object ExecutorMetrics {
 
-  /**
-   * Get the current executor metrics. These are returned as an array, with the index
-   * determined by ExecutorMetricType.metricToOffset.
-   *
-   * @param memoryManager the memory manager for execution and storage memory
-   * @return the values of the metrics
-   */
+  /** Get the current executor metrics. These are returned as an array, with the index
+    * determined by ExecutorMetricType.metricToOffset.
+    *
+    * @param memoryManager the memory manager for execution and storage memory
+    * @return the values of the metrics
+    */
   def getCurrentMetrics(memoryManager: MemoryManager): Array[Long] = {
     val currentMetrics = new Array[Long](ExecutorMetricType.numMetrics)
     var offset = 0

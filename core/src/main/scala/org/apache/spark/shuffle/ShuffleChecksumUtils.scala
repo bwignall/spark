@@ -23,35 +23,43 @@ import java.util.zip.CheckedInputStream
 import org.apache.spark.network.shuffle.checksum.ShuffleChecksumHelper
 import org.apache.spark.network.util.LimitedInputStream
 import org.apache.spark.shuffle.IndexShuffleBlockResolver.NOOP_REDUCE_ID
-import org.apache.spark.storage.{BlockId, ShuffleChecksumBlockId, ShuffleDataBlockId}
+import org.apache.spark.storage.{
+  BlockId,
+  ShuffleChecksumBlockId,
+  ShuffleDataBlockId
+}
 
 object ShuffleChecksumUtils {
 
-  /**
-   * Return checksumFile for shuffle data block ID. Otherwise, null.
-   */
-  def getChecksumFileName(blockId: BlockId, algorithm: String): String = blockId match {
-    case ShuffleDataBlockId(shuffleId, mapId, _) =>
-      ShuffleChecksumHelper.getChecksumFileName(
-        ShuffleChecksumBlockId(shuffleId, mapId, NOOP_REDUCE_ID).name, algorithm)
-    case _ =>
-      null
-  }
+  /** Return checksumFile for shuffle data block ID. Otherwise, null.
+    */
+  def getChecksumFileName(blockId: BlockId, algorithm: String): String =
+    blockId match {
+      case ShuffleDataBlockId(shuffleId, mapId, _) =>
+        ShuffleChecksumHelper.getChecksumFileName(
+          ShuffleChecksumBlockId(shuffleId, mapId, NOOP_REDUCE_ID).name,
+          algorithm
+        )
+      case _ =>
+        null
+    }
 
-  /**
-   * Ensure that the checksum values are consistent with index file and data file.
-   */
+  /** Ensure that the checksum values are consistent with index file and data file.
+    */
   def compareChecksums(
       numPartition: Int,
       algorithm: String,
       checksum: File,
       data: File,
-      index: File): Boolean = {
+      index: File
+  ): Boolean = {
     var checksumIn: DataInputStream = null
     val expectChecksums = Array.ofDim[Long](numPartition)
     try {
       checksumIn = new DataInputStream(new FileInputStream(checksum))
-      (0 until numPartition).foreach(i => expectChecksums(i) = checksumIn.readLong())
+      (0 until numPartition).foreach(i =>
+        expectChecksums(i) = checksumIn.readLong()
+      )
     } finally {
       if (checksumIn != null) {
         checksumIn.close()
@@ -69,9 +77,12 @@ object ShuffleChecksumUtils {
         val curOffset = indexIn.readLong
         val limit = (curOffset - prevOffset).toInt
         val bytes = new Array[Byte](limit)
-        val checksumCal = ShuffleChecksumHelper.getChecksumByAlgorithm(algorithm)
+        val checksumCal =
+          ShuffleChecksumHelper.getChecksumByAlgorithm(algorithm)
         checkedIn = new CheckedInputStream(
-          new LimitedInputStream(dataIn, curOffset - prevOffset), checksumCal)
+          new LimitedInputStream(dataIn, curOffset - prevOffset),
+          checksumCal
+        )
         checkedIn.read(bytes, 0, limit)
         prevOffset = curOffset
         // checksum must be consistent at both write and read sides

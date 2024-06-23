@@ -26,7 +26,11 @@ import org.apache.spark.{JobExecutionStatus, SparkFunSuite}
 import org.apache.spark.executor.ExecutorMetrics
 import org.apache.spark.metrics.ExecutorMetricType
 import org.apache.spark.rdd.DeterministicLevel
-import org.apache.spark.resource.{ExecutorResourceRequest, ResourceInformation, TaskResourceRequest}
+import org.apache.spark.resource.{
+  ExecutorResourceRequest,
+  ResourceInformation,
+  TaskResourceRequest
+}
 import org.apache.spark.status._
 import org.apache.spark.status.api.v1._
 import org.apache.spark.ui.scope.{RDDOperationEdge, RDDOperationNode}
@@ -37,23 +41,32 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
 
   test("All the string fields must be optional to avoid NPE") {
     val protoFile = getWorkspaceFilePath(
-      "core", "src", "main", "protobuf", "org", "apache", "spark", "status", "protobuf",
-      "store_types.proto")
+      "core",
+      "src",
+      "main",
+      "protobuf",
+      "org",
+      "apache",
+      "spark",
+      "status",
+      "protobuf",
+      "store_types.proto"
+    )
 
     val containsStringRegex = "\\s*string .*"
     val invalidDefinition = new mutable.ArrayBuffer[(String, Int)]()
     var lineNumber = 1
-    tryWithResource(Source.fromFile(protoFile.toFile.getCanonicalPath)) { file =>
-      file.getLines().foreach { line =>
-        if (line.matches(containsStringRegex)) {
-          invalidDefinition.append((line, lineNumber))
+    tryWithResource(Source.fromFile(protoFile.toFile.getCanonicalPath)) {
+      file =>
+        file.getLines().foreach { line =>
+          if (line.matches(containsStringRegex)) {
+            invalidDefinition.append((line, lineNumber))
+          }
+          lineNumber += 1
         }
-        lineNumber += 1
-      }
     }
     val errorMessage = new StringBuilder()
-    errorMessage.append(
-      """
+    errorMessage.append("""
         |All the string fields should be defined as `optional string` for handling null string.
         |Please update the following fields:
         |""".stripMargin)
@@ -90,7 +103,8 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
           numCompletedStages = 10,
           numSkippedStages = 11,
           numFailedStages = 12,
-          killedTasksSummary = Map("a" -> 1, "b" -> 2)),
+          killedTasksSummary = Map("a" -> 1, "b" -> 2)
+        ),
         Set(1, 2),
         Some(999)
       )
@@ -183,7 +197,8 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
         shuffleWriteTime = 39L,
         shuffleRecordsWritten = 40L,
         stageId = 41,
-        stageAttemptId = 42)
+        stageAttemptId = 42
+      )
 
       val bytes = serializer.serialize(input)
       val result = serializer.deserialize(bytes, classOf[TaskDataWrapper])
@@ -203,7 +218,9 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
       assert(result.errorMessage == input.errorMessage)
       assert(result.hasMetrics == input.hasMetrics)
       assert(result.executorDeserializeTime == input.executorDeserializeTime)
-      assert(result.executorDeserializeCpuTime == input.executorDeserializeCpuTime)
+      assert(
+        result.executorDeserializeCpuTime == input.executorDeserializeCpuTime
+      )
       assert(result.executorRunTime == input.executorRunTime)
       assert(result.executorCpuTime == input.executorCpuTime)
       assert(result.resultSize == input.resultSize)
@@ -216,23 +233,49 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
       assert(result.inputRecordsRead == input.inputRecordsRead)
       assert(result.outputBytesWritten == input.outputBytesWritten)
       assert(result.outputRecordsWritten == input.outputRecordsWritten)
-      assert(result.shuffleRemoteBlocksFetched == input.shuffleRemoteBlocksFetched)
-      assert(result.shuffleLocalBlocksFetched == input.shuffleLocalBlocksFetched)
+      assert(
+        result.shuffleRemoteBlocksFetched == input.shuffleRemoteBlocksFetched
+      )
+      assert(
+        result.shuffleLocalBlocksFetched == input.shuffleLocalBlocksFetched
+      )
       assert(result.shuffleFetchWaitTime == input.shuffleFetchWaitTime)
       assert(result.shuffleRemoteBytesRead == input.shuffleRemoteBytesRead)
-      assert(result.shuffleRemoteBytesReadToDisk == input.shuffleRemoteBytesReadToDisk)
+      assert(
+        result.shuffleRemoteBytesReadToDisk == input.shuffleRemoteBytesReadToDisk
+      )
       assert(result.shuffleLocalBytesRead == input.shuffleLocalBytesRead)
       assert(result.shuffleRecordsRead == input.shuffleRecordsRead)
-      assert(result.shuffleCorruptMergedBlockChunks == input.shuffleCorruptMergedBlockChunks)
-      assert(result.shuffleMergedFetchFallbackCount == input.shuffleMergedFetchFallbackCount)
-      assert(result.shuffleMergedRemoteBlocksFetched == input.shuffleMergedRemoteBlocksFetched)
-      assert(result.shuffleMergedLocalBlocksFetched == input.shuffleMergedLocalBlocksFetched)
-      assert(result.shuffleMergedRemoteChunksFetched == input.shuffleMergedRemoteChunksFetched)
-      assert(result.shuffleMergedLocalChunksFetched == input.shuffleMergedLocalChunksFetched)
-      assert(result.shuffleMergedRemoteBytesRead == input.shuffleMergedRemoteBytesRead)
-      assert(result.shuffleMergedLocalBytesRead == input.shuffleMergedLocalBytesRead)
-      assert(result.shuffleRemoteReqsDuration == input.shuffleRemoteReqsDuration)
-      assert(result.shuffleMergedRemoteReqDuration == input.shuffleMergedRemoteReqDuration)
+      assert(
+        result.shuffleCorruptMergedBlockChunks == input.shuffleCorruptMergedBlockChunks
+      )
+      assert(
+        result.shuffleMergedFetchFallbackCount == input.shuffleMergedFetchFallbackCount
+      )
+      assert(
+        result.shuffleMergedRemoteBlocksFetched == input.shuffleMergedRemoteBlocksFetched
+      )
+      assert(
+        result.shuffleMergedLocalBlocksFetched == input.shuffleMergedLocalBlocksFetched
+      )
+      assert(
+        result.shuffleMergedRemoteChunksFetched == input.shuffleMergedRemoteChunksFetched
+      )
+      assert(
+        result.shuffleMergedLocalChunksFetched == input.shuffleMergedLocalChunksFetched
+      )
+      assert(
+        result.shuffleMergedRemoteBytesRead == input.shuffleMergedRemoteBytesRead
+      )
+      assert(
+        result.shuffleMergedLocalBytesRead == input.shuffleMergedLocalBytesRead
+      )
+      assert(
+        result.shuffleRemoteReqsDuration == input.shuffleRemoteReqsDuration
+      )
+      assert(
+        result.shuffleMergedRemoteReqDuration == input.shuffleMergedRemoteReqDuration
+      )
       assert(result.shuffleBytesWritten == input.shuffleBytesWritten)
       assert(result.shuffleWriteTime == input.shuffleWriteTime)
       assert(result.shuffleRecordsWritten == input.shuffleRecordsWritten)
@@ -243,7 +286,9 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
 
   test("Executor Stage Summary") {
     val peakMemoryMetrics =
-      Some(new ExecutorMetrics(Array(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 1024L)))
+      Some(
+        new ExecutorMetrics(Array(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 1024L))
+      )
     val info = new ExecutorStageSummary(
       taskTime = 1L,
       failedTasks = 2,
@@ -261,15 +306,18 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
       diskBytesSpilled = 14L,
       isBlacklistedForStage = true,
       peakMemoryMetrics = peakMemoryMetrics,
-      isExcludedForStage = false)
+      isExcludedForStage = false
+    )
     Seq("executor_id_1", null).foreach { executorId =>
       val input = new ExecutorStageSummaryWrapper(
         stageId = 1,
         stageAttemptId = 2,
         executorId = executorId,
-        info = info)
+        info = info
+      )
       val bytes = serializer.serialize(input)
-      val result = serializer.deserialize(bytes, classOf[ExecutorStageSummaryWrapper])
+      val result =
+        serializer.deserialize(bytes, classOf[ExecutorStageSummaryWrapper])
       assert(result.stageId == input.stageId)
       assert(result.stageAttemptId == input.stageAttemptId)
       assert(result.executorId == input.executorId)
@@ -286,84 +334,121 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
   }
 
   private def testApplicationEnvironmentInfoWrapperSerDe(
-      javaVersion: String, javaHome: String, scalaVersion: String): Unit = {
+      javaVersion: String,
+      javaHome: String,
+      scalaVersion: String
+  ): Unit = {
     val input = new ApplicationEnvironmentInfoWrapper(
       new ApplicationEnvironmentInfo(
         runtime = new RuntimeInfo(
           javaVersion = javaVersion,
           javaHome = javaHome,
-          scalaVersion = scalaVersion),
-        sparkProperties = Seq(("spark.conf.1", "1"), ("spark.conf.2", "2"), (null, null)),
-        hadoopProperties =
-          Seq(("hadoop.conf.conf1", "1"), ("hadoop.conf2", "val2"), (null, "val3")),
-        systemProperties =
-          Seq(("sys.prop.1", "value1"), ("sys.prop.2", "value2"), ("sys.prop.3", null)),
+          scalaVersion = scalaVersion
+        ),
+        sparkProperties =
+          Seq(("spark.conf.1", "1"), ("spark.conf.2", "2"), (null, null)),
+        hadoopProperties = Seq(
+          ("hadoop.conf.conf1", "1"),
+          ("hadoop.conf2", "val2"),
+          (null, "val3")
+        ),
+        systemProperties = Seq(
+          ("sys.prop.1", "value1"),
+          ("sys.prop.2", "value2"),
+          ("sys.prop.3", null)
+        ),
         metricsProperties = Seq(("metric.1", "klass1"), ("metric2", "klass2")),
         classpathEntries = Seq(("/jar1", "System"), ("/jar2", "User")),
-        resourceProfiles = Seq(new ResourceProfileInfo(
-          id = 0,
-          executorResources = Map(
-            "0" -> new ExecutorResourceRequest(
-              resourceName = "exec1",
-              amount = 1,
-              discoveryScript = "script0",
-              vendor = "apache"),
-            "1" -> new ExecutorResourceRequest(
-              resourceName = null,
-              amount = 1,
-              discoveryScript = null,
-              vendor = null)
-          ),
-          taskResources = Map(
-            "0" -> new TaskResourceRequest(resourceName = "exec1", amount = 1),
-            "1" -> new TaskResourceRequest(resourceName = "exec2", amount = 1)
+        resourceProfiles = Seq(
+          new ResourceProfileInfo(
+            id = 0,
+            executorResources = Map(
+              "0" -> new ExecutorResourceRequest(
+                resourceName = "exec1",
+                amount = 1,
+                discoveryScript = "script0",
+                vendor = "apache"
+              ),
+              "1" -> new ExecutorResourceRequest(
+                resourceName = null,
+                amount = 1,
+                discoveryScript = null,
+                vendor = null
+              )
+            ),
+            taskResources = Map(
+              "0" -> new TaskResourceRequest(
+                resourceName = "exec1",
+                amount = 1
+              ),
+              "1" -> new TaskResourceRequest(resourceName = "exec2", amount = 1)
+            )
           )
-        ))
+        )
       )
     )
 
     val bytes = serializer.serialize(input)
-    val result = serializer.deserialize(bytes, classOf[ApplicationEnvironmentInfoWrapper])
+    val result =
+      serializer.deserialize(bytes, classOf[ApplicationEnvironmentInfoWrapper])
     assert(result.info.runtime.javaVersion == input.info.runtime.javaVersion)
     assert(result.info.runtime.javaHome == input.info.runtime.javaHome)
     assert(result.info.runtime.scalaVersion == input.info.runtime.scalaVersion)
-    assert(result.info.sparkProperties.length == input.info.sparkProperties.length)
-    result.info.sparkProperties.zip(input.info.sparkProperties).foreach { case (p1, p2) =>
-      assert(p1 == p2)
+    assert(
+      result.info.sparkProperties.length == input.info.sparkProperties.length
+    )
+    result.info.sparkProperties.zip(input.info.sparkProperties).foreach {
+      case (p1, p2) =>
+        assert(p1 == p2)
     }
-    assert(result.info.hadoopProperties.length == input.info.hadoopProperties.length)
-    result.info.hadoopProperties.zip(input.info.hadoopProperties).foreach { case (p1, p2) =>
-      assert(p1 == p2)
+    assert(
+      result.info.hadoopProperties.length == input.info.hadoopProperties.length
+    )
+    result.info.hadoopProperties.zip(input.info.hadoopProperties).foreach {
+      case (p1, p2) =>
+        assert(p1 == p2)
     }
-    assert(result.info.systemProperties.length == input.info.systemProperties.length)
-    result.info.systemProperties.zip(input.info.systemProperties).foreach { case (p1, p2) =>
-      assert(p1 == p2)
+    assert(
+      result.info.systemProperties.length == input.info.systemProperties.length
+    )
+    result.info.systemProperties.zip(input.info.systemProperties).foreach {
+      case (p1, p2) =>
+        assert(p1 == p2)
     }
-    assert(result.info.metricsProperties.length == input.info.metricsProperties.length)
-    result.info.metricsProperties.zip(input.info.metricsProperties).foreach { case (p1, p2) =>
-      assert(p1 == p2)
+    assert(
+      result.info.metricsProperties.length == input.info.metricsProperties.length
+    )
+    result.info.metricsProperties.zip(input.info.metricsProperties).foreach {
+      case (p1, p2) =>
+        assert(p1 == p2)
     }
-    assert(result.info.classpathEntries.length == input.info.classpathEntries.length)
-    result.info.classpathEntries.zip(input.info.classpathEntries).foreach { case (p1, p2) =>
-      assert(p1 == p2)
+    assert(
+      result.info.classpathEntries.length == input.info.classpathEntries.length
+    )
+    result.info.classpathEntries.zip(input.info.classpathEntries).foreach {
+      case (p1, p2) =>
+        assert(p1 == p2)
     }
-    assert(result.info.resourceProfiles.length == input.info.resourceProfiles.length)
-    result.info.resourceProfiles.zip(input.info.resourceProfiles).foreach { case (p1, p2) =>
-      assert(p1.id == p2.id)
-      assert(p1.executorResources.size == p2.executorResources.size)
-      assert(p1.executorResources.keys.size == p2.executorResources.keys.size)
-      p1.executorResources.keysIterator.foreach { k =>
-        assert(p1.executorResources.contains(k))
-        assert(p2.executorResources.contains(k))
-        assert(p1.executorResources(k) == p2.executorResources(k))
-      }
-      assert(p1.taskResources.size == p2.taskResources.size)
-      assert(p1.taskResources.keys.size == p2.taskResources.keys.size)
-      p1.taskResources.keysIterator.foreach { k =>
-        assert(p1.taskResources.contains(k))
-        assert(p2.taskResources.contains(k))
-        assert(p1.taskResources(k) == p2.taskResources(k))
-      }
+    assert(
+      result.info.resourceProfiles.length == input.info.resourceProfiles.length
+    )
+    result.info.resourceProfiles.zip(input.info.resourceProfiles).foreach {
+      case (p1, p2) =>
+        assert(p1.id == p2.id)
+        assert(p1.executorResources.size == p2.executorResources.size)
+        assert(p1.executorResources.keys.size == p2.executorResources.keys.size)
+        p1.executorResources.keysIterator.foreach { k =>
+          assert(p1.executorResources.contains(k))
+          assert(p2.executorResources.contains(k))
+          assert(p1.executorResources(k) == p2.executorResources(k))
+        }
+        assert(p1.taskResources.size == p2.taskResources.size)
+        assert(p1.taskResources.keys.size == p2.taskResources.keys.size)
+        p1.taskResources.keysIterator.foreach { k =>
+          assert(p1.taskResources.contains(k))
+          assert(p2.taskResources.contains(k))
+          assert(p1.taskResources(k) == p2.taskResources(k))
+        }
     }
   }
 
@@ -375,7 +460,10 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
     testApplicationInfoWrapperSerDe(null, null)
   }
 
-  private def testApplicationInfoWrapperSerDe(id: String, name: String): Unit = {
+  private def testApplicationInfoWrapperSerDe(
+      id: String,
+      name: String
+  ): Unit = {
     val attempts: Seq[ApplicationAttemptInfo] = Seq(
       ApplicationAttemptInfo(
         attemptId = Some("001"),
@@ -396,7 +484,8 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
         sparkUser = null,
         completed = true,
         appSparkVersion = null
-      ))
+      )
+    )
     val input = new ApplicationInfoWrapper(
       ApplicationInfo(
         id = id,
@@ -405,7 +494,8 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
         maxCores = Some(2),
         coresPerExecutor = Some(3),
         memoryPerExecutorMB = Some(64),
-        attempts = attempts)
+        attempts = attempts
+      )
     )
 
     val bytes = serializer.serialize(input)
@@ -439,7 +529,8 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
         onHeapMemoryUsed = Some(101),
         offHeapMemoryUsed = Some(102),
         onHeapMemoryRemaining = Some(103),
-        offHeapMemoryRemaining = Some(104)),
+        offHeapMemoryRemaining = Some(104)
+      ),
       new RDDDataDistribution(
         address = null,
         memoryUsed = 60,
@@ -448,7 +539,8 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
         onHeapMemoryUsed = Some(1010),
         offHeapMemoryUsed = Some(1020),
         onHeapMemoryRemaining = Some(1030),
-        offHeapMemoryRemaining = Some(1040))
+        offHeapMemoryRemaining = Some(1040)
+      )
     )
     val rddPartitionInfo = Seq(
       new RDDPartitionInfo(
@@ -456,13 +548,15 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
         storageLevel = "IN_MEM",
         memoryUsed = 105,
         diskUsed = 106,
-        executors = Seq("exec_0", "exec_1")),
+        executors = Seq("exec_0", "exec_1")
+      ),
       new RDDPartitionInfo(
         blockName = null,
         storageLevel = null,
         memoryUsed = 105,
         diskUsed = 106,
-        executors = Seq("exec_2", "exec_3"))
+        executors = Seq("exec_2", "exec_3")
+      )
     )
     val inputs = Seq(
       new RDDStorageInfoWrapper(
@@ -516,11 +610,18 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
       assert(result.info.memoryUsed == input.info.memoryUsed)
       assert(result.info.diskUsed == input.info.diskUsed)
 
-      assert(result.info.dataDistribution.isDefined == input.info.dataDistribution.isDefined)
-      if (result.info.dataDistribution.isDefined && input.info.dataDistribution.isDefined) {
-        assert(result.info.dataDistribution.get.length == input.info.dataDistribution.get.length)
-        result.info.dataDistribution.get.zip(input.info.dataDistribution.get).foreach {
-          case (d1, d2) =>
+      assert(
+        result.info.dataDistribution.isDefined == input.info.dataDistribution.isDefined
+      )
+      if (
+        result.info.dataDistribution.isDefined && input.info.dataDistribution.isDefined
+      ) {
+        assert(
+          result.info.dataDistribution.get.length == input.info.dataDistribution.get.length
+        )
+        result.info.dataDistribution.get
+          .zip(input.info.dataDistribution.get)
+          .foreach { case (d1, d2) =>
             assert(d1.address == d2.address)
             assert(d1.memoryUsed == d2.memoryUsed)
             assert(d1.memoryRemaining == d2.memoryRemaining)
@@ -529,21 +630,26 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
             assert(d1.offHeapMemoryUsed == d2.offHeapMemoryUsed)
             assert(d1.onHeapMemoryRemaining == d2.onHeapMemoryRemaining)
             assert(d1.offHeapMemoryRemaining == d2.offHeapMemoryRemaining)
-        }
+          }
       }
 
-      assert(result.info.partitions.isDefined == input.info.partitions.isDefined)
+      assert(
+        result.info.partitions.isDefined == input.info.partitions.isDefined
+      )
       if (result.info.partitions.isDefined && input.info.partitions.isDefined) {
-        assert(result.info.partitions.get.length == input.info.partitions.get.length)
-        result.info.partitions.get.zip(input.info.partitions.get).foreach { case (p1, p2) =>
-          assert(p1.blockName == p2.blockName)
-          assert(p1.storageLevel == p2.storageLevel)
-          assert(p1.memoryUsed == p2.memoryUsed)
-          assert(p1.diskUsed == p2.diskUsed)
-          assert(p1.executors.length == p2.executors.length)
-          p1.executors.zip(p2.executors).foreach { case (e1, e2) =>
-            e1 == e2
-          }
+        assert(
+          result.info.partitions.get.length == input.info.partitions.get.length
+        )
+        result.info.partitions.get.zip(input.info.partitions.get).foreach {
+          case (p1, p2) =>
+            assert(p1.blockName == p2.blockName)
+            assert(p1.storageLevel == p2.storageLevel)
+            assert(p1.memoryUsed == p2.memoryUsed)
+            assert(p1.diskUsed == p2.diskUsed)
+            assert(p1.executors.length == p2.executors.length)
+            p1.executors.zip(p2.executors).foreach { case (e1, e2) =>
+              e1 == e2
+            }
         }
       }
     }
@@ -559,7 +665,8 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
       useDisk = false,
       deserialized = true,
       memSize = 1L,
-      diskSize = 2L)
+      diskSize = 2L
+    )
     val withNull = new StreamBlockData(
       name = null,
       executorId = null,
@@ -569,7 +676,8 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
       useDisk = false,
       deserialized = true,
       memSize = 1L,
-      diskSize = 2L)
+      diskSize = 2L
+    )
     Seq(normal, withNull).foreach { input =>
       val bytes = serializer.serialize(input)
       val result = serializer.deserialize(bytes, classOf[StreamBlockData])
@@ -594,12 +702,14 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
             resourceName = "exec1",
             amount = 64,
             discoveryScript = "script0",
-            vendor = "apache_2"),
+            vendor = "apache_2"
+          ),
           "1" -> new ExecutorResourceRequest(
             resourceName = "exec2",
             amount = 65,
             discoveryScript = "script1",
-            vendor = "apache_1")
+            vendor = "apache_1"
+          )
         ),
         taskResources = Map(
           "0" -> new TaskResourceRequest(resourceName = "exec1", amount = 1),
@@ -611,15 +721,23 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
     val bytes = serializer.serialize(input)
     val result = serializer.deserialize(bytes, classOf[ResourceProfileWrapper])
     assert(result.rpInfo.id == input.rpInfo.id)
-    assert(result.rpInfo.executorResources.size == input.rpInfo.executorResources.size)
-    assert(result.rpInfo.executorResources.keys.size == input.rpInfo.executorResources.keys.size)
+    assert(
+      result.rpInfo.executorResources.size == input.rpInfo.executorResources.size
+    )
+    assert(
+      result.rpInfo.executorResources.keys.size == input.rpInfo.executorResources.keys.size
+    )
     result.rpInfo.executorResources.keysIterator.foreach { k =>
       assert(result.rpInfo.executorResources.contains(k))
       assert(input.rpInfo.executorResources.contains(k))
-      assert(result.rpInfo.executorResources(k) == input.rpInfo.executorResources(k))
+      assert(
+        result.rpInfo.executorResources(k) == input.rpInfo.executorResources(k)
+      )
     }
     assert(result.rpInfo.taskResources.size == input.rpInfo.taskResources.size)
-    assert(result.rpInfo.taskResources.keys.size == input.rpInfo.taskResources.keys.size)
+    assert(
+      result.rpInfo.taskResources.keys.size == input.rpInfo.taskResources.keys.size
+    )
     result.rpInfo.taskResources.keysIterator.foreach { k =>
       assert(result.rpInfo.taskResources.contains(k))
       assert(input.rpInfo.taskResources.contains(k))
@@ -671,7 +789,8 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
         shuffleMergedRemoteReqsDuration = 38.1,
         shuffleWriteBytes = 39.1,
         shuffleWriteRecords = 40.1,
-        shuffleWriteTime = 41.1)
+        shuffleWriteTime = 41.1
+      )
       val bytes = serializer.serialize(input)
       val result = serializer.deserialize(bytes, classOf[CachedQuantile])
       assert(result.stageId == input.stageId)
@@ -680,7 +799,9 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
       assert(result.taskCount == input.taskCount)
       assert(result.duration == input.duration)
       assert(result.executorDeserializeTime == input.executorDeserializeTime)
-      assert(result.executorDeserializeCpuTime == input.executorDeserializeCpuTime)
+      assert(
+        result.executorDeserializeCpuTime == input.executorDeserializeCpuTime
+      )
       assert(result.executorRunTime == input.executorRunTime)
       assert(result.executorCpuTime == input.executorCpuTime)
       assert(result.resultSize == input.resultSize)
@@ -697,22 +818,50 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
       assert(result.recordsWritten == input.recordsWritten)
       assert(result.shuffleReadBytes == input.shuffleReadBytes)
       assert(result.shuffleRecordsRead == input.shuffleRecordsRead)
-      assert(result.shuffleRemoteBlocksFetched == input.shuffleRemoteBlocksFetched)
-      assert(result.shuffleLocalBlocksFetched == input.shuffleLocalBlocksFetched)
+      assert(
+        result.shuffleRemoteBlocksFetched == input.shuffleRemoteBlocksFetched
+      )
+      assert(
+        result.shuffleLocalBlocksFetched == input.shuffleLocalBlocksFetched
+      )
       assert(result.shuffleFetchWaitTime == input.shuffleFetchWaitTime)
       assert(result.shuffleRemoteBytesRead == input.shuffleRemoteBytesRead)
-      assert(result.shuffleRemoteBytesReadToDisk == input.shuffleRemoteBytesReadToDisk)
-      assert(result.shuffleTotalBlocksFetched == input.shuffleTotalBlocksFetched)
-      assert(result.shuffleCorruptMergedBlockChunks == input.shuffleCorruptMergedBlockChunks)
-      assert(result.shuffleMergedFetchFallbackCount == input.shuffleMergedFetchFallbackCount)
-      assert(result.shuffleMergedRemoteBlocksFetched == input.shuffleMergedRemoteBlocksFetched)
-      assert(result.shuffleMergedLocalBlocksFetched == input.shuffleMergedLocalBlocksFetched)
-      assert(result.shuffleMergedRemoteChunksFetched == input.shuffleMergedRemoteChunksFetched)
-      assert(result.shuffleMergedLocalChunksFetched == input.shuffleMergedLocalChunksFetched)
-      assert(result.shuffleMergedRemoteBytesRead == input.shuffleMergedRemoteBytesRead)
-      assert(result.shuffleMergedLocalBytesRead == input.shuffleMergedLocalBytesRead)
-      assert(result.shuffleRemoteReqsDuration == input.shuffleRemoteReqsDuration)
-      assert(result.shuffleMergedRemoteReqsDuration == input.shuffleMergedRemoteReqsDuration)
+      assert(
+        result.shuffleRemoteBytesReadToDisk == input.shuffleRemoteBytesReadToDisk
+      )
+      assert(
+        result.shuffleTotalBlocksFetched == input.shuffleTotalBlocksFetched
+      )
+      assert(
+        result.shuffleCorruptMergedBlockChunks == input.shuffleCorruptMergedBlockChunks
+      )
+      assert(
+        result.shuffleMergedFetchFallbackCount == input.shuffleMergedFetchFallbackCount
+      )
+      assert(
+        result.shuffleMergedRemoteBlocksFetched == input.shuffleMergedRemoteBlocksFetched
+      )
+      assert(
+        result.shuffleMergedLocalBlocksFetched == input.shuffleMergedLocalBlocksFetched
+      )
+      assert(
+        result.shuffleMergedRemoteChunksFetched == input.shuffleMergedRemoteChunksFetched
+      )
+      assert(
+        result.shuffleMergedLocalChunksFetched == input.shuffleMergedLocalChunksFetched
+      )
+      assert(
+        result.shuffleMergedRemoteBytesRead == input.shuffleMergedRemoteBytesRead
+      )
+      assert(
+        result.shuffleMergedLocalBytesRead == input.shuffleMergedLocalBytesRead
+      )
+      assert(
+        result.shuffleRemoteReqsDuration == input.shuffleRemoteReqsDuration
+      )
+      assert(
+        result.shuffleMergedRemoteReqsDuration == input.shuffleMergedRemoteReqsDuration
+      )
       assert(result.shuffleWriteBytes == input.shuffleWriteBytes)
       assert(result.shuffleWriteRecords == input.shuffleWriteRecords)
       assert(result.shuffleWriteTime == input.shuffleWriteTime)
@@ -732,7 +881,8 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
       )
     )
     val bytes = serializer.serialize(input)
-    val result = serializer.deserialize(bytes, classOf[SpeculationStageSummaryWrapper])
+    val result =
+      serializer.deserialize(bytes, classOf[SpeculationStageSummaryWrapper])
     assert(result.stageId == input.stageId)
     assert(result.stageAttemptId == input.stageAttemptId)
     checkAnswer(result.info, input.info)
@@ -740,16 +890,23 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
 
   test("Executor Summary") {
     val memoryMetrics =
-      Some(new MemoryMetrics(
-        usedOnHeapStorageMemory = 15,
-        usedOffHeapStorageMemory = 16,
-        totalOnHeapStorageMemory = 17,
-        totalOffHeapStorageMemory = 18))
+      Some(
+        new MemoryMetrics(
+          usedOnHeapStorageMemory = 15,
+          usedOffHeapStorageMemory = 16,
+          totalOnHeapStorageMemory = 17,
+          totalOffHeapStorageMemory = 18
+        )
+      )
     val peakMemoryMetric =
-      Some(new ExecutorMetrics(Array(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 1024L)))
+      Some(
+        new ExecutorMetrics(Array(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 1024L))
+      )
     val resources =
-      Map("resource1" -> new ResourceInformation("re1", Array("add1", "add2")),
-        "resource1" -> new ResourceInformation(null, null))
+      Map(
+        "resource1" -> new ResourceInformation("re1", Array("add1", "add2")),
+        "resource1" -> new ResourceInformation(null, null)
+      )
     Seq(("id_1", "localhost:7777"), (null, "")).foreach { case (id, hostPort) =>
       val input = new ExecutorSummaryWrapper(
         info = new ExecutorSummary(
@@ -775,7 +932,8 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
           addTime = new Date(13),
           removeTime = Some(new Date(14)),
           removeReason = Some("reason_1"),
-          executorLogs = Map("log1" -> "logs/log1.log", "log2" -> "/log/log2.log"),
+          executorLogs =
+            Map("log1" -> "logs/log1.log", "log2" -> "/log/log2.log"),
           memoryMetrics = memoryMetrics,
           blacklistedInStages = Set(19, 20, 21),
           peakMemoryMetrics = peakMemoryMetric,
@@ -788,7 +946,8 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
       )
 
       val bytes = serializer.serialize(input)
-      val result = serializer.deserialize(bytes, classOf[ExecutorSummaryWrapper])
+      val result =
+        serializer.deserialize(bytes, classOf[ExecutorSummaryWrapper])
 
       assert(result.info.id == input.info.id)
       assert(result.info.hostPort == input.info.hostPort)
@@ -819,26 +978,47 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
         assert(result.info.executorLogs(k) == input.info.executorLogs(k))
       }
 
-      assert(result.info.memoryMetrics.isDefined == input.info.memoryMetrics.isDefined)
-      if (result.info.memoryMetrics.isDefined && input.info.memoryMetrics.isDefined) {
-        assert(result.info.memoryMetrics.get.usedOnHeapStorageMemory ==
-          input.info.memoryMetrics.get.usedOnHeapStorageMemory)
-        assert(result.info.memoryMetrics.get.usedOffHeapStorageMemory ==
-          input.info.memoryMetrics.get.usedOffHeapStorageMemory)
-        assert(result.info.memoryMetrics.get.totalOnHeapStorageMemory ==
-          input.info.memoryMetrics.get.totalOnHeapStorageMemory)
-        assert(result.info.memoryMetrics.get.totalOffHeapStorageMemory ==
-          input.info.memoryMetrics.get.totalOffHeapStorageMemory)
+      assert(
+        result.info.memoryMetrics.isDefined == input.info.memoryMetrics.isDefined
+      )
+      if (
+        result.info.memoryMetrics.isDefined && input.info.memoryMetrics.isDefined
+      ) {
+        assert(
+          result.info.memoryMetrics.get.usedOnHeapStorageMemory ==
+            input.info.memoryMetrics.get.usedOnHeapStorageMemory
+        )
+        assert(
+          result.info.memoryMetrics.get.usedOffHeapStorageMemory ==
+            input.info.memoryMetrics.get.usedOffHeapStorageMemory
+        )
+        assert(
+          result.info.memoryMetrics.get.totalOnHeapStorageMemory ==
+            input.info.memoryMetrics.get.totalOnHeapStorageMemory
+        )
+        assert(
+          result.info.memoryMetrics.get.totalOffHeapStorageMemory ==
+            input.info.memoryMetrics.get.totalOffHeapStorageMemory
+        )
       }
 
-      assert(result.info.blacklistedInStages.size == input.info.blacklistedInStages.size)
+      assert(
+        result.info.blacklistedInStages.size == input.info.blacklistedInStages.size
+      )
       result.info.blacklistedInStages.foreach { stage =>
         assert(input.info.blacklistedInStages.contains(stage))
       }
 
-      assert(result.info.peakMemoryMetrics.isDefined == input.info.peakMemoryMetrics.isDefined)
-      if (result.info.peakMemoryMetrics.isDefined && input.info.peakMemoryMetrics.isDefined) {
-        checkAnswer(result.info.peakMemoryMetrics.get, input.info.peakMemoryMetrics.get)
+      assert(
+        result.info.peakMemoryMetrics.isDefined == input.info.peakMemoryMetrics.isDefined
+      )
+      if (
+        result.info.peakMemoryMetrics.isDefined && input.info.peakMemoryMetrics.isDefined
+      ) {
+        checkAnswer(
+          result.info.peakMemoryMetrics.get,
+          input.info.peakMemoryMetrics.get
+        )
       }
 
       assert(result.info.attributes.size == input.info.attributes.size)
@@ -852,10 +1032,13 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
         assert(input.info.resources.contains(k))
         assert(result.info.resources(k).name == input.info.resources(k).name)
         if (input.info.resources(k).addresses != null) {
-          result.info.resources(k).addresses.zip(input.info.resources(k).addresses).foreach {
-            case (a1, a2) =>
+          result.info
+            .resources(k)
+            .addresses
+            .zip(input.info.resources(k).addresses)
+            .foreach { case (a1, a2) =>
               assert(a1 == a2)
-          }
+            }
         } else {
           assert(result.info.resources(k).addresses.isEmpty)
         }
@@ -864,7 +1047,9 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
       assert(result.info.resourceProfileId == input.info.resourceProfileId)
       assert(result.info.isExcluded == input.info.isExcluded)
 
-      assert(result.info.excludedInStages.size == input.info.excludedInStages.size)
+      assert(
+        result.info.excludedInStages.size == input.info.excludedInStages.size
+      )
       result.info.excludedInStages.foreach { stage =>
         assert(input.info.excludedInStages.contains(stage))
       }
@@ -875,7 +1060,7 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
     Seq(
       ("id_1", "localhost:2020"),
       (null, "") // hostPort can't be null. Otherwise there will be NPE.
-    ).foreach { case(id, hostPort) =>
+    ).foreach { case (id, hostPort) =>
       val input = new ProcessSummaryWrapper(
         info = new ProcessSummary(
           id = id,
@@ -928,14 +1113,17 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
             cached = true,
             barrier = false,
             callsite = "callsite_1",
-            outputDeterministicLevel = DeterministicLevel.INDETERMINATE),
+            outputDeterministicLevel = DeterministicLevel.INDETERMINATE
+          ),
           RDDOperationNode(
             id = 20,
             name = null,
             cached = true,
             barrier = false,
             callsite = null,
-            outputDeterministicLevel = DeterministicLevel.DETERMINATE)),
+            outputDeterministicLevel = DeterministicLevel.DETERMINATE
+          )
+        ),
         childClusters = Seq(
           new RDDOperationClusterWrapper(
             id = "id_1",
@@ -947,7 +1135,9 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
                 cached = false,
                 barrier = true,
                 callsite = "callsite_2",
-                outputDeterministicLevel = DeterministicLevel.UNORDERED)),
+                outputDeterministicLevel = DeterministicLevel.UNORDERED
+              )
+            ),
             childClusters = Seq.empty
           ),
           new RDDOperationClusterWrapper(
@@ -960,13 +1150,17 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
                 cached = false,
                 barrier = true,
                 callsite = null,
-                outputDeterministicLevel = DeterministicLevel.UNORDERED)),
+                outputDeterministicLevel = DeterministicLevel.UNORDERED
+              )
+            ),
             childClusters = Seq.empty
-          ))
+          )
+        )
       )
     )
     val bytes = serializer.serialize(input)
-    val result = serializer.deserialize(bytes, classOf[RDDOperationGraphWrapper])
+    val result =
+      serializer.deserialize(bytes, classOf[RDDOperationGraphWrapper])
 
     assert(result.stageId == input.stageId)
     assert(result.edges.size == input.edges.size)
@@ -985,7 +1179,10 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
       assert(e1.toId == e2.toId)
     }
 
-    def compareClusters(c1: RDDOperationClusterWrapper, c2: RDDOperationClusterWrapper): Unit = {
+    def compareClusters(
+        c1: RDDOperationClusterWrapper,
+        c2: RDDOperationClusterWrapper
+    ): Unit = {
       assert(c1.id == c2.id)
       assert(c1.name == c2.name)
       assert(c1.childNodes.size == c2.childNodes.size)
@@ -998,8 +1195,8 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
         assert(n1.outputDeterministicLevel == n2.outputDeterministicLevel)
       }
       assert(c1.childClusters.size == c2.childClusters.size)
-      c1.childClusters.zip(c2.childClusters).foreach {
-        case (_c1, _c2) => compareClusters(_c1, _c2)
+      c1.childClusters.zip(c2.childClusters).foreach { case (_c1, _c2) =>
+        compareClusters(_c1, _c2)
       }
     }
 
@@ -1014,14 +1211,16 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
     testStageDataSerDe(null, null, null)
   }
 
-  private def testStageDataSerDe(name: String, details: String, schedulingPool: String): Unit = {
+  private def testStageDataSerDe(
+      name: String,
+      details: String,
+      schedulingPool: String
+  ): Unit = {
     val accumulatorUpdates = Seq(
       new AccumulableInfo(1L, "duration", Some("update"), "value1"),
       new AccumulableInfo(2L, "duration2", None, "value2")
     )
-    val inputMetrics = new InputMetrics(
-      bytesRead = 1L,
-      recordsRead = 2L)
+    val inputMetrics = new InputMetrics(bytesRead = 1L, recordsRead = 2L)
     val outputMetrics = new OutputMetrics(
       bytesWritten = 1L,
       recordsWritten = 2L
@@ -1113,7 +1312,9 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
       Map(1L -> taskData1, 2L -> taskData2)
     )
     val peakMemoryMetrics =
-      Some(new ExecutorMetrics(Array(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 1024L)))
+      Some(
+        new ExecutorMetrics(Array(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 1024L))
+      )
     val executorStageSummary1 = new ExecutorStageSummary(
       taskTime = 1L,
       failedTasks = 2,
@@ -1131,7 +1332,8 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
       diskBytesSpilled = 14L,
       isBlacklistedForStage = true,
       peakMemoryMetrics = peakMemoryMetrics,
-      isExcludedForStage = false)
+      isExcludedForStage = false
+    )
     val executorStageSummary2 = new ExecutorStageSummary(
       taskTime = 11L,
       failedTasks = 12,
@@ -1149,9 +1351,13 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
       diskBytesSpilled = 114L,
       isBlacklistedForStage = false,
       peakMemoryMetrics = peakMemoryMetrics,
-      isExcludedForStage = true)
+      isExcludedForStage = true
+    )
     val executorSummary = Some(
-      Map("executor_id_1" -> executorStageSummary1, "executor_id_2" -> executorStageSummary2)
+      Map(
+        "executor_id_1" -> executorStageSummary1,
+        "executor_id_2" -> executorStageSummary2
+      )
     )
     val speculationStageSummary = new SpeculationStageSummary(
       numTasks = 3,
@@ -1161,82 +1367,84 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
       numKilledTasks = 7
     )
     val inputMetricDistributions = new InputMetricDistributions(
-      bytesRead = IndexedSeq(1.001D, 2.001D),
-      recordsRead = IndexedSeq(3.001D, 4.001D)
+      bytesRead = IndexedSeq(1.001d, 2.001d),
+      recordsRead = IndexedSeq(3.001d, 4.001d)
     )
     val outputMetricDistributions = new OutputMetricDistributions(
-      bytesWritten = IndexedSeq(1.001D, 2.001D),
-      recordsWritten = IndexedSeq(3.001D, 4.001D)
+      bytesWritten = IndexedSeq(1.001d, 2.001d),
+      recordsWritten = IndexedSeq(3.001d, 4.001d)
     )
-    val shufflePushReadMetricDistributions = new ShufflePushReadMetricDistributions(
-      corruptMergedBlockChunks = IndexedSeq(1.001D, 2.001D),
-      mergedFetchFallbackCount = IndexedSeq(2.011D, 3.01D),
-      remoteMergedBlocksFetched = IndexedSeq(1.101D, 2.1D),
-      localMergedBlocksFetched = IndexedSeq(3.01D, 3.101D),
-      remoteMergedChunksFetched = IndexedSeq(1.001D, 2.001D),
-      localMergedChunksFetched = IndexedSeq(2.110D, 3.101D),
-      remoteMergedBytesRead = IndexedSeq(1.001D, 2.001D),
-      localMergedBytesRead = IndexedSeq(4.101D, 3.011D),
-      remoteMergedReqsDuration = IndexedSeq(3.001D, 4.101D)
-    )
+    val shufflePushReadMetricDistributions =
+      new ShufflePushReadMetricDistributions(
+        corruptMergedBlockChunks = IndexedSeq(1.001d, 2.001d),
+        mergedFetchFallbackCount = IndexedSeq(2.011d, 3.01d),
+        remoteMergedBlocksFetched = IndexedSeq(1.101d, 2.1d),
+        localMergedBlocksFetched = IndexedSeq(3.01d, 3.101d),
+        remoteMergedChunksFetched = IndexedSeq(1.001d, 2.001d),
+        localMergedChunksFetched = IndexedSeq(2.110d, 3.101d),
+        remoteMergedBytesRead = IndexedSeq(1.001d, 2.001d),
+        localMergedBytesRead = IndexedSeq(4.101d, 3.011d),
+        remoteMergedReqsDuration = IndexedSeq(3.001d, 4.101d)
+      )
     val shuffleReadMetricDistributions = new ShuffleReadMetricDistributions(
-      readBytes = IndexedSeq(1.001D, 2.001D),
-      readRecords = IndexedSeq(3.001D, 4.001D),
-      remoteBlocksFetched = IndexedSeq(5.001D, 6.001D),
-      localBlocksFetched = IndexedSeq(7.001D, 8.001D),
-      fetchWaitTime = IndexedSeq(9.001D, 10.001D),
-      remoteBytesRead = IndexedSeq(11.001D, 12.001D),
-      remoteBytesReadToDisk = IndexedSeq(13.001D, 14.001D),
-      totalBlocksFetched = IndexedSeq(15.001D, 16.001D),
-      remoteReqsDuration = IndexedSeq(11.01D, 14.001D),
+      readBytes = IndexedSeq(1.001d, 2.001d),
+      readRecords = IndexedSeq(3.001d, 4.001d),
+      remoteBlocksFetched = IndexedSeq(5.001d, 6.001d),
+      localBlocksFetched = IndexedSeq(7.001d, 8.001d),
+      fetchWaitTime = IndexedSeq(9.001d, 10.001d),
+      remoteBytesRead = IndexedSeq(11.001d, 12.001d),
+      remoteBytesReadToDisk = IndexedSeq(13.001d, 14.001d),
+      totalBlocksFetched = IndexedSeq(15.001d, 16.001d),
+      remoteReqsDuration = IndexedSeq(11.01d, 14.001d),
       shufflePushReadMetricsDist = shufflePushReadMetricDistributions
     )
     val shuffleWriteMetricDistributions = new ShuffleWriteMetricDistributions(
-      writeBytes = IndexedSeq(1.001D, 2.001D),
-      writeRecords = IndexedSeq(3.001D, 4.001D),
-      writeTime = IndexedSeq(5.001D, 6.001D)
+      writeBytes = IndexedSeq(1.001d, 2.001d),
+      writeRecords = IndexedSeq(3.001d, 4.001d),
+      writeTime = IndexedSeq(5.001d, 6.001d)
     )
     val taskMetricDistributions = new TaskMetricDistributions(
-      quantiles = IndexedSeq(1.001D, 2.001D),
-      duration = IndexedSeq(3.001D, 4.001D),
-      executorDeserializeTime = IndexedSeq(5.001D, 6.001D),
-      executorDeserializeCpuTime = IndexedSeq(7.001D, 8.001D),
-      executorRunTime = IndexedSeq(9.001D, 10.001D),
-      executorCpuTime = IndexedSeq(11.001D, 12.001D),
-      resultSize = IndexedSeq(13.001D, 14.001D),
-      jvmGcTime = IndexedSeq(15.001D, 16.001D),
-      resultSerializationTime = IndexedSeq(17.001D, 18.001D),
-      gettingResultTime = IndexedSeq(19.001D, 20.001D),
-      schedulerDelay = IndexedSeq(21.001D, 22.001D),
-      peakExecutionMemory = IndexedSeq(23.001D, 24.001D),
-      memoryBytesSpilled = IndexedSeq(25.001D, 26.001D),
-      diskBytesSpilled = IndexedSeq(27.001D, 28.001D),
+      quantiles = IndexedSeq(1.001d, 2.001d),
+      duration = IndexedSeq(3.001d, 4.001d),
+      executorDeserializeTime = IndexedSeq(5.001d, 6.001d),
+      executorDeserializeCpuTime = IndexedSeq(7.001d, 8.001d),
+      executorRunTime = IndexedSeq(9.001d, 10.001d),
+      executorCpuTime = IndexedSeq(11.001d, 12.001d),
+      resultSize = IndexedSeq(13.001d, 14.001d),
+      jvmGcTime = IndexedSeq(15.001d, 16.001d),
+      resultSerializationTime = IndexedSeq(17.001d, 18.001d),
+      gettingResultTime = IndexedSeq(19.001d, 20.001d),
+      schedulerDelay = IndexedSeq(21.001d, 22.001d),
+      peakExecutionMemory = IndexedSeq(23.001d, 24.001d),
+      memoryBytesSpilled = IndexedSeq(25.001d, 26.001d),
+      diskBytesSpilled = IndexedSeq(27.001d, 28.001d),
       inputMetrics = inputMetricDistributions,
       outputMetrics = outputMetricDistributions,
       shuffleReadMetrics = shuffleReadMetricDistributions,
       shuffleWriteMetrics = shuffleWriteMetricDistributions
     )
     val executorPeakMetricsDistributions = new ExecutorPeakMetricsDistributions(
-      quantiles = IndexedSeq(1.001D, 2.001D),
+      quantiles = IndexedSeq(1.001d, 2.001d),
       executorMetrics = IndexedSeq(
-        new ExecutorMetrics(Array(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 1024L)))
+        new ExecutorMetrics(Array(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 1024L))
+      )
     )
     val executorMetricsDistributions = new ExecutorMetricsDistributions(
-      quantiles = IndexedSeq(1.001D, 2.001D),
-      taskTime = IndexedSeq(3.001D, 4.001D),
-      failedTasks = IndexedSeq(5.001D, 6.001D),
-      succeededTasks = IndexedSeq(7.001D, 8.001D),
-      killedTasks = IndexedSeq(9.001D, 10.001D),
-      inputBytes = IndexedSeq(11.001D, 12.001D),
-      inputRecords = IndexedSeq(13.001D, 14.001D),
-      outputBytes = IndexedSeq(15.001D, 16.001D),
-      outputRecords = IndexedSeq(17.001D, 18.001D),
-      shuffleRead = IndexedSeq(19.001D, 20.001D),
-      shuffleReadRecords = IndexedSeq(21.001D, 22.001D),
-      shuffleWrite = IndexedSeq(23.001D, 24.001D),
-      shuffleWriteRecords = IndexedSeq(25.001D, 24.001D),
-      memoryBytesSpilled = IndexedSeq(27.001D, 28.001D),
-      diskBytesSpilled = IndexedSeq(29.001D, 30.001D),
+      quantiles = IndexedSeq(1.001d, 2.001d),
+      taskTime = IndexedSeq(3.001d, 4.001d),
+      failedTasks = IndexedSeq(5.001d, 6.001d),
+      succeededTasks = IndexedSeq(7.001d, 8.001d),
+      killedTasks = IndexedSeq(9.001d, 10.001d),
+      inputBytes = IndexedSeq(11.001d, 12.001d),
+      inputRecords = IndexedSeq(13.001d, 14.001d),
+      outputBytes = IndexedSeq(15.001d, 16.001d),
+      outputRecords = IndexedSeq(17.001d, 18.001d),
+      shuffleRead = IndexedSeq(19.001d, 20.001d),
+      shuffleReadRecords = IndexedSeq(21.001d, 22.001d),
+      shuffleWrite = IndexedSeq(23.001d, 24.001d),
+      shuffleWriteRecords = IndexedSeq(25.001d, 24.001d),
+      memoryBytesSpilled = IndexedSeq(27.001d, 28.001d),
+      diskBytesSpilled = IndexedSeq(29.001d, 30.001d),
       peakMemoryMetrics = executorPeakMetricsDistributions
     )
     val info = new StageData(
@@ -1331,17 +1539,25 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
     assert(result.info.numCompletedIndices == input.info.numCompletedIndices)
 
     assert(result.info.submissionTime == input.info.submissionTime)
-    assert(result.info.firstTaskLaunchedTime == input.info.firstTaskLaunchedTime)
+    assert(
+      result.info.firstTaskLaunchedTime == input.info.firstTaskLaunchedTime
+    )
     assert(result.info.completionTime == input.info.completionTime)
     assert(result.info.failureReason == input.info.failureReason)
 
-    assert(result.info.executorDeserializeTime == input.info.executorDeserializeTime)
-    assert(result.info.executorDeserializeCpuTime == input.info.executorDeserializeCpuTime)
+    assert(
+      result.info.executorDeserializeTime == input.info.executorDeserializeTime
+    )
+    assert(
+      result.info.executorDeserializeCpuTime == input.info.executorDeserializeCpuTime
+    )
     assert(result.info.executorRunTime == input.info.executorRunTime)
     assert(result.info.executorCpuTime == input.info.executorCpuTime)
     assert(result.info.resultSize == input.info.resultSize)
     assert(result.info.jvmGcTime == input.info.jvmGcTime)
-    assert(result.info.resultSerializationTime == input.info.resultSerializationTime)
+    assert(
+      result.info.resultSerializationTime == input.info.resultSerializationTime
+    )
     assert(result.info.memoryBytesSpilled == input.info.memoryBytesSpilled)
     assert(result.info.diskBytesSpilled == input.info.diskBytesSpilled)
     assert(result.info.peakExecutionMemory == input.info.peakExecutionMemory)
@@ -1349,34 +1565,64 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
     assert(result.info.inputRecords == input.info.inputRecords)
     assert(result.info.outputBytes == input.info.outputBytes)
     assert(result.info.outputRecords == input.info.outputRecords)
-    assert(result.info.shuffleRemoteBlocksFetched == input.info.shuffleRemoteBlocksFetched)
-    assert(result.info.shuffleLocalBlocksFetched == input.info.shuffleLocalBlocksFetched)
+    assert(
+      result.info.shuffleRemoteBlocksFetched == input.info.shuffleRemoteBlocksFetched
+    )
+    assert(
+      result.info.shuffleLocalBlocksFetched == input.info.shuffleLocalBlocksFetched
+    )
     assert(result.info.shuffleFetchWaitTime == input.info.shuffleFetchWaitTime)
-    assert(result.info.shuffleRemoteBytesRead == input.info.shuffleRemoteBytesRead)
-    assert(result.info.shuffleRemoteBytesReadToDisk == input.info.shuffleRemoteBytesReadToDisk)
-    assert(result.info.shuffleLocalBytesRead == input.info.shuffleLocalBytesRead)
+    assert(
+      result.info.shuffleRemoteBytesRead == input.info.shuffleRemoteBytesRead
+    )
+    assert(
+      result.info.shuffleRemoteBytesReadToDisk == input.info.shuffleRemoteBytesReadToDisk
+    )
+    assert(
+      result.info.shuffleLocalBytesRead == input.info.shuffleLocalBytesRead
+    )
     assert(result.info.shuffleReadBytes == input.info.shuffleReadBytes)
     assert(result.info.shuffleReadRecords == input.info.shuffleReadRecords)
-    assert(result.info.shuffleCorruptMergedBlockChunks ==
-      input.info.shuffleCorruptMergedBlockChunks)
-    assert(result.info.shuffleMergedFetchFallbackCount ==
-      input.info.shuffleMergedFetchFallbackCount)
-    assert(result.info.shuffleMergedRemoteBlocksFetched ==
-      input.info.shuffleMergedRemoteBlocksFetched)
-    assert(result.info.shuffleMergedLocalBlocksFetched ==
-      input.info.shuffleMergedLocalBlocksFetched)
-    assert(result.info.shuffleMergedRemoteChunksFetched ==
-      input.info.shuffleMergedRemoteChunksFetched)
-    assert(result.info.shuffleMergedLocalChunksFetched ==
-      input.info.shuffleMergedLocalChunksFetched)
-    assert(result.info.shuffleMergedRemoteBytesRead ==
-      input.info.shuffleMergedRemoteBytesRead)
-    assert(result.info.shuffleMergedLocalBytesRead ==
-      input.info.shuffleMergedLocalBytesRead)
-    assert(result.info.shuffleRemoteReqsDuration ==
-      input.info.shuffleRemoteReqsDuration)
-    assert(result.info.shuffleMergedRemoteReqsDuration ==
-      input.info.shuffleMergedRemoteReqsDuration)
+    assert(
+      result.info.shuffleCorruptMergedBlockChunks ==
+        input.info.shuffleCorruptMergedBlockChunks
+    )
+    assert(
+      result.info.shuffleMergedFetchFallbackCount ==
+        input.info.shuffleMergedFetchFallbackCount
+    )
+    assert(
+      result.info.shuffleMergedRemoteBlocksFetched ==
+        input.info.shuffleMergedRemoteBlocksFetched
+    )
+    assert(
+      result.info.shuffleMergedLocalBlocksFetched ==
+        input.info.shuffleMergedLocalBlocksFetched
+    )
+    assert(
+      result.info.shuffleMergedRemoteChunksFetched ==
+        input.info.shuffleMergedRemoteChunksFetched
+    )
+    assert(
+      result.info.shuffleMergedLocalChunksFetched ==
+        input.info.shuffleMergedLocalChunksFetched
+    )
+    assert(
+      result.info.shuffleMergedRemoteBytesRead ==
+        input.info.shuffleMergedRemoteBytesRead
+    )
+    assert(
+      result.info.shuffleMergedLocalBytesRead ==
+        input.info.shuffleMergedLocalBytesRead
+    )
+    assert(
+      result.info.shuffleRemoteReqsDuration ==
+        input.info.shuffleRemoteReqsDuration
+    )
+    assert(
+      result.info.shuffleMergedRemoteReqsDuration ==
+        input.info.shuffleMergedRemoteReqsDuration
+    )
     assert(result.info.shuffleWriteBytes == input.info.shuffleWriteBytes)
     assert(result.info.shuffleWriteTime == input.info.shuffleWriteTime)
     assert(result.info.shuffleWriteRecords == input.info.shuffleWriteRecords)
@@ -1394,33 +1640,67 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
       checkIdTask(result.info.tasks.get, input.info.tasks.get)
     }
 
-    assert(result.info.executorSummary.isDefined == input.info.executorSummary.isDefined)
-    if (result.info.executorSummary.isDefined && input.info.executorSummary.isDefined) {
-      checkAnswer(result.info.executorSummary.get, input.info.executorSummary.get)
+    assert(
+      result.info.executorSummary.isDefined == input.info.executorSummary.isDefined
+    )
+    if (
+      result.info.executorSummary.isDefined && input.info.executorSummary.isDefined
+    ) {
+      checkAnswer(
+        result.info.executorSummary.get,
+        input.info.executorSummary.get
+      )
     }
 
-    assert(result.info.speculationSummary.isDefined == input.info.speculationSummary.isDefined)
-    if (result.info.speculationSummary.isDefined && input.info.speculationSummary.isDefined) {
-      checkAnswer(result.info.speculationSummary.get, input.info.speculationSummary.get)
+    assert(
+      result.info.speculationSummary.isDefined == input.info.speculationSummary.isDefined
+    )
+    if (
+      result.info.speculationSummary.isDefined && input.info.speculationSummary.isDefined
+    ) {
+      checkAnswer(
+        result.info.speculationSummary.get,
+        input.info.speculationSummary.get
+      )
     }
     assert(result.info.killedTasksSummary == input.info.killedTasksSummary)
     assert(result.info.resourceProfileId == input.info.resourceProfileId)
-    assert(result.info.peakExecutorMetrics.isDefined == input.info.peakExecutorMetrics.isDefined)
-    if (result.info.peakExecutorMetrics.isDefined && input.info.peakExecutorMetrics.isDefined) {
-      checkAnswer(result.info.peakExecutorMetrics.get, input.info.peakExecutorMetrics.get)
+    assert(
+      result.info.peakExecutorMetrics.isDefined == input.info.peakExecutorMetrics.isDefined
+    )
+    if (
+      result.info.peakExecutorMetrics.isDefined && input.info.peakExecutorMetrics.isDefined
+    ) {
+      checkAnswer(
+        result.info.peakExecutorMetrics.get,
+        input.info.peakExecutorMetrics.get
+      )
     }
-    assert(result.info.taskMetricsDistributions.isDefined ==
-      input.info.taskMetricsDistributions.isDefined)
-    if (result.info.taskMetricsDistributions.isDefined &&
-      input.info.taskMetricsDistributions.isDefined) {
-      checkAnswer(result.info.taskMetricsDistributions.get, input.info.taskMetricsDistributions.get)
+    assert(
+      result.info.taskMetricsDistributions.isDefined ==
+        input.info.taskMetricsDistributions.isDefined
+    )
+    if (
+      result.info.taskMetricsDistributions.isDefined &&
+      input.info.taskMetricsDistributions.isDefined
+    ) {
+      checkAnswer(
+        result.info.taskMetricsDistributions.get,
+        input.info.taskMetricsDistributions.get
+      )
     }
-    assert(result.info.executorMetricsDistributions.isDefined ==
-      input.info.executorMetricsDistributions.isDefined)
-    if (result.info.executorMetricsDistributions.isDefined &&
-      input.info.executorMetricsDistributions.isDefined) {
-      checkAnswer(result.info.executorMetricsDistributions.get,
-        input.info.executorMetricsDistributions.get)
+    assert(
+      result.info.executorMetricsDistributions.isDefined ==
+        input.info.executorMetricsDistributions.isDefined
+    )
+    if (
+      result.info.executorMetricsDistributions.isDefined &&
+      input.info.executorMetricsDistributions.isDefined
+    ) {
+      checkAnswer(
+        result.info.executorMetricsDistributions.get,
+        input.info.executorMetricsDistributions.get
+      )
     }
     assert(result.info.isShufflePushEnabled == input.info.isShufflePushEnabled)
     assert(result.info.shuffleMergersCount == input.info.shuffleMergersCount)
@@ -1452,7 +1732,9 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
 
   private def checkAnswer(result: TaskMetrics, expected: TaskMetrics): Unit = {
     assert(result.executorDeserializeTime == expected.executorDeserializeTime)
-    assert(result.executorDeserializeCpuTime == expected.executorDeserializeCpuTime)
+    assert(
+      result.executorDeserializeCpuTime == expected.executorDeserializeCpuTime
+    )
     assert(result.executorRunTime == expected.executorRunTime)
     assert(result.executorCpuTime == expected.executorCpuTime)
     assert(result.resultSize == expected.resultSize)
@@ -1467,17 +1749,26 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
     checkAnswer(result.shuffleWriteMetrics, expected.shuffleWriteMetrics)
   }
 
-  private def checkAnswer(result: InputMetrics, expected: InputMetrics): Unit = {
+  private def checkAnswer(
+      result: InputMetrics,
+      expected: InputMetrics
+  ): Unit = {
     assert(result.bytesRead == expected.bytesRead)
     assert(result.recordsRead == expected.recordsRead)
   }
 
-  private def checkAnswer(result: OutputMetrics, expected: OutputMetrics): Unit = {
+  private def checkAnswer(
+      result: OutputMetrics,
+      expected: OutputMetrics
+  ): Unit = {
     assert(result.bytesWritten == expected.bytesWritten)
     assert(result.recordsWritten == expected.recordsWritten)
   }
 
-  private def checkAnswer(result: ShuffleReadMetrics, expected: ShuffleReadMetrics): Unit = {
+  private def checkAnswer(
+      result: ShuffleReadMetrics,
+      expected: ShuffleReadMetrics
+  ): Unit = {
     assert(result.remoteBlocksFetched == expected.remoteBlocksFetched)
     assert(result.localBlocksFetched == expected.localBlocksFetched)
     assert(result.fetchWaitTime == expected.fetchWaitTime)
@@ -1489,27 +1780,38 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
     checkAnswer(result.shufflePushReadMetrics, expected.shufflePushReadMetrics)
   }
 
-  private def checkAnswer(result: ShufflePushReadMetrics,
-      expected: ShufflePushReadMetrics): Unit = {
+  private def checkAnswer(
+      result: ShufflePushReadMetrics,
+      expected: ShufflePushReadMetrics
+  ): Unit = {
     assert(result.corruptMergedBlockChunks == expected.corruptMergedBlockChunks)
     assert(result.mergedFetchFallbackCount == expected.mergedFetchFallbackCount)
-    assert(result.remoteMergedBlocksFetched == expected.remoteMergedBlocksFetched)
+    assert(
+      result.remoteMergedBlocksFetched == expected.remoteMergedBlocksFetched
+    )
     assert(result.localMergedBlocksFetched == expected.localMergedBlocksFetched)
-    assert(result.remoteMergedChunksFetched == expected.remoteMergedChunksFetched)
+    assert(
+      result.remoteMergedChunksFetched == expected.remoteMergedChunksFetched
+    )
     assert(result.localMergedChunksFetched == expected.localMergedChunksFetched)
     assert(result.remoteMergedBytesRead == expected.remoteMergedBytesRead)
     assert(result.localMergedBytesRead == expected.localMergedBytesRead)
     assert(result.remoteMergedReqsDuration == expected.remoteMergedReqsDuration)
   }
 
-  private def checkAnswer(result: ShuffleWriteMetrics, expected: ShuffleWriteMetrics): Unit = {
+  private def checkAnswer(
+      result: ShuffleWriteMetrics,
+      expected: ShuffleWriteMetrics
+  ): Unit = {
     assert(result.bytesWritten == expected.bytesWritten)
     assert(result.writeTime == expected.writeTime)
     assert(result.recordsWritten == expected.recordsWritten)
   }
 
-  private def checkAnswer(result: collection.Seq[AccumulableInfo],
-      expected: collection.Seq[AccumulableInfo]): Unit = {
+  private def checkAnswer(
+      result: collection.Seq[AccumulableInfo],
+      expected: collection.Seq[AccumulableInfo]
+  ): Unit = {
     assert(result.length == expected.length)
     result.zip(expected).foreach { case (a1, a2) =>
       assert(a1.id == a2.id)
@@ -1520,7 +1822,10 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
     }
   }
 
-  private def checkIdTask(result: Map[Long, TaskData], expected: Map[Long, TaskData]): Unit = {
+  private def checkIdTask(
+      result: Map[Long, TaskData],
+      expected: Map[Long, TaskData]
+  ): Unit = {
     assert(result.size == expected.size)
     assert(result.keys.size == expected.keys.size)
     result.keysIterator.foreach { k =>
@@ -1550,8 +1855,10 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
     }
   }
 
-  private def checkAnswer(result: Map[String, ExecutorStageSummary],
-      expected: Map[String, ExecutorStageSummary]): Unit = {
+  private def checkAnswer(
+      result: Map[String, ExecutorStageSummary],
+      expected: Map[String, ExecutorStageSummary]
+  ): Unit = {
     assert(result.size == expected.size)
     assert(result.keys.size == expected.keys.size)
     result.keysIterator.foreach { k =>
@@ -1560,8 +1867,10 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
     }
   }
 
-  private def checkAnswer(result: ExecutorStageSummary,
-      expected: ExecutorStageSummary): Unit = {
+  private def checkAnswer(
+      result: ExecutorStageSummary,
+      expected: ExecutorStageSummary
+  ): Unit = {
     assert(result.taskTime == expected.taskTime)
     assert(result.failedTasks == expected.failedTasks)
     assert(result.succeededTasks == expected.succeededTasks)
@@ -1578,14 +1887,20 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
     assert(result.diskBytesSpilled == expected.diskBytesSpilled)
     assert(result.isBlacklistedForStage == expected.isBlacklistedForStage)
     assert(result.isExcludedForStage == expected.isExcludedForStage)
-    assert(result.peakMemoryMetrics.isDefined == expected.peakMemoryMetrics.isDefined)
-    if (result.peakMemoryMetrics.isDefined && expected.peakMemoryMetrics.isDefined) {
+    assert(
+      result.peakMemoryMetrics.isDefined == expected.peakMemoryMetrics.isDefined
+    )
+    if (
+      result.peakMemoryMetrics.isDefined && expected.peakMemoryMetrics.isDefined
+    ) {
       checkAnswer(result.peakMemoryMetrics.get, expected.peakMemoryMetrics.get)
     }
   }
 
-  private def checkAnswer(result: SpeculationStageSummary,
-      expected: SpeculationStageSummary): Unit = {
+  private def checkAnswer(
+      result: SpeculationStageSummary,
+      expected: SpeculationStageSummary
+  ): Unit = {
     assert(result.numTasks == expected.numTasks)
     assert(result.numActiveTasks == expected.numActiveTasks)
     assert(result.numCompletedTasks == expected.numCompletedTasks)
@@ -1593,18 +1908,25 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
     assert(result.numKilledTasks == expected.numKilledTasks)
   }
 
-  private def checkAnswer(result: ExecutorMetrics, expected: ExecutorMetrics): Unit = {
+  private def checkAnswer(
+      result: ExecutorMetrics,
+      expected: ExecutorMetrics
+  ): Unit = {
     ExecutorMetricType.metricToOffset.foreach { case (name, _) =>
       result.getMetricValue(name) == expected.getMetricValue(name)
     }
   }
 
-  private def checkAnswer(result: TaskMetricDistributions,
-      expected: TaskMetricDistributions): Unit = {
+  private def checkAnswer(
+      result: TaskMetricDistributions,
+      expected: TaskMetricDistributions
+  ): Unit = {
     assert(result.quantiles == expected.quantiles)
     assert(result.duration == expected.duration)
     assert(result.executorDeserializeTime == expected.executorDeserializeTime)
-    assert(result.executorDeserializeCpuTime == expected.executorDeserializeCpuTime)
+    assert(
+      result.executorDeserializeCpuTime == expected.executorDeserializeCpuTime
+    )
     assert(result.executorRunTime == expected.executorRunTime)
     assert(result.executorCpuTime == expected.executorCpuTime)
     assert(result.resultSize == expected.resultSize)
@@ -1622,20 +1944,26 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
     checkAnswer(result.shuffleWriteMetrics, expected.shuffleWriteMetrics)
   }
 
-  private def checkAnswer(result: InputMetricDistributions,
-      expected: InputMetricDistributions): Unit = {
+  private def checkAnswer(
+      result: InputMetricDistributions,
+      expected: InputMetricDistributions
+  ): Unit = {
     assert(result.bytesRead == expected.bytesRead)
     assert(result.recordsRead == expected.recordsRead)
   }
 
-  private def checkAnswer(result: OutputMetricDistributions,
-      expected: OutputMetricDistributions): Unit = {
+  private def checkAnswer(
+      result: OutputMetricDistributions,
+      expected: OutputMetricDistributions
+  ): Unit = {
     assert(result.bytesWritten == expected.bytesWritten)
     assert(result.recordsWritten == expected.recordsWritten)
   }
 
-  private def checkAnswer(result: ShuffleReadMetricDistributions,
-      expected: ShuffleReadMetricDistributions): Unit = {
+  private def checkAnswer(
+      result: ShuffleReadMetricDistributions,
+      expected: ShuffleReadMetricDistributions
+  ): Unit = {
     assert(result.readBytes == expected.readBytes)
     assert(result.readRecords == expected.readRecords)
     assert(result.remoteBlocksFetched == expected.remoteBlocksFetched)
@@ -1645,31 +1973,44 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
     assert(result.remoteBytesReadToDisk == expected.remoteBytesReadToDisk)
     assert(result.totalBlocksFetched == expected.totalBlocksFetched)
     assert(result.remoteReqsDuration == expected.remoteReqsDuration)
-    checkAnswer(result.shufflePushReadMetricsDist, expected.shufflePushReadMetricsDist)
+    checkAnswer(
+      result.shufflePushReadMetricsDist,
+      expected.shufflePushReadMetricsDist
+    )
   }
 
-  private def checkAnswer(result: ShufflePushReadMetricDistributions,
-      expected: ShufflePushReadMetricDistributions): Unit = {
+  private def checkAnswer(
+      result: ShufflePushReadMetricDistributions,
+      expected: ShufflePushReadMetricDistributions
+  ): Unit = {
     assert(result.corruptMergedBlockChunks == expected.corruptMergedBlockChunks)
     assert(result.mergedFetchFallbackCount == expected.mergedFetchFallbackCount)
-    assert(result.remoteMergedBlocksFetched == expected.remoteMergedBlocksFetched)
+    assert(
+      result.remoteMergedBlocksFetched == expected.remoteMergedBlocksFetched
+    )
     assert(result.localMergedBlocksFetched == expected.localMergedBlocksFetched)
-    assert(result.remoteMergedChunksFetched == expected.remoteMergedChunksFetched)
+    assert(
+      result.remoteMergedChunksFetched == expected.remoteMergedChunksFetched
+    )
     assert(result.localMergedChunksFetched == expected.localMergedChunksFetched)
     assert(result.remoteMergedBytesRead == expected.remoteMergedBytesRead)
     assert(result.localMergedBytesRead == expected.localMergedBytesRead)
     assert(result.remoteMergedReqsDuration == expected.remoteMergedReqsDuration)
   }
 
-  private def checkAnswer(result: ShuffleWriteMetricDistributions,
-      expected: ShuffleWriteMetricDistributions): Unit = {
+  private def checkAnswer(
+      result: ShuffleWriteMetricDistributions,
+      expected: ShuffleWriteMetricDistributions
+  ): Unit = {
     assert(result.writeBytes == expected.writeBytes)
     assert(result.writeRecords == expected.writeRecords)
     assert(result.writeTime == expected.writeTime)
   }
 
-  private def checkAnswer(result: ExecutorMetricsDistributions,
-      expected: ExecutorMetricsDistributions): Unit = {
+  private def checkAnswer(
+      result: ExecutorMetricsDistributions,
+      expected: ExecutorMetricsDistributions
+  ): Unit = {
     assert(result.quantiles == expected.quantiles)
 
     assert(result.taskTime == expected.taskTime)
@@ -1689,12 +2030,15 @@ class KVStoreProtobufSerializerSuite extends SparkFunSuite {
     checkAnswer(result.peakMemoryMetrics, expected.peakMemoryMetrics)
   }
 
-  private def checkAnswer(result: ExecutorPeakMetricsDistributions,
-      expected: ExecutorPeakMetricsDistributions): Unit = {
+  private def checkAnswer(
+      result: ExecutorPeakMetricsDistributions,
+      expected: ExecutorPeakMetricsDistributions
+  ): Unit = {
     assert(result.quantiles == expected.quantiles)
     assert(result.executorMetrics.size == expected.executorMetrics.size)
-    result.executorMetrics.zip(expected.executorMetrics).foreach { case (a1, a2) =>
-      checkAnswer(a1, a2)
+    result.executorMetrics.zip(expected.executorMetrics).foreach {
+      case (a1, a2) =>
+        checkAnswer(a1, a2)
     }
   }
 }

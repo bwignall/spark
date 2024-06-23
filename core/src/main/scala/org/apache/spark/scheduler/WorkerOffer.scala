@@ -19,11 +19,9 @@ package org.apache.spark.scheduler
 
 import org.apache.spark.resource.ResourceProfile
 
-/**
- * Represents free resources available on an executor.
- */
-private[spark]
-case class WorkerOffer(
+/** Represents free resources available on an executor.
+  */
+private[spark] case class WorkerOffer(
     executorId: String,
     host: String,
     cores: Int,
@@ -31,4 +29,5 @@ case class WorkerOffer(
     // when multiple executors are launched on the same host.
     address: Option[String] = None,
     resources: ExecutorResourcesAmounts = ExecutorResourcesAmounts.empty,
-    resourceProfileId: Int = ResourceProfile.DEFAULT_RESOURCE_PROFILE_ID)
+    resourceProfileId: Int = ResourceProfile.DEFAULT_RESOURCE_PROFILE_ID
+)

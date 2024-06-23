@@ -25,15 +25,18 @@ import org.apache.spark.internal.config.Tests._
 import org.apache.spark.storage.TestBlockId
 import org.apache.spark.storage.memory.MemoryStore
 
-class UnifiedMemoryManagerSuite extends MemoryManagerSuite with PrivateMethodTester {
+class UnifiedMemoryManagerSuite
+    extends MemoryManagerSuite
+    with PrivateMethodTester {
   private val dummyBlock = TestBlockId("--")
 
   private val storageFraction: Double = 0.5
 
-  /**
-   * Make a [[UnifiedMemoryManager]] and a [[MemoryStore]] with limited class dependencies.
-   */
-  private def makeThings(maxMemory: Long): (UnifiedMemoryManager, MemoryStore) = {
+  /** Make a [[UnifiedMemoryManager]] and a [[MemoryStore]] with limited class dependencies.
+    */
+  private def makeThings(
+      maxMemory: Long
+  ): (UnifiedMemoryManager, MemoryStore) = {
     val mm = createMemoryManager(maxMemory)
     val ms = makeMemoryStore(mm)
     (mm, ms)
@@ -41,7 +44,8 @@ class UnifiedMemoryManagerSuite extends MemoryManagerSuite with PrivateMethodTes
 
   override protected def createMemoryManager(
       maxOnHeapExecutionMemory: Long,
-      maxOffHeapExecutionMemory: Long): UnifiedMemoryManager = {
+      maxOffHeapExecutionMemory: Long
+  ): UnifiedMemoryManager = {
     val conf = new SparkConf()
       .set(MEMORY_FRACTION, 1.0)
       .set(TEST_MEMORY, maxOnHeapExecutionMemory)
@@ -144,7 +148,10 @@ class UnifiedMemoryManagerSuite extends MemoryManagerSuite with PrivateMethodTes
     evictedBlocks.clear()
     mm.releaseAllStorageMemory()
     require(mm.executionMemoryUsed === 300L)
-    require(mm.storageMemoryUsed === 0, "bad test: all storage memory should have been released")
+    require(
+      mm.storageMemoryUsed === 0,
+      "bad test: all storage memory should have been released"
+    )
     // Acquire some storage memory again, but this time keep it within the storage region
     assert(mm.acquireStorageMemory(dummyBlock, 400L, memoryMode))
     assertEvictBlocksToFreeSpaceNotCalled(ms)
@@ -158,7 +165,9 @@ class UnifiedMemoryManagerSuite extends MemoryManagerSuite with PrivateMethodTes
     assertEvictBlocksToFreeSpaceNotCalled(ms)
   }
 
-  test("execution memory requests smaller than free memory should evict storage (SPARK-12165)") {
+  test(
+    "execution memory requests smaller than free memory should evict storage (SPARK-12165)"
+  ) {
     val maxMemory = 1000L
     val taskAttemptId = 0L
     val (mm, ms) = makeThings(maxMemory)
@@ -228,7 +237,8 @@ class UnifiedMemoryManagerSuite extends MemoryManagerSuite with PrivateMethodTes
       .set(TEST_RESERVED_MEMORY, reservedMemory)
 
     val mm = UnifiedMemoryManager(conf, numCores = 1)
-    val expectedMaxMemory = ((systemMemory - reservedMemory) * memoryFraction).toLong
+    val expectedMaxMemory =
+      ((systemMemory - reservedMemory) * memoryFraction).toLong
     assert(mm.maxHeapMemory === expectedMaxMemory)
 
     // Try using a system memory that's too small
@@ -251,14 +261,17 @@ class UnifiedMemoryManagerSuite extends MemoryManagerSuite with PrivateMethodTes
     val mm = UnifiedMemoryManager(conf, numCores = 1)
 
     // Try using an executor memory that's too small
-    val conf2 = conf.clone().set(EXECUTOR_MEMORY.key, (reservedMemory / 2).toString)
+    val conf2 =
+      conf.clone().set(EXECUTOR_MEMORY.key, (reservedMemory / 2).toString)
     val exception = intercept[IllegalArgumentException] {
       UnifiedMemoryManager(conf2, numCores = 1)
     }
     assert(exception.getMessage.contains("increase executor memory"))
   }
 
-  test("execution can evict cached blocks when there are multiple active tasks (SPARK-12155)") {
+  test(
+    "execution can evict cached blocks when there are multiple active tasks (SPARK-12155)"
+  ) {
     val conf = new SparkConf()
       .set(MEMORY_FRACTION, 1.0)
       .set(MEMORY_STORAGE_FRACTION, 0.0)

@@ -33,17 +33,15 @@ import org.apache.spark.resource.ResourceInformation
 import org.apache.spark.shuffle.FetchFailedException
 import org.apache.spark.util._
 
-
-/**
- * A [[TaskContext]] implementation.
- *
- * A small note on thread safety. The interrupted & fetchFailed fields are volatile, this makes
- * sure that updates are always visible across threads. The complete & failed flags and their
- * callbacks are protected by locking on the context instance. For instance, this ensures
- * that you cannot add a completion listener in one thread while we are completing in another
- * thread. Other state is immutable, however the exposed `TaskMetrics` & `MetricsSystem` objects are
- * not thread safe.
- */
+/** A [[TaskContext]] implementation.
+  *
+  * A small note on thread safety. The interrupted & fetchFailed fields are volatile, this makes
+  * sure that updates are always visible across threads. The complete & failed flags and their
+  * callbacks are protected by locking on the context instance. For instance, this ensures
+  * that you cannot add a completion listener in one thread while we are completing in another
+  * thread. Other state is immutable, however the exposed `TaskMetrics` & `MetricsSystem` objects are
+  * not thread safe.
+  */
 private[spark] class TaskContextImpl(
     override val stageId: Int,
     override val stageAttemptNumber: Int,
@@ -57,27 +55,26 @@ private[spark] class TaskContextImpl(
     // The default value is only used in tests.
     override val taskMetrics: TaskMetrics = TaskMetrics.empty,
     override val cpus: Int = SparkEnv.get.conf.get(config.CPUS_PER_TASK),
-    override val resources: Map[String, ResourceInformation] = Map.empty)
-  extends TaskContext
-  with Logging {
+    override val resources: Map[String, ResourceInformation] = Map.empty
+) extends TaskContext
+    with Logging {
 
-  /**
-   * List of callback functions to execute when the task completes.
-   *
-   * Using a stack causes us to process listeners in reverse order of registration. As listeners are
-   * invoked, they are popped from the stack.
-   */
+  /** List of callback functions to execute when the task completes.
+    *
+    * Using a stack causes us to process listeners in reverse order of registration. As listeners are
+    * invoked, they are popped from the stack.
+    */
   @transient private val onCompleteCallbacks = new Stack[TaskCompletionListener]
 
   /** List of callback functions to execute when the task fails. */
   @transient private val onFailureCallbacks = new Stack[TaskFailureListener]
 
-  /**
-   * The thread currently executing task completion or failure listeners, if any.
-   *
-   * `invokeListeners()` uses this to ensure listeners are called sequentially.
-   */
-  @transient @volatile private var listenerInvocationThread: Option[Thread] = None
+  /** The thread currently executing task completion or failure listeners, if any.
+    *
+    * `invokeListeners()` uses this to ensure listeners are called sequentially.
+    */
+  @transient @volatile private var listenerInvocationThread: Option[Thread] =
+    None
 
   // If defined, the corresponding task has been killed and this option contains the reason.
   @volatile private var reasonIfKilled: Option[String] = None
@@ -91,9 +88,12 @@ private[spark] class TaskContextImpl(
 
   // If there was a fetch failure in the task, we store it here, to make sure user-code doesn't
   // hide the exception.  See SPARK-19276
-  @volatile private var _fetchFailedException: Option[FetchFailedException] = None
+  @volatile private var _fetchFailedException: Option[FetchFailedException] =
+    None
 
-  override def addTaskCompletionListener(listener: TaskCompletionListener): this.type = {
+  override def addTaskCompletionListener(
+      listener: TaskCompletionListener
+  ): this.type = {
     val needToCallListener = synchronized {
       // If there is already a thread invoking listeners, adding the new listener to
       // `onCompleteCallbacks` will cause that thread to execute the new listener, and the call to
@@ -110,7 +110,9 @@ private[spark] class TaskContextImpl(
     this
   }
 
-  override def addTaskFailureListener(listener: TaskFailureListener): this.type = {
+  override def addTaskFailureListener(
+      listener: TaskFailureListener
+  ): this.type = {
     synchronized {
       onFailureCallbacks.push(listener)
       failureCauseOpt
@@ -130,7 +132,9 @@ private[spark] class TaskContextImpl(
     invokeTaskFailureListeners(error)
   }
 
-  private[spark] override def markTaskCompleted(error: Option[Throwable]): Unit = {
+  private[spark] override def markTaskCompleted(
+      error: Option[Throwable]
+  ): Unit = {
     synchronized {
       if (completed) return
       completed = true
@@ -157,8 +161,8 @@ private[spark] class TaskContextImpl(
   private def invokeListeners[T](
       listeners: Stack[T],
       name: String,
-      error: Option[Throwable])(
-      callback: T => Unit): Unit = {
+      error: Option[Throwable]
+  )(callback: T => Unit): Unit = {
     // This method is subject to two constraints:
     //
     // 1. Listeners must be run sequentially to uphold the guarantee provided by the TaskContext
@@ -194,7 +198,10 @@ private[spark] class TaskContextImpl(
 
     val listenerExceptions = new ArrayBuffer[Throwable](2)
     var listenerOption: Option[T] = None
-    while ({listenerOption = getNextListenerOrDeregisterThread(); listenerOption.nonEmpty}) {
+    while ({
+      listenerOption = getNextListenerOrDeregisterThread();
+      listenerOption.nonEmpty
+    }) {
       val listener = listenerOption.get
       try {
         callback(listener)
@@ -252,7 +259,9 @@ private[spark] class TaskContextImpl(
     }
     if (listenerExceptions.nonEmpty) {
       val exception = new TaskCompletionListenerException(
-        listenerExceptions.map(_.getMessage).toSeq, error)
+        listenerExceptions.map(_.getMessage).toSeq,
+        error
+      )
       listenerExceptions.foreach(exception.addSuppressed)
       throw exception
     }
@@ -280,20 +289,26 @@ private[spark] class TaskContextImpl(
 
   override def isInterrupted(): Boolean = reasonIfKilled.isDefined
 
-  override def getLocalProperty(key: String): String = localProperties.getProperty(key)
+  override def getLocalProperty(key: String): String =
+    localProperties.getProperty(key)
 
   override def getMetricsSources(sourceName: String): Seq[Source] =
     metricsSystem.getSourcesByName(sourceName)
 
-  private[spark] override def registerAccumulator(a: AccumulatorV2[_, _]): Unit = {
+  private[spark] override def registerAccumulator(
+      a: AccumulatorV2[_, _]
+  ): Unit = {
     taskMetrics.registerAccumulator(a)
   }
 
-  private[spark] override def setFetchFailed(fetchFailed: FetchFailedException): Unit = {
+  private[spark] override def setFetchFailed(
+      fetchFailed: FetchFailedException
+  ): Unit = {
     this._fetchFailedException = Option(fetchFailed)
   }
 
-  private[spark] override def fetchFailed: Option[FetchFailedException] = _fetchFailedException
+  private[spark] override def fetchFailed: Option[FetchFailedException] =
+    _fetchFailedException
 
   private[spark] override def getLocalProperties: Properties = localProperties
 }

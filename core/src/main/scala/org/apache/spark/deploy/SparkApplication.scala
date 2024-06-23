@@ -21,27 +21,28 @@ import java.lang.reflect.Modifier
 
 import org.apache.spark.SparkConf
 
-/**
- * Entry point for a Spark application. Implementations must provide a no-argument constructor.
- */
+/** Entry point for a Spark application. Implementations must provide a no-argument constructor.
+  */
 private[spark] trait SparkApplication {
 
   def start(args: Array[String], conf: SparkConf): Unit
 
 }
 
-/**
- * Implementation of SparkApplication that wraps a standard Java class with a "main" method.
- *
- * Configuration is propagated to the application via system properties, so running multiple
- * of these in the same JVM may lead to undefined behavior due to configuration leaks.
- */
-private[deploy] class JavaMainApplication(klass: Class[_]) extends SparkApplication {
+/** Implementation of SparkApplication that wraps a standard Java class with a "main" method.
+  *
+  * Configuration is propagated to the application via system properties, so running multiple
+  * of these in the same JVM may lead to undefined behavior due to configuration leaks.
+  */
+private[deploy] class JavaMainApplication(klass: Class[_])
+    extends SparkApplication {
 
   override def start(args: Array[String], conf: SparkConf): Unit = {
     val mainMethod = klass.getMethod("main", new Array[String](0).getClass)
     if (!Modifier.isStatic(mainMethod.getModifiers)) {
-      throw new IllegalStateException("The main method in the given main class must be static")
+      throw new IllegalStateException(
+        "The main method in the given main class must be static"
+      )
     }
 
     val sysProps = conf.getAll.toMap

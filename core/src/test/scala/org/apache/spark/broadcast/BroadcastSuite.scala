@@ -40,16 +40,22 @@ class DummyBroadcastClass(rdd: RDD[Int]) extends Serializable {
   val bid = broadcast.id
 
   def doSomething(): Set[(Int, Boolean)] = {
-    rdd.map { x =>
-      val bm = SparkEnv.get.blockManager
-      // Check if broadcast block was fetched
-      val isFound = bm.getLocalValues(BroadcastBlockId(bid)).isDefined
-      (x, isFound)
-    }.collect().toSet
+    rdd
+      .map { x =>
+        val bm = SparkEnv.get.blockManager
+        // Check if broadcast block was fetched
+        val isFound = bm.getLocalValues(BroadcastBlockId(bid)).isDefined
+        (x, isFound)
+      }
+      .collect()
+      .toSet
   }
 }
 
-class BroadcastSuite extends SparkFunSuite with LocalSparkContext with EncryptionFunSuite {
+class BroadcastSuite
+    extends SparkFunSuite
+    with LocalSparkContext
+    with EncryptionFunSuite {
 
   test("Using TorrentBroadcast locally") {
     sc = new SparkContext("local", "test")
@@ -67,15 +73,23 @@ class BroadcastSuite extends SparkFunSuite with LocalSparkContext with Encryptio
     assert(results.collect().toSet === (1 to 10).map(x => (x, 10)).toSet)
   }
 
-  encryptionTest("Accessing TorrentBroadcast variables in a local cluster") { conf =>
-    val numWorkers = 4
-    conf.set(SERIALIZER, "org.apache.spark.serializer.KryoSerializer")
-    conf.set(config.BROADCAST_COMPRESS, true)
-    sc = new SparkContext("local-cluster[%d, 1, 1024]".format(numWorkers), "test", conf)
-    val list = List[Int](1, 2, 3, 4)
-    val broadcast = sc.broadcast(list)
-    val results = sc.parallelize(1 to numWorkers).map(x => (x, broadcast.value.sum))
-    assert(results.collect().toSet === (1 to numWorkers).map(x => (x, 10)).toSet)
+  encryptionTest("Accessing TorrentBroadcast variables in a local cluster") {
+    conf =>
+      val numWorkers = 4
+      conf.set(SERIALIZER, "org.apache.spark.serializer.KryoSerializer")
+      conf.set(config.BROADCAST_COMPRESS, true)
+      sc = new SparkContext(
+        "local-cluster[%d, 1, 1024]".format(numWorkers),
+        "test",
+        conf
+      )
+      val list = List[Int](1, 2, 3, 4)
+      val broadcast = sc.broadcast(list)
+      val results =
+        sc.parallelize(1 to numWorkers).map(x => (x, broadcast.value.sum))
+      assert(
+        results.collect().toSet === (1 to numWorkers).map(x => (x, 10)).toSet
+      )
   }
 
   test("TorrentBroadcast's blockifyObject and unblockifyObject are inverses") {
@@ -90,17 +104,20 @@ class BroadcastSuite extends SparkFunSuite with LocalSparkContext with Encryptio
       val size = 1 + rand.nextInt(1024 * 10)
       val data: Array[Byte] = new Array[Byte](size)
       rand.nextBytes(data)
-      val blocks = blockifyObject(data, blockSize, serializer, compressionCodec).map { b =>
-        new ChunkedByteBuffer(b).toInputStream(dispose = true)
-      }
-      val unblockified = unBlockifyObject[Array[Byte]](blocks, serializer, compressionCodec)
+      val blocks =
+        blockifyObject(data, blockSize, serializer, compressionCodec).map { b =>
+          new ChunkedByteBuffer(b).toInputStream(dispose = true)
+        }
+      val unblockified =
+        unBlockifyObject[Array[Byte]](blocks, serializer, compressionCodec)
       assert(unblockified === data)
     }
   }
 
   test("Test Lazy Broadcast variables with TorrentBroadcast") {
     val numWorkers = 2
-    sc = new SparkContext("local-cluster[%d, 1, 1024]".format(numWorkers), "test")
+    sc =
+      new SparkContext("local-cluster[%d, 1, 1024]".format(numWorkers), "test")
     val rdd = sc.parallelize(1 to numWorkers)
     val results = new DummyBroadcastClass(rdd).doSomething()
 
@@ -119,7 +136,9 @@ class BroadcastSuite extends SparkFunSuite with LocalSparkContext with Encryptio
     testUnpersistTorrentBroadcast(distributed = true, removeFromDriver = false)
   }
 
-  test("Unpersisting TorrentBroadcast on executors and driver in distributed mode") {
+  test(
+    "Unpersisting TorrentBroadcast on executors and driver in distributed mode"
+  ) {
     testUnpersistTorrentBroadcast(distributed = true, removeFromDriver = true)
   }
 
@@ -128,7 +147,9 @@ class BroadcastSuite extends SparkFunSuite with LocalSparkContext with Encryptio
     testPackage.runCallSiteTest(sc)
   }
 
-  test("Broadcast variables cannot be created after SparkContext is stopped (SPARK-5065)") {
+  test(
+    "Broadcast variables cannot be created after SparkContext is stopped (SPARK-5065)"
+  ) {
     sc = new SparkContext("local", "test")
     sc.stop()
     val thrown = intercept[IllegalStateException] {
@@ -145,7 +166,8 @@ class BroadcastSuite extends SparkFunSuite with LocalSparkContext with Encryptio
   }
 
   encryptionTest("Cache broadcast to disk") { conf =>
-    conf.setMaster("local")
+    conf
+      .setMaster("local")
       .setAppName("test")
       .set(config.MEMORY_STORAGE_FRACTION, 0.0)
     sc = new SparkContext(conf)
@@ -162,7 +184,8 @@ class BroadcastSuite extends SparkFunSuite with LocalSparkContext with Encryptio
     sc = new SparkContext(conf)
     val list = List[Int](1, 2, 3, 4)
     val broadcast = sc.broadcast(list)
-    val instances = sc.parallelize(1 to 10)
+    val instances = sc
+      .parallelize(1 to 10)
       .map(x => System.identityHashCode(broadcast.value))
       .collect()
       .toSet
@@ -179,7 +202,8 @@ class BroadcastSuite extends SparkFunSuite with LocalSparkContext with Encryptio
     sc = new SparkContext(conf)
     val list = List[Int](1, 2, 3, 4)
     val broadcast = sc.broadcast(list)
-    val instances = sc.parallelize(1 to 10)
+    val instances = sc
+      .parallelize(1 to 10)
       .map(x => System.identityHashCode(broadcast.value))
       .collect()
       .toSet
@@ -206,15 +230,16 @@ class BroadcastSuite extends SparkFunSuite with LocalSparkContext with Encryptio
     }
   }
 
-  /**
-   * Verify the persistence of state associated with a TorrentBroadcast in a local-cluster.
-   *
-   * This test creates a broadcast variable, uses it on all executors, and then unpersists it.
-   * In between each step, this test verifies that the broadcast blocks are present only on the
-   * expected nodes.
-   */
-  private def testUnpersistTorrentBroadcast(distributed: Boolean,
-      removeFromDriver: Boolean): Unit = {
+  /** Verify the persistence of state associated with a TorrentBroadcast in a local-cluster.
+    *
+    * This test creates a broadcast variable, uses it on all executors, and then unpersists it.
+    * In between each step, this test verifies that the broadcast blocks are present only on the
+    * expected nodes.
+    */
+  private def testUnpersistTorrentBroadcast(
+      distributed: Boolean,
+      removeFromDriver: Boolean
+  ): Unit = {
     val numWorkers = if (distributed) 2 else 0
 
     // Verify that blocks are persisted only on the driver
@@ -229,7 +254,10 @@ class BroadcastSuite extends SparkFunSuite with LocalSparkContext with Encryptio
     }
 
     // Verify that blocks are persisted in both the executors and the driver
-    def afterUsingBroadcast(broadcastId: Long, bmm: BlockManagerMaster): Unit = {
+    def afterUsingBroadcast(
+        broadcastId: Long,
+        bmm: BlockManagerMaster
+    ): Unit = {
       var blockId = BroadcastBlockId(broadcastId)
       val statuses = bmm.getBlockStatus(blockId, askStorageEndpoints = true)
       assert(statuses.size === numWorkers + 1)
@@ -252,30 +280,39 @@ class BroadcastSuite extends SparkFunSuite with LocalSparkContext with Encryptio
       assert(statuses.size === expectedNumBlocks)
     }
 
-    testUnpersistBroadcast(distributed, numWorkers, afterCreation,
-      afterUsingBroadcast, afterUnpersist, removeFromDriver)
+    testUnpersistBroadcast(
+      distributed,
+      numWorkers,
+      afterCreation,
+      afterUsingBroadcast,
+      afterUnpersist,
+      removeFromDriver
+    )
   }
 
-  /**
-   * This test runs in 4 steps:
-   *
-   * 1) Create broadcast variable, and verify that all state is persisted on the driver.
-   * 2) Use the broadcast variable on all executors, and verify that all state is persisted
-   *    on both the driver and the executors.
-   * 3) Unpersist the broadcast, and verify that all state is removed where they should be.
-   * 4) [Optional] If removeFromDriver is false, we verify that the broadcast is re-usable.
-   */
+  /** This test runs in 4 steps:
+    *
+    * 1) Create broadcast variable, and verify that all state is persisted on the driver.
+    * 2) Use the broadcast variable on all executors, and verify that all state is persisted
+    *    on both the driver and the executors.
+    * 3) Unpersist the broadcast, and verify that all state is removed where they should be.
+    * 4) [Optional] If removeFromDriver is false, we verify that the broadcast is re-usable.
+    */
   private def testUnpersistBroadcast(
       distributed: Boolean,
-      numWorkers: Int,  // used only when distributed = true
+      numWorkers: Int, // used only when distributed = true
       afterCreation: (Long, BlockManagerMaster) => Unit,
       afterUsingBroadcast: (Long, BlockManagerMaster) => Unit,
       afterUnpersist: (Long, BlockManagerMaster) => Unit,
-      removeFromDriver: Boolean): Unit = {
+      removeFromDriver: Boolean
+  ): Unit = {
 
     sc = if (distributed) {
       val _sc =
-        new SparkContext("local-cluster[%d, 1, 1024]".format(numWorkers), "test")
+        new SparkContext(
+          "local-cluster[%d, 1, 1024]".format(numWorkers),
+          "test"
+        )
       // Wait until all salves are up
       try {
         TestUtils.waitUntilExecutorsUp(_sc, numWorkers, 60000)
@@ -298,8 +335,14 @@ class BroadcastSuite extends SparkFunSuite with LocalSparkContext with Encryptio
     // Use broadcast variable on all executors
     val partitions = 10
     assert(partitions > numWorkers)
-    val results = sc.parallelize(1 to partitions, partitions).map(x => (x, broadcast.value.sum))
-    assert(results.collect().toSet === (1 to partitions).map(x => (x, list.sum)).toSet)
+    val results = sc
+      .parallelize(1 to partitions, partitions)
+      .map(x => (x, broadcast.value.sum))
+    assert(
+      results.collect().toSet === (1 to partitions)
+        .map(x => (x, list.sum))
+        .toSet
+    )
     afterUsingBroadcast(broadcast.id, blockManagerMaster)
 
     // Unpersist broadcast
@@ -318,15 +361,23 @@ class BroadcastSuite extends SparkFunSuite with LocalSparkContext with Encryptio
       val e1 = intercept[SparkException] { broadcast.value }
       assert(e1.isInternalError)
       assert(e1.getErrorClass == "INTERNAL_ERROR_BROADCAST")
-      val e2 = intercept[SparkException] { broadcast.unpersist(blocking = true) }
+      val e2 = intercept[SparkException] {
+        broadcast.unpersist(blocking = true)
+      }
       assert(e2.isInternalError)
       assert(e2.getErrorClass == "INTERNAL_ERROR_BROADCAST")
       val e3 = intercept[SparkException] { broadcast.destroy(blocking = true) }
       assert(e3.isInternalError)
       assert(e3.getErrorClass == "INTERNAL_ERROR_BROADCAST")
     } else {
-      val results = sc.parallelize(1 to partitions, partitions).map(x => (x, broadcast.value.sum))
-      assert(results.collect().toSet === (1 to partitions).map(x => (x, list.sum)).toSet)
+      val results = sc
+        .parallelize(1 to partitions, partitions)
+        .map(x => (x, broadcast.value.sum))
+      assert(
+        results.collect().toSet === (1 to partitions)
+          .map(x => (x, list.sum))
+          .toSet
+      )
     }
   }
 }

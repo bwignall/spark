@@ -23,12 +23,11 @@ import org.apache.spark._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.util.{AccumulatorV2, CallSite}
 
-/**
- * Types of events that can be handled by the DAGScheduler. The DAGScheduler uses an event queue
- * architecture where any thread can post an event (e.g. a task finishing or a new job being
- * submitted) but there is a single "logic" thread that reads these events and takes decisions.
- * This greatly simplifies synchronization.
- */
+/** Types of events that can be handled by the DAGScheduler. The DAGScheduler uses an event queue
+  * architecture where any thread can post an event (e.g. a task finishing or a new job being
+  * submitted) but there is a single "logic" thread that reads these events and takes decisions.
+  * This greatly simplifies synchronization.
+  */
 private[scheduler] sealed trait DAGSchedulerEvent
 
 /** A result-yielding job was submitted on a target RDD */
@@ -40,43 +39,42 @@ private[scheduler] case class JobSubmitted(
     callSite: CallSite,
     listener: JobListener,
     artifactSet: JobArtifactSet,
-    properties: Properties = null)
-  extends DAGSchedulerEvent
+    properties: Properties = null
+) extends DAGSchedulerEvent
 
 /** A map stage as submitted to run as a separate job */
 private[scheduler] case class MapStageSubmitted(
-  jobId: Int,
-  dependency: ShuffleDependency[_, _, _],
-  callSite: CallSite,
-  listener: JobListener,
-  artifactSet: JobArtifactSet,
-  properties: Properties = null)
-  extends DAGSchedulerEvent
+    jobId: Int,
+    dependency: ShuffleDependency[_, _, _],
+    callSite: CallSite,
+    listener: JobListener,
+    artifactSet: JobArtifactSet,
+    properties: Properties = null
+) extends DAGSchedulerEvent
 
 private[scheduler] case class StageCancelled(
     stageId: Int,
-    reason: Option[String])
-  extends DAGSchedulerEvent
+    reason: Option[String]
+) extends DAGSchedulerEvent
 
-private[scheduler] case class JobCancelled(
-    jobId: Int,
-    reason: Option[String])
-  extends DAGSchedulerEvent
+private[scheduler] case class JobCancelled(jobId: Int, reason: Option[String])
+    extends DAGSchedulerEvent
 
 private[scheduler] case class JobGroupCancelled(
     groupId: String,
-    cancelFutureJobs: Boolean = false)
-  extends DAGSchedulerEvent
+    cancelFutureJobs: Boolean = false
+) extends DAGSchedulerEvent
 
-private[scheduler] case class JobTagCancelled(tagName: String) extends DAGSchedulerEvent
+private[scheduler] case class JobTagCancelled(tagName: String)
+    extends DAGSchedulerEvent
 
 private[scheduler] case object AllJobsCancelled extends DAGSchedulerEvent
 
-private[scheduler]
-case class BeginEvent(task: Task[_], taskInfo: TaskInfo) extends DAGSchedulerEvent
+private[scheduler] case class BeginEvent(task: Task[_], taskInfo: TaskInfo)
+    extends DAGSchedulerEvent
 
-private[scheduler]
-case class GettingResultEvent(taskInfo: TaskInfo) extends DAGSchedulerEvent
+private[scheduler] case class GettingResultEvent(taskInfo: TaskInfo)
+    extends DAGSchedulerEvent
 
 private[scheduler] case class CompletionEvent(
     task: Task[_],
@@ -84,45 +82,62 @@ private[scheduler] case class CompletionEvent(
     result: Any,
     accumUpdates: Seq[AccumulatorV2[_, _]],
     metricPeaks: Array[Long],
-    taskInfo: TaskInfo)
-  extends DAGSchedulerEvent
+    taskInfo: TaskInfo
+) extends DAGSchedulerEvent
 
-private[scheduler] case class ExecutorAdded(execId: String, host: String) extends DAGSchedulerEvent
+private[scheduler] case class ExecutorAdded(execId: String, host: String)
+    extends DAGSchedulerEvent
 
-private[scheduler] case class ExecutorLost(execId: String, reason: ExecutorLossReason)
-  extends DAGSchedulerEvent
+private[scheduler] case class ExecutorLost(
+    execId: String,
+    reason: ExecutorLossReason
+) extends DAGSchedulerEvent
 
-private[scheduler] case class WorkerRemoved(workerId: String, host: String, message: String)
-  extends DAGSchedulerEvent
+private[scheduler] case class WorkerRemoved(
+    workerId: String,
+    host: String,
+    message: String
+) extends DAGSchedulerEvent
 
-private[scheduler]
-case class StageFailed(stageId: Int, reason: String, exception: Option[Throwable])
-  extends DAGSchedulerEvent
+private[scheduler] case class StageFailed(
+    stageId: Int,
+    reason: String,
+    exception: Option[Throwable]
+) extends DAGSchedulerEvent
 
-private[scheduler]
-case class TaskSetFailed(taskSet: TaskSet, reason: String, exception: Option[Throwable])
-  extends DAGSchedulerEvent
+private[scheduler] case class TaskSetFailed(
+    taskSet: TaskSet,
+    reason: String,
+    exception: Option[Throwable]
+) extends DAGSchedulerEvent
 
 private[scheduler] case object ResubmitFailedStages extends DAGSchedulerEvent
 
-private[scheduler]
-case class SpeculativeTaskSubmitted(task: Task[_], taskIndex: Int = -1) extends DAGSchedulerEvent
+private[scheduler] case class SpeculativeTaskSubmitted(
+    task: Task[_],
+    taskIndex: Int = -1
+) extends DAGSchedulerEvent
 
-private[scheduler]
-case class UnschedulableTaskSetAdded(stageId: Int, stageAttemptId: Int)
-  extends DAGSchedulerEvent
+private[scheduler] case class UnschedulableTaskSetAdded(
+    stageId: Int,
+    stageAttemptId: Int
+) extends DAGSchedulerEvent
 
-private[scheduler]
-case class UnschedulableTaskSetRemoved(stageId: Int, stageAttemptId: Int)
-  extends DAGSchedulerEvent
+private[scheduler] case class UnschedulableTaskSetRemoved(
+    stageId: Int,
+    stageAttemptId: Int
+) extends DAGSchedulerEvent
 
 private[scheduler] case class RegisterMergeStatuses(
-    stage: ShuffleMapStage, mergeStatuses: Seq[(Int, MergeStatus)])
-  extends DAGSchedulerEvent
+    stage: ShuffleMapStage,
+    mergeStatuses: Seq[(Int, MergeStatus)]
+) extends DAGSchedulerEvent
 
 private[scheduler] case class ShuffleMergeFinalized(stage: ShuffleMapStage)
-  extends DAGSchedulerEvent
+    extends DAGSchedulerEvent
 
 private[scheduler] case class ShufflePushCompleted(
-    shuffleId: Int, shuffleMergeId: Int, mapIndex: Int)
-  extends DAGSchedulerEvent
+    shuffleId: Int,
+    shuffleMergeId: Int,
+    mapIndex: Int
+) extends DAGSchedulerEvent

@@ -20,17 +20,18 @@ package org.apache.spark.security
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.Utils
 
-/**
- * This class is responsible for getting the groups for a particular user in Unix based
- * environments. This implementation uses the Unix Shell based id command to fetch the user groups
- * for the specified user. It does not cache the user groups as the invocations are expected
- * to be infrequent.
- */
+/** This class is responsible for getting the groups for a particular user in Unix based
+  * environments. This implementation uses the Unix Shell based id command to fetch the user groups
+  * for the specified user. It does not cache the user groups as the invocations are expected
+  * to be infrequent.
+  */
 
-private[spark] class ShellBasedGroupsMappingProvider extends GroupMappingServiceProvider
-  with Logging {
+private[spark] class ShellBasedGroupsMappingProvider
+    extends GroupMappingServiceProvider
+    with Logging {
 
-  private lazy val idPath = Utils.executeAndGetOutput("which" :: "id" :: Nil).stripLineEnd
+  private lazy val idPath =
+    Utils.executeAndGetOutput("which" :: "id" :: Nil).stripLineEnd
 
   override def getGroups(username: String): Set[String] = {
     val userGroups = getUnixGroups(username)
@@ -41,6 +42,10 @@ private[spark] class ShellBasedGroupsMappingProvider extends GroupMappingService
   // shells out a "bash -c id -Gn username" to get user groups
   private def getUnixGroups(username: String): Set[String] = {
     // we need to get rid of the trailing "\n" from the result of command execution
-    Utils.executeAndGetOutput(idPath ::  "-Gn" :: username :: Nil).stripLineEnd.split(" ").toSet
+    Utils
+      .executeAndGetOutput(idPath :: "-Gn" :: username :: Nil)
+      .stripLineEnd
+      .split(" ")
+      .toSet
   }
 }

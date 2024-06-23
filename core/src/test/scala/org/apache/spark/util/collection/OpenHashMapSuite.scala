@@ -45,7 +45,9 @@ class OpenHashMapSuite extends SparkFunSuite with Matchers {
     val goodMap3 = new OpenHashMap[String, String](256)
     assert(goodMap3.size === 0)
     intercept[IllegalArgumentException] {
-      new OpenHashMap[String, Int](1 << 30 + 1) // Invalid map size: bigger than 2^30
+      new OpenHashMap[String, Int](
+        1 << 30 + 1
+      ) // Invalid map size: bigger than 2^30
     }
     intercept[IllegalArgumentException] {
       new OpenHashMap[String, Int](-1)
@@ -76,7 +78,8 @@ class OpenHashMapSuite extends SparkFunSuite with Matchers {
     for ((k, v) <- map) {
       set.add((k, v))
     }
-    val expected = (1 to 1000).map(x => (x.toString, x)) :+ ((null.asInstanceOf[String], -1))
+    val expected =
+      (1 to 1000).map(x => (x.toString, x)) :+ ((null.asInstanceOf[String], -1))
     assert(set === expected.toSet)
   }
 
@@ -105,7 +108,9 @@ class OpenHashMapSuite extends SparkFunSuite with Matchers {
       set.add((k, v))
     }
     val expected =
-      (1 to 1000).map(_.toString).map(x => (x, x)) :+ ((null.asInstanceOf[String], "-1"))
+      (1 to 1000)
+        .map(_.toString)
+        .map(x => (x, x)) :+ ((null.asInstanceOf[String], "-1"))
     assert(set === expected.toSet)
   }
 
@@ -142,26 +147,35 @@ class OpenHashMapSuite extends SparkFunSuite with Matchers {
     }
     assert(map.size === 100)
     for (i <- 1 to 100) {
-      val res = map.changeValue(i.toString, { assert(false); "" }, v => {
-        assert(v === i.toString)
-        v + "!"
-      })
+      val res = map.changeValue(
+        i.toString,
+        { assert(false); "" },
+        v => {
+          assert(v === i.toString)
+          v + "!"
+        }
+      )
       assert(res === s"$i!")
     }
     // Iterate from 101 to 400 to make sure the map grows a couple of times, because we had a
     // bug where changeValue would return the wrong result when the map grew on that insert
     for (i <- 101 to 400) {
-      val res = map.changeValue(i.toString, { s"$i!" }, v => { assert(false); v })
+      val res =
+        map.changeValue(i.toString, { s"$i!" }, v => { assert(false); v })
       assert(res === s"$i!")
     }
     assert(map.size === 400)
     assert(map(null) === null)
     map.changeValue(null, { "null!" }, v => { assert(false); v })
     assert(map.size === 401)
-    map.changeValue(null, { assert(false); "" }, v => {
-      assert(v === "null!")
-      "null!!"
-    })
+    map.changeValue(
+      null,
+      { assert(false); "" },
+      v => {
+        assert(v === "null!")
+        "null!!"
+      }
+    )
     assert(map.size === 401)
   }
 
@@ -250,7 +264,9 @@ class OpenHashMapSuite extends SparkFunSuite with Matchers {
     assert(map.get(null) === Some(null))
   }
 
-  test("SPARK-45599: 0.0 and -0.0 should count distinctly; NaNs should count together") {
+  test(
+    "SPARK-45599: 0.0 and -0.0 should count distinctly; NaNs should count together"
+  ) {
     // Exactly these elements provided in roughly this order trigger a condition where lookups of
     // 0.0 and -0.0 in the bitset happen to collide, causing their counts to be merged incorrectly
     // and inconsistently if `==` is used to check for key equality.
@@ -266,7 +282,7 @@ class OpenHashMapSuite extends SparkFunSuite with Matchers {
     )
 
     val map1 = new OpenHashMap[Double, Int]()
-    spark45599Repro.foreach(map1.changeValue(_, 1, {_ + 1}))
+    spark45599Repro.foreach(map1.changeValue(_, 1, { _ + 1 }))
     assert(map1(0.0) == 1)
     assert(map1(-0.0) == 1)
     assert(map1(Double.NaN) == 3)
@@ -274,7 +290,7 @@ class OpenHashMapSuite extends SparkFunSuite with Matchers {
     val map2 = new OpenHashMap[Double, Int]()
     // Simply changing the order in which the elements are added to the map should not change the
     // counts for 0.0 and -0.0.
-    spark45599Repro.reverse.foreach(map2.changeValue(_, 1, {_ + 1}))
+    spark45599Repro.reverse.foreach(map2.changeValue(_, 1, { _ + 1 }))
     assert(map2(0.0) == 1)
     assert(map2(-0.0) == 1)
     assert(map2(Double.NaN) == 3)

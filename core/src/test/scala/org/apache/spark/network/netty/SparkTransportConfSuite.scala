@@ -30,7 +30,8 @@ class SparkTransportConfSuite extends SparkFunSuite with MockitoSugar {
   test("default value is get when neither role nor module is set") {
     val numUsableCores = 4
     val conf = new SparkConf()
-    val sparkTransportConf = SparkTransportConf.fromSparkConf(conf, module, numUsableCores, None)
+    val sparkTransportConf =
+      SparkTransportConf.fromSparkConf(conf, module, numUsableCores, None)
     val expected = NettyUtils.defaultNumThreads(numUsableCores)
     val serActual = sparkTransportConf.get(s"spark.$module.io.$serThreads", "")
     val cliActual = sparkTransportConf.get(s"spark.$module.io.$cliThreads", "")
@@ -45,14 +46,17 @@ class SparkTransportConfSuite extends SparkFunSuite with MockitoSugar {
     val conf = new SparkConf()
       .set(s"spark.$module.io.$serThreads", serExpected)
       .set(s"spark.$module.io.$cliThreads", cliExpected)
-    val sparkTransportConf = SparkTransportConf.fromSparkConf(conf, module, numUsableCores, None)
+    val sparkTransportConf =
+      SparkTransportConf.fromSparkConf(conf, module, numUsableCores, None)
     val serActual = sparkTransportConf.get(s"spark.$module.io.$serThreads", "")
     val cliActual = sparkTransportConf.get(s"spark.$module.io.$cliThreads", "")
     assert(serActual == serExpected)
     assert(cliActual == cliExpected)
   }
 
-  test("use correct configuration when both module and role configs are present") {
+  test(
+    "use correct configuration when both module and role configs are present"
+  ) {
     val role = Some("driver")
     val numUsableCores = 10
     val serModule = "7"
@@ -64,16 +68,20 @@ class SparkTransportConfSuite extends SparkFunSuite with MockitoSugar {
       .set(s"spark.$module.io.$cliThreads", cliModule)
       .set(s"spark.${role.get}.$module.io.$serThreads", serExpected)
       .set(s"spark.${role.get}.$module.io.$cliThreads", cliExpected)
-    val sparkTransportConf = SparkTransportConf.fromSparkConf(conf, module, numUsableCores, role)
+    val sparkTransportConf =
+      SparkTransportConf.fromSparkConf(conf, module, numUsableCores, role)
     val serActual = sparkTransportConf.get(s"spark.$module.io.$serThreads", "")
     val cliActual = sparkTransportConf.get(s"spark.$module.io.$cliThreads", "")
     assert(serActual == serExpected)
     assert(cliActual == cliExpected)
 
     val exeRole = Some("executor")
-    val sparkTransConfExe = SparkTransportConf.fromSparkConf(conf, module, numUsableCores, exeRole)
-    val serActualExe = sparkTransConfExe.get(s"spark.$module.io.$serThreads", "")
-    val cliActualExe = sparkTransConfExe.get(s"spark.$module.io.$cliThreads", "")
+    val sparkTransConfExe =
+      SparkTransportConf.fromSparkConf(conf, module, numUsableCores, exeRole)
+    val serActualExe =
+      sparkTransConfExe.get(s"spark.$module.io.$serThreads", "")
+    val cliActualExe =
+      sparkTransConfExe.get(s"spark.$module.io.$cliThreads", "")
     assert(serActualExe == serModule)
     assert(cliActualExe == cliModule)
   }

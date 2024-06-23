@@ -29,54 +29,52 @@ import org.apache.spark.internal.LogKeys._
 import org.apache.spark.scheduler.ReplayListenerBus._
 import org.apache.spark.util.JsonProtocol
 
-/**
- * A SparkListenerBus that can be used to replay events from serialized event data.
- */
+/** A SparkListenerBus that can be used to replay events from serialized event data.
+  */
 private[spark] class ReplayListenerBus extends SparkListenerBus with Logging {
 
-  /**
-   * Replay each event in the order maintained in the given stream. The stream is expected to
-   * contain one JSON-encoded SparkListenerEvent per line.
-   *
-   * This method can be called multiple times, but the listener behavior is undefined after any
-   * error is thrown by this method.
-   *
-   * @param logData Stream containing event log data.
-   * @param sourceName Filename (or other source identifier) from whence @logData is being read
-   * @param maybeTruncated Indicate whether log file might be truncated (some abnormal situations
-   *        encountered, log file might not finished writing) or not
-   * @param eventsFilter Filter function to select JSON event strings in the log data stream that
-   *        should be parsed and replayed. When not specified, all event strings in the log data
-   *        are parsed and replayed.
-   * @return whether it succeeds to replay the log file entirely without error including
-   *         HaltReplayException. false otherwise.
-   */
+  /** Replay each event in the order maintained in the given stream. The stream is expected to
+    * contain one JSON-encoded SparkListenerEvent per line.
+    *
+    * This method can be called multiple times, but the listener behavior is undefined after any
+    * error is thrown by this method.
+    *
+    * @param logData Stream containing event log data.
+    * @param sourceName Filename (or other source identifier) from whence @logData is being read
+    * @param maybeTruncated Indicate whether log file might be truncated (some abnormal situations
+    *        encountered, log file might not finished writing) or not
+    * @param eventsFilter Filter function to select JSON event strings in the log data stream that
+    *        should be parsed and replayed. When not specified, all event strings in the log data
+    *        are parsed and replayed.
+    * @return whether it succeeds to replay the log file entirely without error including
+    *         HaltReplayException. false otherwise.
+    */
   def replay(
       logData: InputStream,
       sourceName: String,
       maybeTruncated: Boolean = false,
-      eventsFilter: ReplayEventsFilter = SELECT_ALL_FILTER): Boolean = {
+      eventsFilter: ReplayEventsFilter = SELECT_ALL_FILTER
+  ): Boolean = {
     val lines = Source.fromInputStream(logData)(Codec.UTF8).getLines()
     replay(lines, sourceName, maybeTruncated, eventsFilter)
   }
 
-  /**
-   * Overloaded variant of [[replay()]] which accepts an iterator of lines instead of an
-   * [[InputStream]]. Exposed for use by custom ApplicationHistoryProvider implementations.
-   */
+  /** Overloaded variant of [[replay()]] which accepts an iterator of lines instead of an
+    * [[InputStream]]. Exposed for use by custom ApplicationHistoryProvider implementations.
+    */
   def replay(
       lines: Iterator[String],
       sourceName: String,
       maybeTruncated: Boolean,
-      eventsFilter: ReplayEventsFilter): Boolean = {
+      eventsFilter: ReplayEventsFilter
+  ): Boolean = {
     var currentLine: String = null
     var lineNumber: Int = 0
     val unrecognizedEvents = new scala.collection.mutable.HashSet[String]
     val unrecognizedProperties = new scala.collection.mutable.HashSet[String]
 
     try {
-      val lineEntries = lines
-        .zipWithIndex
+      val lineEntries = lines.zipWithIndex
         .filter { case (line, _) => eventsFilter(line) }
 
       while (lineEntries.hasNext) {
@@ -92,7 +90,9 @@ private[spark] class ReplayListenerBus extends SparkListenerBus with Logging {
             // Ignore unknown events, parse through the event log file.
             // To avoid spamming, warnings are only displayed once for each unknown event.
             if (!unrecognizedEvents.contains(e.getMessage)) {
-              logWarning(log"Drop unrecognized event: ${MDC(ERROR, e.getMessage)}")
+              logWarning(
+                log"Drop unrecognized event: ${MDC(ERROR, e.getMessage)}"
+              )
               unrecognizedEvents.add(e.getMessage)
             }
             logDebug(s"Drop incompatible event log: $currentLine")
@@ -100,7 +100,9 @@ private[spark] class ReplayListenerBus extends SparkListenerBus with Logging {
             // Ignore unrecognized properties, parse through the event log file.
             // To avoid spamming, warnings are only displayed once for each unrecognized property.
             if (!unrecognizedProperties.contains(e.getMessage)) {
-              logWarning(log"Drop unrecognized property: ${MDC(ERROR, e.getMessage)}")
+              logWarning(
+                log"Drop unrecognized property: ${MDC(ERROR, e.getMessage)}"
+              )
               unrecognizedProperties.add(e.getMessage)
             }
             logDebug(s"Drop incompatible event log: $currentLine")
@@ -111,9 +113,11 @@ private[spark] class ReplayListenerBus extends SparkListenerBus with Logging {
             if (!maybeTruncated || lineEntries.hasNext) {
               throw jpe
             } else {
-              logWarning(log"Got JsonParseException from log file ${MDC(FILE_NAME, sourceName)}" +
-                log" at line ${MDC(LINE_NUM, lineNumber)}, " +
-                log"the file might not have finished writing cleanly.")
+              logWarning(
+                log"Got JsonParseException from log file ${MDC(FILE_NAME, sourceName)}" +
+                  log" at line ${MDC(LINE_NUM, lineNumber)}, " +
+                  log"the file might not have finished writing cleanly."
+              )
             }
         }
       }
@@ -126,8 +130,13 @@ private[spark] class ReplayListenerBus extends SparkListenerBus with Logging {
       case ioe: IOException =>
         throw ioe
       case e: Exception =>
-        logError(log"Exception parsing Spark event log: ${MDC(PATH, sourceName)}", e)
-        logError(log"Malformed line #${MDC(LINE_NUM, lineNumber)}: ${MDC(LINE, currentLine)}\n")
+        logError(
+          log"Exception parsing Spark event log: ${MDC(PATH, sourceName)}",
+          e
+        )
+        logError(
+          log"Malformed line #${MDC(LINE_NUM, lineNumber)}: ${MDC(LINE, currentLine)}\n"
+        )
         false
     }
   }
@@ -138,10 +147,9 @@ private[spark] class ReplayListenerBus extends SparkListenerBus with Logging {
 
 }
 
-/**
- * Exception that can be thrown by listeners to halt replay. This is handled by ReplayListenerBus
- * only, and will cause errors if thrown when using other bus implementations.
- */
+/** Exception that can be thrown by listeners to halt replay. This is handled by ReplayListenerBus
+  * only, and will cause errors if thrown when using other bus implementations.
+  */
 private[spark] class HaltReplayException extends RuntimeException
 
 private[spark] object ReplayListenerBus {

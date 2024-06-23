@@ -72,16 +72,25 @@ class LocalDiskShuffleMapOutputWriterSuite extends SparkFunSuite {
     conf = new SparkConf()
       .set("spark.app.id", "example.spark.app")
       .set("spark.shuffle.localDisk.file.output.buffer", "16k")
-    when(blockResolver.getDataFile(anyInt, anyLong)).thenReturn(mergedOutputFile)
+    when(blockResolver.getDataFile(anyInt, anyLong))
+      .thenReturn(mergedOutputFile)
     when(blockResolver.createTempFile(any(classOf[File])))
       .thenAnswer { invocationOnMock =>
         val file = invocationOnMock.getArguments()(0).asInstanceOf[File]
         Utils.tempFileWith(file)
       }
-    when(blockResolver.writeMetadataFileAndCommit(
-      anyInt, anyLong, any(classOf[Array[Long]]), any(classOf[Array[Long]]), any(classOf[File])))
+    when(
+      blockResolver.writeMetadataFileAndCommit(
+        anyInt,
+        anyLong,
+        any(classOf[Array[Long]]),
+        any(classOf[Array[Long]]),
+        any(classOf[File])
+      )
+    )
       .thenAnswer { invocationOnMock =>
-        partitionSizesInMergedFile = invocationOnMock.getArguments()(2).asInstanceOf[Array[Long]]
+        partitionSizesInMergedFile =
+          invocationOnMock.getArguments()(2).asInstanceOf[Array[Long]]
         val tmp: File = invocationOnMock.getArguments()(4).asInstanceOf[File]
         if (tmp != null) {
           mergedOutputFile.delete()
@@ -94,7 +103,8 @@ class LocalDiskShuffleMapOutputWriterSuite extends SparkFunSuite {
       0,
       NUM_PARTITIONS,
       blockResolver,
-      conf)
+      conf
+    )
   }
 
   test("writing to an outputstream") {
@@ -117,13 +127,21 @@ class LocalDiskShuffleMapOutputWriterSuite extends SparkFunSuite {
       Files.write(outputTempFile.toPath, data(p))
       val tempFileInput = new FileInputStream(outputTempFile)
       val channel = writer.openChannelWrapper()
-      Utils.tryWithResource(new FileInputStream(outputTempFile)) { tempFileInput =>
-        Utils.tryWithResource(writer.openChannelWrapper().get) { channelWrapper =>
-          assert(channelWrapper.channel().isInstanceOf[FileChannel],
-            "Underlying channel should be a file channel")
-          Utils.copyFileStreamNIO(
-            tempFileInput.getChannel, channelWrapper.channel(), 0L, data(p).length)
-        }
+      Utils.tryWithResource(new FileInputStream(outputTempFile)) {
+        tempFileInput =>
+          Utils.tryWithResource(writer.openChannelWrapper().get) {
+            channelWrapper =>
+              assert(
+                channelWrapper.channel().isInstanceOf[FileChannel],
+                "Underlying channel should be a file channel"
+              )
+              Utils.copyFileStreamNIO(
+                tempFileInput.getChannel,
+                channelWrapper.channel(),
+                0L,
+                data(p).length
+              )
+          }
       }
     }
     verifyWrittenRecords()
@@ -134,7 +152,11 @@ class LocalDiskShuffleMapOutputWriterSuite extends SparkFunSuite {
     val result = (0 until NUM_PARTITIONS).map { part =>
       val startOffset = data.slice(0, part).map(_.length).sum
       val partitionSize = data(part).length
-      Arrays.copyOfRange(mergedOutputBytes, startOffset, startOffset + partitionSize)
+      Arrays.copyOfRange(
+        mergedOutputBytes,
+        startOffset,
+        startOffset + partitionSize
+      )
     }.toArray
     result
   }

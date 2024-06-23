@@ -29,32 +29,32 @@ import org.apache.spark.internal.{Logging, MDC}
 import org.apache.spark.internal.LogKeys._
 import org.apache.spark.util.NextIterator
 
-private[spark] class JdbcPartition(idx: Int, val lower: Long, val upper: Long) extends Partition {
+private[spark] class JdbcPartition(idx: Int, val lower: Long, val upper: Long)
+    extends Partition {
   override def index: Int = idx
 }
 
-/**
- * An RDD that executes a SQL query on a JDBC connection and reads results.
- * For usage example, see test case JdbcRDDSuite.
- *
- * @param getConnection a function that returns an open Connection.
- *   The RDD takes care of closing the connection.
- * @param sql the text of the query.
- *   The query must contain two ? placeholders for parameters used to partition the results.
- *   For example,
- *   {{{
- *   select title, author from books where ? <= id and id <= ?
- *   }}}
- * @param lowerBound the minimum value of the first placeholder
- * @param upperBound the maximum value of the second placeholder
- *   The lower and upper bounds are inclusive.
- * @param numPartitions the number of partitions.
- *   Given a lowerBound of 1, an upperBound of 20, and a numPartitions of 2,
- *   the query would be executed twice, once with (1, 10) and once with (11, 20)
- * @param mapRow a function from a ResultSet to a single row of the desired result type(s).
- *   This should only call getInt, getString, etc; the RDD takes care of calling next.
- *   The default maps a ResultSet to an array of Object.
- */
+/** An RDD that executes a SQL query on a JDBC connection and reads results.
+  * For usage example, see test case JdbcRDDSuite.
+  *
+  * @param getConnection a function that returns an open Connection.
+  *   The RDD takes care of closing the connection.
+  * @param sql the text of the query.
+  *   The query must contain two ? placeholders for parameters used to partition the results.
+  *   For example,
+  *   {{{
+  *   select title, author from books where ? <= id and id <= ?
+  *   }}}
+  * @param lowerBound the minimum value of the first placeholder
+  * @param upperBound the maximum value of the second placeholder
+  *   The lower and upper bounds are inclusive.
+  * @param numPartitions the number of partitions.
+  *   Given a lowerBound of 1, an upperBound of 20, and a numPartitions of 2,
+  *   the query would be executed twice, once with (1, 10) and once with (11, 20)
+  * @param mapRow a function from a ResultSet to a single row of the desired result type(s).
+  *   This should only call getInt, getString, etc; the RDD takes care of calling next.
+  *   The default maps a ResultSet to an array of Object.
+  */
 class JdbcRDD[T: ClassTag](
     sc: SparkContext,
     getConnection: () => Connection,
@@ -62,8 +62,9 @@ class JdbcRDD[T: ClassTag](
     lowerBound: Long,
     upperBound: Long,
     numPartitions: Int,
-    mapRow: (ResultSet) => T = JdbcRDD.resultSetToObjectArray _)
-  extends RDD[T](sc, Nil) with Logging {
+    mapRow: (ResultSet) => T = JdbcRDD.resultSetToObjectArray _
+) extends RDD[T](sc, Nil)
+    with Logging {
 
   override def getPartitions: Array[Partition] = {
     // bounds are inclusive, hence the + 1 here and - 1 on end
@@ -75,70 +76,78 @@ class JdbcRDD[T: ClassTag](
     }.toArray
   }
 
-  override def compute(thePart: Partition, context: TaskContext): Iterator[T] = new NextIterator[T]
-  {
-    context.addTaskCompletionListener[Unit]{ context => closeIfNeeded() }
-    val part = thePart.asInstanceOf[JdbcPartition]
-    val conn = getConnection()
-    val stmt = conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
+  override def compute(thePart: Partition, context: TaskContext): Iterator[T] =
+    new NextIterator[T] {
+      context.addTaskCompletionListener[Unit] { context => closeIfNeeded() }
+      val part = thePart.asInstanceOf[JdbcPartition]
+      val conn = getConnection()
+      val stmt = conn.prepareStatement(
+        sql,
+        ResultSet.TYPE_FORWARD_ONLY,
+        ResultSet.CONCUR_READ_ONLY
+      )
 
-    val url = conn.getMetaData.getURL
-    if (url.startsWith("jdbc:mysql:")) {
-      // setFetchSize(Integer.MIN_VALUE) is a mysql driver specific way to force
-      // streaming results, rather than pulling entire resultset into memory.
-      // See the below URL
-      // dev.mysql.com/doc/connector-j/5.1/en/connector-j-reference-implementation-notes.html
+      val url = conn.getMetaData.getURL
+      if (url.startsWith("jdbc:mysql:")) {
+        // setFetchSize(Integer.MIN_VALUE) is a mysql driver specific way to force
+        // streaming results, rather than pulling entire resultset into memory.
+        // See the below URL
+        // dev.mysql.com/doc/connector-j/5.1/en/connector-j-reference-implementation-notes.html
 
-      stmt.setFetchSize(Integer.MIN_VALUE)
-    } else {
-      stmt.setFetchSize(100)
-    }
-
-    logInfo(log"statement fetch size set to: ${MDC(FETCH_SIZE, stmt.getFetchSize)}")
-
-    stmt.setLong(1, part.lower)
-    stmt.setLong(2, part.upper)
-    val rs = stmt.executeQuery()
-
-    override def getNext(): T = {
-      if (rs.next()) {
-        mapRow(rs)
+        stmt.setFetchSize(Integer.MIN_VALUE)
       } else {
-        finished = true
-        null.asInstanceOf[T]
+        stmt.setFetchSize(100)
       }
-    }
 
-    override def close(): Unit = {
-      try {
-        if (null != rs) {
-          rs.close()
+      logInfo(
+        log"statement fetch size set to: ${MDC(FETCH_SIZE, stmt.getFetchSize)}"
+      )
+
+      stmt.setLong(1, part.lower)
+      stmt.setLong(2, part.upper)
+      val rs = stmt.executeQuery()
+
+      override def getNext(): T = {
+        if (rs.next()) {
+          mapRow(rs)
+        } else {
+          finished = true
+          null.asInstanceOf[T]
         }
-      } catch {
-        case e: Exception => logWarning("Exception closing resultset", e)
       }
-      try {
-        if (null != stmt) {
-          stmt.close()
+
+      override def close(): Unit = {
+        try {
+          if (null != rs) {
+            rs.close()
+          }
+        } catch {
+          case e: Exception => logWarning("Exception closing resultset", e)
         }
-      } catch {
-        case e: Exception => logWarning("Exception closing statement", e)
-      }
-      try {
-        if (null != conn) {
-          conn.close()
+        try {
+          if (null != stmt) {
+            stmt.close()
+          }
+        } catch {
+          case e: Exception => logWarning("Exception closing statement", e)
         }
-        logInfo("closed connection")
-      } catch {
-        case e: Exception => logWarning("Exception closing connection", e)
+        try {
+          if (null != conn) {
+            conn.close()
+          }
+          logInfo("closed connection")
+        } catch {
+          case e: Exception => logWarning("Exception closing connection", e)
+        }
       }
     }
-  }
 }
 
 object JdbcRDD {
   def resultSetToObjectArray(rs: ResultSet): Array[Object] = {
-    Array.tabulate[Object](rs.getMetaData.getColumnCount)(i => rs.getObject(i + 1))
+    Array.tabulate[Object](rs.getMetaData.getColumnCount)(i =>
+      rs.getObject(i + 1)
+    )
   }
 
   trait ConnectionFactory extends Serializable {
@@ -146,28 +155,27 @@ object JdbcRDD {
     def getConnection: Connection
   }
 
-  /**
-   * Create an RDD that executes a SQL query on a JDBC connection and reads results.
-   * For usage example, see test case JavaAPISuite.testJavaJdbcRDD.
-   *
-   * @param connectionFactory a factory that returns an open Connection.
-   *   The RDD takes care of closing the connection.
-   * @param sql the text of the query.
-   *   The query must contain two ? placeholders for parameters used to partition the results.
-   *   For example,
-   *   {{{
-   *   select title, author from books where ? <= id and id <= ?
-   *   }}}
-   * @param lowerBound the minimum value of the first placeholder
-   * @param upperBound the maximum value of the second placeholder
-   *   The lower and upper bounds are inclusive.
-   * @param numPartitions the number of partitions.
-   *   Given a lowerBound of 1, an upperBound of 20, and a numPartitions of 2,
-   *   the query would be executed twice, once with (1, 10) and once with (11, 20)
-   * @param mapRow a function from a ResultSet to a single row of the desired result type(s).
-   *   This should only call getInt, getString, etc; the RDD takes care of calling next.
-   *   The default maps a ResultSet to an array of Object.
-   */
+  /** Create an RDD that executes a SQL query on a JDBC connection and reads results.
+    * For usage example, see test case JavaAPISuite.testJavaJdbcRDD.
+    *
+    * @param connectionFactory a factory that returns an open Connection.
+    *   The RDD takes care of closing the connection.
+    * @param sql the text of the query.
+    *   The query must contain two ? placeholders for parameters used to partition the results.
+    *   For example,
+    *   {{{
+    *   select title, author from books where ? <= id and id <= ?
+    *   }}}
+    * @param lowerBound the minimum value of the first placeholder
+    * @param upperBound the maximum value of the second placeholder
+    *   The lower and upper bounds are inclusive.
+    * @param numPartitions the number of partitions.
+    *   Given a lowerBound of 1, an upperBound of 20, and a numPartitions of 2,
+    *   the query would be executed twice, once with (1, 10) and once with (11, 20)
+    * @param mapRow a function from a ResultSet to a single row of the desired result type(s).
+    *   This should only call getInt, getString, etc; the RDD takes care of calling next.
+    *   The default maps a ResultSet to an array of Object.
+    */
   def create[T](
       sc: JavaSparkContext,
       connectionFactory: ConnectionFactory,
@@ -175,7 +183,8 @@ object JdbcRDD {
       lowerBound: Long,
       upperBound: Long,
       numPartitions: Int,
-      mapRow: JFunction[ResultSet, T]): JavaRDD[T] = {
+      mapRow: JFunction[ResultSet, T]
+  ): JavaRDD[T] = {
 
     val jdbcRDD = new JdbcRDD[T](
       sc.sc,
@@ -184,37 +193,38 @@ object JdbcRDD {
       lowerBound,
       upperBound,
       numPartitions,
-      (resultSet: ResultSet) => mapRow.call(resultSet))(fakeClassTag)
+      (resultSet: ResultSet) => mapRow.call(resultSet)
+    )(fakeClassTag)
 
     new JavaRDD[T](jdbcRDD)(fakeClassTag)
   }
 
-  /**
-   * Create an RDD that executes a SQL query on a JDBC connection and reads results. Each row is
-   * converted into a `Object` array. For usage example, see test case JavaAPISuite.testJavaJdbcRDD.
-   *
-   * @param connectionFactory a factory that returns an open Connection.
-   *   The RDD takes care of closing the connection.
-   * @param sql the text of the query.
-   *   The query must contain two ? placeholders for parameters used to partition the results.
-   *   For example,
-   *   {{{
-   *   select title, author from books where ? <= id and id <= ?
-   *   }}}
-   * @param lowerBound the minimum value of the first placeholder
-   * @param upperBound the maximum value of the second placeholder
-   *   The lower and upper bounds are inclusive.
-   * @param numPartitions the number of partitions.
-   *   Given a lowerBound of 1, an upperBound of 20, and a numPartitions of 2,
-   *   the query would be executed twice, once with (1, 10) and once with (11, 20)
-   */
+  /** Create an RDD that executes a SQL query on a JDBC connection and reads results. Each row is
+    * converted into a `Object` array. For usage example, see test case JavaAPISuite.testJavaJdbcRDD.
+    *
+    * @param connectionFactory a factory that returns an open Connection.
+    *   The RDD takes care of closing the connection.
+    * @param sql the text of the query.
+    *   The query must contain two ? placeholders for parameters used to partition the results.
+    *   For example,
+    *   {{{
+    *   select title, author from books where ? <= id and id <= ?
+    *   }}}
+    * @param lowerBound the minimum value of the first placeholder
+    * @param upperBound the maximum value of the second placeholder
+    *   The lower and upper bounds are inclusive.
+    * @param numPartitions the number of partitions.
+    *   Given a lowerBound of 1, an upperBound of 20, and a numPartitions of 2,
+    *   the query would be executed twice, once with (1, 10) and once with (11, 20)
+    */
   def create(
       sc: JavaSparkContext,
       connectionFactory: ConnectionFactory,
       sql: String,
       lowerBound: Long,
       upperBound: Long,
-      numPartitions: Int): JavaRDD[Array[Object]] = {
+      numPartitions: Int
+  ): JavaRDD[Array[Object]] = {
 
     val mapRow = new JFunction[ResultSet, Array[Object]] {
       override def call(resultSet: ResultSet): Array[Object] = {
@@ -222,6 +232,14 @@ object JdbcRDD {
       }
     }
 
-    create(sc, connectionFactory, sql, lowerBound, upperBound, numPartitions, mapRow)
+    create(
+      sc,
+      connectionFactory,
+      sql,
+      lowerBound,
+      upperBound,
+      numPartitions,
+      mapRow
+    )
   }
 }

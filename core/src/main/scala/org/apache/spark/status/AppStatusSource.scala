@@ -25,7 +25,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.internal.config.Status.METRICS_APP_STATUS_SOURCE_ENABLED
 import org.apache.spark.metrics.source.Source
 
-private [spark] class JobDuration(val value: AtomicLong) extends Gauge[Long] {
+private[spark] class JobDuration(val value: AtomicLong) extends Gauge[Long] {
   override def getValue: Long = value.get()
 }
 
@@ -82,7 +82,9 @@ private[spark] class AppStatusSource extends Source {
 
 private[spark] object AppStatusSource {
 
-  def getCounter(prefix: String, name: String)(implicit metricRegistry: MetricRegistry): Counter = {
+  def getCounter(prefix: String, name: String)(implicit
+      metricRegistry: MetricRegistry
+  ): Counter = {
     metricRegistry.counter(MetricRegistry.name(prefix, name))
   }
 

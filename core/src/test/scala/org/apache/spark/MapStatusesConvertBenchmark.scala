@@ -20,21 +20,24 @@ package org.apache.spark
 import org.roaringbitmap.RoaringBitmap
 
 import org.apache.spark.benchmark.{Benchmark, BenchmarkBase}
-import org.apache.spark.scheduler.{HighlyCompressedMapStatus, MapStatus, MergeStatus}
+import org.apache.spark.scheduler.{
+  HighlyCompressedMapStatus,
+  MapStatus,
+  MergeStatus
+}
 import org.apache.spark.storage.BlockManagerId
 
-/**
- * Benchmark to measure performance for converting mapStatuses and mergeStatuses.
- * To run this benchmark:
- * {{{
- *   1. without sbt:
- *      bin/spark-submit --class <this class> --jars <spark core test jar>
- *   2. build/sbt "core/Test/runMain <this class>"
- *   3. generate result:
- *      SPARK_GENERATE_BENCHMARK_FILES=1 build/sbt "core/Test/runMain <this class>"
- *      Results will be written to "benchmarks/MapStatusesConvertBenchmark-results.txt".
- * }}}
- * */
+/** Benchmark to measure performance for converting mapStatuses and mergeStatuses.
+  * To run this benchmark:
+  * {{{
+  *   1. without sbt:
+  *      bin/spark-submit --class <this class> --jars <spark core test jar>
+  *   2. build/sbt "core/Test/runMain <this class>"
+  *   3. generate result:
+  *      SPARK_GENERATE_BENCHMARK_FILES=1 build/sbt "core/Test/runMain <this class>"
+  *      Results will be written to "benchmarks/MapStatusesConvertBenchmark-results.txt".
+  * }}}
+  */
 object MapStatusesConvertBenchmark extends BenchmarkBase {
 
   private def convertMapStatus(numIters: Int): Unit = {
@@ -57,18 +60,25 @@ object MapStatusesConvertBenchmark extends BenchmarkBase {
       HighlyCompressedMapStatus(
         blockManagers(mapTaskId % blockManagerNumber),
         Array.tabulate(shufflePartitions)(i => if (i % 50 == 0) 1 else 0),
-        mapTaskId)
+        mapTaskId
+      )
     }
     val bitmap = new RoaringBitmap()
     Range(0, 4000).foreach(bitmap.add(_))
     val mergeStatuses = Array.tabulate(shufflePartitions) { part =>
-      MergeStatus(blockManagers(part % blockManagerNumber), shuffleId, bitmap, 100)
+      MergeStatus(
+        blockManagers(part % blockManagerNumber),
+        shuffleId,
+        bitmap,
+        100
+      )
     }
 
     Array(499, 999, 1499).foreach { endPartition =>
       benchmark.addCase(
         s"Num Maps: $mapNumber Fetch partitions:${endPartition - startPartition + 1}",
-        numIters) { _ =>
+        numIters
+      ) { _ =>
         MapOutputTracker.convertMapStatuses(
           shuffleId,
           startPartition,
@@ -76,7 +86,8 @@ object MapStatusesConvertBenchmark extends BenchmarkBase {
           mapStatuses,
           startMapIndex,
           endMapIndex,
-          Some(mergeStatuses))
+          Some(mergeStatuses)
+        )
       }
     }
 

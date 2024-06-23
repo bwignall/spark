@@ -41,9 +41,19 @@ import org.apache.spark.resource.ResourceProfile
 import org.apache.spark.resource.ResourceProfile._
 import org.apache.spark.resource.ResourceUtils._
 import org.apache.spark.rpc._
-import org.apache.spark.scheduler.{ExecutorLossMessage, ExecutorLossReason, TaskDescription}
+import org.apache.spark.scheduler.{
+  ExecutorLossMessage,
+  ExecutorLossReason,
+  TaskDescription
+}
 import org.apache.spark.scheduler.cluster.CoarseGrainedClusterMessages._
-import org.apache.spark.util.{ChildFirstURLClassLoader, MutableURLClassLoader, SignalUtils, ThreadUtils, Utils}
+import org.apache.spark.util.{
+  ChildFirstURLClassLoader,
+  MutableURLClassLoader,
+  SignalUtils,
+  ThreadUtils,
+  Utils
+}
 
 private[spark] class CoarseGrainedExecutorBackend(
     override val rpcEnv: RpcEnv,
@@ -54,8 +64,10 @@ private[spark] class CoarseGrainedExecutorBackend(
     cores: Int,
     env: SparkEnv,
     resourcesFileOpt: Option[String],
-    resourceProfile: ResourceProfile)
-  extends IsolatedThreadSafeRpcEndpoint with ExecutorBackend with Logging {
+    resourceProfile: ResourceProfile
+) extends IsolatedThreadSafeRpcEndpoint
+    with ExecutorBackend
+    with Logging {
 
   import CoarseGrainedExecutorBackend._
 
@@ -74,24 +86,36 @@ private[spark] class CoarseGrainedExecutorBackend(
   override def onStart(): Unit = {
     if (env.conf.get(DECOMMISSION_ENABLED)) {
       val signal = env.conf.get(EXECUTOR_DECOMMISSION_SIGNAL)
-      logInfo(log"Registering SIG${MDC(LogKeys.SIGNAL, signal)}" +
-        log" handler to trigger decommissioning.")
-      SignalUtils.register(signal, log"Failed to register SIG${MDC(LogKeys.SIGNAL, signal)} " +
-        log"handler - disabling executor decommission feature.")(
-        self.askSync[Boolean](ExecutorDecommissionSigReceived))
+      logInfo(
+        log"Registering SIG${MDC(LogKeys.SIGNAL, signal)}" +
+          log" handler to trigger decommissioning."
+      )
+      SignalUtils.register(
+        signal,
+        log"Failed to register SIG${MDC(LogKeys.SIGNAL, signal)} " +
+          log"handler - disabling executor decommission feature."
+      )(self.askSync[Boolean](ExecutorDecommissionSigReceived))
     }
 
-    logInfo(log"Connecting to driver: ${MDC(LogKeys.URL, driverUrl)}" )
+    logInfo(log"Connecting to driver: ${MDC(LogKeys.URL, driverUrl)}")
     try {
       val securityManager = new SecurityManager(env.conf)
       val shuffleClientTransportConf = SparkTransportConf.fromSparkConf(
-        env.conf, "shuffle", sslOptions = Some(securityManager.getRpcSSLOptions()))
-      if (NettyUtils.preferDirectBufs(shuffleClientTransportConf) &&
-          PlatformDependent.maxDirectMemory() < env.conf.get(MAX_REMOTE_BLOCK_SIZE_FETCH_TO_MEM)) {
-        throw new SparkException(s"Netty direct memory should at least be bigger than " +
-          s"'${MAX_REMOTE_BLOCK_SIZE_FETCH_TO_MEM.key}', but got " +
-          s"${PlatformDependent.maxDirectMemory()} bytes < " +
-          s"${env.conf.get(MAX_REMOTE_BLOCK_SIZE_FETCH_TO_MEM)}")
+        env.conf,
+        "shuffle",
+        sslOptions = Some(securityManager.getRpcSSLOptions())
+      )
+      if (
+        NettyUtils.preferDirectBufs(shuffleClientTransportConf) &&
+        PlatformDependent
+          .maxDirectMemory() < env.conf.get(MAX_REMOTE_BLOCK_SIZE_FETCH_TO_MEM)
+      ) {
+        throw new SparkException(
+          s"Netty direct memory should at least be bigger than " +
+            s"'${MAX_REMOTE_BLOCK_SIZE_FETCH_TO_MEM.key}', but got " +
+            s"${PlatformDependent.maxDirectMemory()} bytes < " +
+            s"${env.conf.get(MAX_REMOTE_BLOCK_SIZE_FETCH_TO_MEM)}"
+        )
       }
 
       _resources = parseOrFindResources(resourcesFileOpt)
@@ -99,25 +123,42 @@ private[spark] class CoarseGrainedExecutorBackend(
       case NonFatal(e) =>
         exitExecutor(1, "Unable to create executor due to " + e.getMessage, e)
     }
-    rpcEnv.asyncSetupEndpointRefByURI(driverUrl).flatMap { ref =>
-      // This is a very fast action so we can use "ThreadUtils.sameThread"
-      driver = Some(ref)
-      env.executorBackend = Option(this)
-      ref.ask[Boolean](RegisterExecutor(executorId, self, hostname, cores, extractLogUrls,
-        extractAttributes, _resources, resourceProfile.id))
-    }(ThreadUtils.sameThread).onComplete {
-      case Success(_) =>
-        self.send(RegisteredExecutor)
-      case Failure(e) =>
-        exitExecutor(1, s"Cannot register with driver: $driverUrl", e, notifyDriver = false)
-    }(ThreadUtils.sameThread)
+    rpcEnv
+      .asyncSetupEndpointRefByURI(driverUrl)
+      .flatMap { ref =>
+        // This is a very fast action so we can use "ThreadUtils.sameThread"
+        driver = Some(ref)
+        env.executorBackend = Option(this)
+        ref.ask[Boolean](
+          RegisterExecutor(
+            executorId,
+            self,
+            hostname,
+            cores,
+            extractLogUrls,
+            extractAttributes,
+            _resources,
+            resourceProfile.id
+          )
+        )
+      }(ThreadUtils.sameThread)
+      .onComplete {
+        case Success(_) =>
+          self.send(RegisteredExecutor)
+        case Failure(e) =>
+          exitExecutor(
+            1,
+            s"Cannot register with driver: $driverUrl",
+            e,
+            notifyDriver = false
+          )
+      }(ThreadUtils.sameThread)
   }
 
-  /**
-   * Create a classLoader for use for resource discovery. The user could provide a class
-   * as a substitute for the default one so we have to be able to load it from a user specified
-   * jar.
-   */
+  /** Create a classLoader for use for resource discovery. The user could provide a class
+    * as a substitute for the default one so we have to be able to load it from a user specified
+    * jar.
+    */
   private def createClassLoader(): MutableURLClassLoader = {
     val currentLoader = Utils.getContextOrSparkClassLoader
     val urls = getUserClassPath.toArray
@@ -129,7 +170,9 @@ private[spark] class CoarseGrainedExecutorBackend(
   }
 
   // visible for testing
-  def parseOrFindResources(resourcesFileOpt: Option[String]): Map[String, ResourceInformation] = {
+  def parseOrFindResources(
+      resourcesFileOpt: Option[String]
+  ): Map[String, ResourceInformation] = {
     // use a classloader that includes the user classpath in case they specified a class for
     // resource discovery
     val urlClassLoader = createClassLoader()
@@ -139,7 +182,8 @@ private[spark] class CoarseGrainedExecutorBackend(
         resourcesFileOpt,
         SPARK_EXECUTOR_PREFIX,
         resourceProfile,
-        env.conf)
+        env.conf
+      )
       logResourceInfo(SPARK_EXECUTOR_PREFIX, resources)
       resources
     }
@@ -149,17 +193,23 @@ private[spark] class CoarseGrainedExecutorBackend(
 
   def extractLogUrls: Map[String, String] = {
     val prefix = "SPARK_LOG_URL_"
-    sys.env.filter { case (k, _) => k.startsWith(prefix) }
+    sys.env
+      .filter { case (k, _) => k.startsWith(prefix) }
       .map(e => (e._1.substring(prefix.length).toLowerCase(Locale.ROOT), e._2))
   }
 
   def extractAttributes: Map[String, String] = {
     val prefix = "SPARK_EXECUTOR_ATTRIBUTE_"
-    sys.env.filter { case (k, _) => k.startsWith(prefix) }
+    sys.env
+      .filter { case (k, _) => k.startsWith(prefix) }
       .map(e => (e._1.substring(prefix.length).toUpperCase(Locale.ROOT), e._2))
   }
 
-  def notifyDriverAboutPushCompletion(shuffleId: Int, shuffleMergeId: Int, mapIndex: Int): Unit = {
+  def notifyDriverAboutPushCompletion(
+      shuffleId: Int,
+      shuffleMergeId: Int,
+      mapIndex: Int
+  ): Unit = {
     val msg = ShufflePushCompletion(shuffleId, shuffleMergeId, mapIndex)
     driver.foreach(_.send(msg))
   }
@@ -168,8 +218,14 @@ private[spark] class CoarseGrainedExecutorBackend(
     case RegisteredExecutor =>
       logInfo("Successfully registered with driver")
       try {
-        executor = new Executor(executorId, hostname, env, getUserClassPath, isLocal = false,
-          resources = _resources)
+        executor = new Executor(
+          executorId,
+          hostname,
+          env,
+          getUserClassPath,
+          isLocal = false,
+          resources = _resources
+        )
         driver.get.send(LaunchedExecutor(executorId))
       } catch {
         case NonFatal(e) =>
@@ -220,28 +276,39 @@ private[spark] class CoarseGrainedExecutorBackend(
       }.start()
 
     case UpdateDelegationTokens(tokenBytes) =>
-      logInfo(log"Received tokens of ${MDC(LogKeys.NUM_BYTES, tokenBytes.length)} bytes")
+      logInfo(
+        log"Received tokens of ${MDC(LogKeys.NUM_BYTES, tokenBytes.length)} bytes"
+      )
       SparkHadoopUtil.get.addDelegationTokens(tokenBytes, env.conf)
 
     case DecommissionExecutor =>
       decommissionSelf()
   }
 
-  override def receiveAndReply(context: RpcCallContext): PartialFunction[Any, Unit] = {
+  override def receiveAndReply(
+      context: RpcCallContext
+  ): PartialFunction[Any, Unit] = {
     case ExecutorDecommissionSigReceived =>
       var driverNotified = false
       try {
         driver.foreach { driverRef =>
           // Tell driver that we are starting decommissioning so it stops trying to schedule us
-          driverNotified = driverRef.askSync[Boolean](ExecutorDecommissioning(executorId))
+          driverNotified =
+            driverRef.askSync[Boolean](ExecutorDecommissioning(executorId))
           if (driverNotified) decommissionSelf()
         }
       } catch {
         case e: Exception =>
           if (driverNotified) {
-            logError("Fail to decommission self (but driver has been notified).", e)
+            logError(
+              "Fail to decommission self (but driver has been notified).",
+              e
+            )
           } else {
-            logError("Fail to tell driver that we are starting decommissioning", e)
+            logError(
+              "Fail to tell driver that we are starting decommissioning",
+              e
+            )
           }
           decommissioned = false
       }
@@ -253,18 +320,30 @@ private[spark] class CoarseGrainedExecutorBackend(
 
   override def onDisconnected(remoteAddress: RpcAddress): Unit = {
     if (stopping.get()) {
-      logInfo(log"Driver from ${MDC(LogKeys.RPC_ADDRESS, remoteAddress)}" +
-        log" disconnected during shutdown")
+      logInfo(
+        log"Driver from ${MDC(LogKeys.RPC_ADDRESS, remoteAddress)}" +
+          log" disconnected during shutdown"
+      )
     } else if (driver.exists(_.address == remoteAddress)) {
-      exitExecutor(1, s"Driver $remoteAddress disassociated! Shutting down.", null,
-        notifyDriver = false)
+      exitExecutor(
+        1,
+        s"Driver $remoteAddress disassociated! Shutting down.",
+        null,
+        notifyDriver = false
+      )
     } else {
-      logWarning(log"An unknown (${MDC(LogKeys.REMOTE_ADDRESS, remoteAddress)} " +
-        log"driver disconnected.")
+      logWarning(
+        log"An unknown (${MDC(LogKeys.REMOTE_ADDRESS, remoteAddress)} " +
+          log"driver disconnected."
+      )
     }
   }
 
-  override def statusUpdate(taskId: Long, state: TaskState, data: ByteBuffer): Unit = {
+  override def statusUpdate(
+      taskId: Long,
+      state: TaskState,
+      data: ByteBuffer
+  ): Unit = {
     val resources = executor.runningTasks.get(taskId).taskDescription.resources
     val cpus = executor.runningTasks.get(taskId).taskDescription.cpus
     val msg = StatusUpdate(executorId, taskId, state, data, cpus, resources)
@@ -274,21 +353,25 @@ private[spark] class CoarseGrainedExecutorBackend(
     driver match {
       case Some(driverRef) => driverRef.send(msg)
       case None =>
-        logWarning(log"Drop ${MDC(LogKeys.MESSAGE, msg)} because has not yet connected to driver")
+        logWarning(
+          log"Drop ${MDC(LogKeys.MESSAGE, msg)} because has not yet connected to driver"
+        )
     }
   }
 
-  /**
-   * This function can be overloaded by other child classes to handle
-   * executor exits differently. For e.g. when an executor goes down,
-   * back-end may not want to take the parent process down.
-   */
-  protected def exitExecutor(code: Int,
-                             reason: String,
-                             throwable: Throwable = null,
-                             notifyDriver: Boolean = true) = {
+  /** This function can be overloaded by other child classes to handle
+    * executor exits differently. For e.g. when an executor goes down,
+    * back-end may not want to take the parent process down.
+    */
+  protected def exitExecutor(
+      code: Int,
+      reason: String,
+      throwable: Throwable = null,
+      notifyDriver: Boolean = true
+  ) = {
     if (stopping.compareAndSet(false, true)) {
-      val message = log"Executor self-exiting due to : ${MDC(LogKeys.REASON, reason)}"
+      val message =
+        log"Executor self-exiting due to : ${MDC(LogKeys.REASON, reason)}"
       if (throwable != null) {
         logError(message, throwable)
       } else {
@@ -300,21 +383,29 @@ private[spark] class CoarseGrainedExecutorBackend(
       }
 
       if (notifyDriver && driver.nonEmpty) {
-        driver.get.send(RemoveExecutor(executorId, new ExecutorLossReason(reason)))
+        driver.get.send(
+          RemoveExecutor(executorId, new ExecutorLossReason(reason))
+        )
       }
       self.send(Shutdown)
     } else {
-      logInfo("Skip exiting executor since it's been already asked to exit before.")
+      logInfo(
+        "Skip exiting executor since it's been already asked to exit before."
+      )
     }
   }
 
   private def decommissionSelf(): Unit = {
     if (!env.conf.get(DECOMMISSION_ENABLED)) {
-      logWarning("Receive decommission request, but decommission feature is disabled.")
+      logWarning(
+        "Receive decommission request, but decommission feature is disabled."
+      )
       return
     } else if (decommissioned) {
-      logWarning(log"Executor ${MDC(LogKeys.EXECUTOR_ID, executorId)} " +
-        log"already started decommissioning.")
+      logWarning(
+        log"Executor ${MDC(LogKeys.EXECUTOR_ID, executorId)} " +
+          log"already started decommissioning."
+      )
       return
     }
     logInfo(log"Decommission executor ${MDC(LogKeys.EXECUTOR_ID, executorId)}.")
@@ -326,9 +417,11 @@ private[spark] class CoarseGrainedExecutorBackend(
       if (migrationEnabled) {
         env.blockManager.decommissionBlockManager()
       } else if (env.conf.get(STORAGE_DECOMMISSION_ENABLED)) {
-        logError(log"Storage decommissioning attempted but neither " +
-          log"${MDC(LogKeys.CONFIG, STORAGE_DECOMMISSION_SHUFFLE_BLOCKS_ENABLED.key)} or " +
-          log"${MDC(LogKeys.CONFIG2, STORAGE_DECOMMISSION_RDD_BLOCKS_ENABLED.key)} is enabled ")
+        logError(
+          log"Storage decommissioning attempted but neither " +
+            log"${MDC(LogKeys.CONFIG, STORAGE_DECOMMISSION_SHUFFLE_BLOCKS_ENABLED.key)} or " +
+            log"${MDC(LogKeys.CONFIG2, STORAGE_DECOMMISSION_RDD_BLOCKS_ENABLED.key)} is enabled "
+        )
       }
       if (executor != null) {
         executor.decommission()
@@ -347,7 +440,9 @@ private[spark] class CoarseGrainedExecutorBackend(
           // This config is internal and only used by unit tests to force an executor
           // to hang around for longer when decommissioned.
           val initialSleepMillis = env.conf.getInt(
-            "spark.test.executor.decommission.initial.sleep.millis", sleep_time)
+            "spark.test.executor.decommission.initial.sleep.millis",
+            sleep_time
+          )
           if (initialSleepMillis > 0) {
             Thread.sleep(initialSleepMillis)
           }
@@ -356,22 +451,38 @@ private[spark] class CoarseGrainedExecutorBackend(
             if (executor == null || executor.numRunningTasks == 0) {
               if (migrationEnabled) {
                 logInfo("No running tasks, checking migrations")
-                val (migrationTime, allBlocksMigrated) = env.blockManager.lastMigrationInfo()
+                val (migrationTime, allBlocksMigrated) =
+                  env.blockManager.lastMigrationInfo()
                 // We can only trust allBlocksMigrated boolean value if there were no tasks running
                 // since the start of computing it.
-                if (allBlocksMigrated && (migrationTime > lastTaskFinishTime.get())) {
+                if (
+                  allBlocksMigrated && (migrationTime > lastTaskFinishTime
+                    .get())
+                ) {
                   logInfo("No running tasks, all blocks migrated, stopping.")
-                  exitExecutor(0, ExecutorLossMessage.decommissionFinished, notifyDriver = true)
+                  exitExecutor(
+                    0,
+                    ExecutorLossMessage.decommissionFinished,
+                    notifyDriver = true
+                  )
                 } else {
                   logInfo("All blocks not yet migrated.")
                 }
               } else {
-                logInfo("No running tasks, no block migration configured, stopping.")
-                exitExecutor(0, ExecutorLossMessage.decommissionFinished, notifyDriver = true)
+                logInfo(
+                  "No running tasks, no block migration configured, stopping."
+                )
+                exitExecutor(
+                  0,
+                  ExecutorLossMessage.decommissionFinished,
+                  notifyDriver = true
+                )
               }
             } else {
-              logInfo(log"Blocked from shutdown by" +
-                log" ${MDC(LogKeys.NUM_TASKS, executor.numRunningTasks)} running tasks")
+              logInfo(
+                log"Blocked from shutdown by" +
+                  log" ${MDC(LogKeys.NUM_TASKS, executor.numRunningTasks)} running tasks"
+              )
             }
             Thread.sleep(sleep_time)
           }
@@ -404,23 +515,45 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
       appId: String,
       workerUrl: Option[String],
       resourcesFileOpt: Option[String],
-      resourceProfileId: Int)
+      resourceProfileId: Int
+  )
 
   def main(args: Array[String]): Unit = {
-    val createFn: (RpcEnv, Arguments, SparkEnv, ResourceProfile) =>
-      CoarseGrainedExecutorBackend = { case (rpcEnv, arguments, env, resourceProfile) =>
-      new CoarseGrainedExecutorBackend(rpcEnv, arguments.driverUrl, arguments.executorId,
-        arguments.bindAddress, arguments.hostname, arguments.cores,
-        env, arguments.resourcesFileOpt, resourceProfile)
+    val createFn: (
+        RpcEnv,
+        Arguments,
+        SparkEnv,
+        ResourceProfile
+    ) => CoarseGrainedExecutorBackend = {
+      case (rpcEnv, arguments, env, resourceProfile) =>
+        new CoarseGrainedExecutorBackend(
+          rpcEnv,
+          arguments.driverUrl,
+          arguments.executorId,
+          arguments.bindAddress,
+          arguments.hostname,
+          arguments.cores,
+          env,
+          arguments.resourcesFileOpt,
+          resourceProfile
+        )
     }
-    run(parseArguments(args, this.getClass.getCanonicalName.stripSuffix("$")), createFn)
+    run(
+      parseArguments(args, this.getClass.getCanonicalName.stripSuffix("$")),
+      createFn
+    )
     System.exit(0)
   }
 
   def run(
       arguments: Arguments,
-      backendCreateFn: (RpcEnv, Arguments, SparkEnv, ResourceProfile) =>
-        CoarseGrainedExecutorBackend): Unit = {
+      backendCreateFn: (
+          RpcEnv,
+          Arguments,
+          SparkEnv,
+          ResourceProfile
+      ) => CoarseGrainedExecutorBackend
+  ): Unit = {
 
     Utils.initDaemon(log)
 
@@ -438,7 +571,8 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
         executorConf,
         new SecurityManager(executorConf),
         numUsableCores = 0,
-        clientMode = true)
+        clientMode = true
+      )
 
       var driver: RpcEndpointRef = null
       val nTries = 3
@@ -446,14 +580,19 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
         try {
           driver = fetcher.setupEndpointRefByURI(arguments.driverUrl)
         } catch {
-          case e: Throwable => if (i == nTries - 1) {
-            throw e
-          }
+          case e: Throwable =>
+            if (i == nTries - 1) {
+              throw e
+            }
         }
       }
 
-      val cfg = driver.askSync[SparkAppConfig](RetrieveSparkAppConfig(arguments.resourceProfileId))
-      val props = cfg.sparkProperties ++ Seq[(String, String)](("spark.app.id", arguments.appId))
+      val cfg = driver.askSync[SparkAppConfig](
+        RetrieveSparkAppConfig(arguments.resourceProfileId)
+      )
+      val props = cfg.sparkProperties ++ Seq[(String, String)](
+        ("spark.app.id", arguments.appId)
+      )
       fetcher.shutdown()
 
       // Create SparkEnv using properties we fetched from the driver.
@@ -474,24 +613,41 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
       driverConf.set(EXECUTOR_ID, arguments.executorId)
       cfg.logLevel.foreach(logLevel => Utils.setLogLevelIfNeeded(logLevel))
 
-      val env = SparkEnv.createExecutorEnv(driverConf, arguments.executorId, arguments.bindAddress,
-        arguments.hostname, arguments.cores, cfg.ioEncryptionKey, isLocal = false)
+      val env = SparkEnv.createExecutorEnv(
+        driverConf,
+        arguments.executorId,
+        arguments.bindAddress,
+        arguments.hostname,
+        arguments.cores,
+        cfg.ioEncryptionKey,
+        isLocal = false
+      )
       // Set the application attemptId in the BlockStoreClient if available.
       val appAttemptId = env.conf.get(APP_ATTEMPT_ID)
       appAttemptId.foreach(attemptId =>
         env.blockManager.blockStoreClient.setAppAttemptId(attemptId)
       )
-      val backend = backendCreateFn(env.rpcEnv, arguments, env, cfg.resourceProfile)
+      val backend =
+        backendCreateFn(env.rpcEnv, arguments, env, cfg.resourceProfile)
       env.rpcEnv.setupEndpoint("Executor", backend)
       arguments.workerUrl.foreach { url =>
-        env.rpcEnv.setupEndpoint("WorkerWatcher",
-          new WorkerWatcher(env.rpcEnv, url, isChildProcessStopping = backend.stopping))
+        env.rpcEnv.setupEndpoint(
+          "WorkerWatcher",
+          new WorkerWatcher(
+            env.rpcEnv,
+            url,
+            isChildProcessStopping = backend.stopping
+          )
+        )
       }
       env.rpcEnv.awaitTermination()
     }
   }
 
-  def parseArguments(args: Array[String], classNameForEntry: String): Arguments = {
+  def parseArguments(
+      args: Array[String],
+      classNameForEntry: String
+  ): Arguments = {
     var driverUrl: String = null
     var executorId: String = null
     var bindAddress: String = null
@@ -533,7 +689,7 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
         case ("--resourceProfileId") :: value :: tail =>
           resourceProfileId = value.toInt
           argv = tail
-        case Nil =>
+        case Nil  =>
         case tail =>
           // scalastyle:off println
           System.err.println(s"Unrecognized options: ${tail.mkString(" ")}")
@@ -544,10 +700,14 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
 
     if (hostname == null) {
       hostname = Utils.localHostName()
-      log.info(s"Executor hostname is not provided, will use '$hostname' to advertise itself")
+      log.info(
+        s"Executor hostname is not provided, will use '$hostname' to advertise itself"
+      )
     }
 
-    if (driverUrl == null || executorId == null || cores <= 0 || appId == null) {
+    if (
+      driverUrl == null || executorId == null || cores <= 0 || appId == null
+    ) {
       printUsageAndExit(classNameForEntry)
     }
 
@@ -555,14 +715,22 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
       bindAddress = hostname
     }
 
-    Arguments(driverUrl, executorId, bindAddress, hostname, cores, appId, workerUrl,
-      resourcesFileOpt, resourceProfileId)
+    Arguments(
+      driverUrl,
+      executorId,
+      bindAddress,
+      hostname,
+      cores,
+      appId,
+      workerUrl,
+      resourcesFileOpt,
+      resourceProfileId
+    )
   }
 
   private def printUsageAndExit(classNameForEntry: String): Unit = {
     // scalastyle:off println
-    System.err.println(
-      s"""
+    System.err.println(s"""
       |Usage: $classNameForEntry [options]
       |
       | Options are:

@@ -19,17 +19,15 @@ package org.apache.spark.scheduler
 
 import org.apache.spark.resource.{ResourceAllocator, ResourceInformation}
 
-/**
- * Class to hold information about a type of Resource on an Executor. This information is managed
- * by SchedulerBackend, and TaskScheduler shall schedule tasks on idle Executors based on the
- * information.
- * @param name Resource name
- * @param addresses Resource addresses provided by the executor
- */
-private[spark] class ExecutorResourceInfo(
-    name: String,
-    addresses: Seq[String])
-  extends ResourceInformation(name, addresses.toArray) with ResourceAllocator {
+/** Class to hold information about a type of Resource on an Executor. This information is managed
+  * by SchedulerBackend, and TaskScheduler shall schedule tasks on idle Executors based on the
+  * information.
+  * @param name Resource name
+  * @param addresses Resource addresses provided by the executor
+  */
+private[spark] class ExecutorResourceInfo(name: String, addresses: Seq[String])
+    extends ResourceInformation(name, addresses.toArray)
+    with ResourceAllocator {
 
   override protected def resourceName = this.name
   override protected def resourceAddresses = this.addresses

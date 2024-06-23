@@ -30,19 +30,19 @@ import org.apache.spark.internal.config.Python.PYTHON_AUTH_SOCKET_TIMEOUT
 import org.apache.spark.network.util.JavaUtils
 import org.apache.spark.util.{ThreadUtils, Utils}
 
-
-/**
- * Creates a server in the JVM to communicate with external processes (e.g., Python and R) for
- * handling one batch of data, with authentication and error handling.
- *
- * The socket server can only accept one connection, or close if no connection
- * in configurable amount of seconds (default 15).
- */
+/** Creates a server in the JVM to communicate with external processes (e.g., Python and R) for
+  * handling one batch of data, with authentication and error handling.
+  *
+  * The socket server can only accept one connection, or close if no connection
+  * in configurable amount of seconds (default 15).
+  */
 private[spark] abstract class SocketAuthServer[T](
     authHelper: SocketAuthHelper,
-    threadName: String) extends Logging {
+    threadName: String
+) extends Logging {
 
-  def this(env: SparkEnv, threadName: String) = this(new SocketAuthHelper(env.conf), threadName)
+  def this(env: SparkEnv, threadName: String) =
+    this(new SocketAuthHelper(env.conf), threadName)
   def this(threadName: String) = this(SparkEnv.get, threadName)
 
   private val promise = Promise[T]()
@@ -61,9 +61,13 @@ private[spark] abstract class SocketAuthServer[T](
       override def run(): Unit = {
         var sock: Socket = null
         try {
-          logTrace(s"Waiting for connection on $address with port ${serverSocket.getLocalPort}")
+          logTrace(
+            s"Waiting for connection on $address with port ${serverSocket.getLocalPort}"
+          )
           sock = serverSocket.accept()
-          logTrace(s"Connection accepted from address ${sock.getRemoteSocketAddress}")
+          logTrace(
+            s"Connection accepted from address ${sock.getRemoteSocketAddress}"
+          )
           authHelper.authClient(sock)
           logTrace("Client authenticated")
           promise.complete(Try(handleConnection(sock)))
@@ -79,17 +83,15 @@ private[spark] abstract class SocketAuthServer[T](
 
   val (port, secret) = startServer()
 
-  /**
-   * Handle a connection which has already been authenticated.  Any error from this function
-   * will clean up this connection and the entire server, and get propagated to [[getResult]].
-   */
+  /** Handle a connection which has already been authenticated.  Any error from this function
+    * will clean up this connection and the entire server, and get propagated to [[getResult]].
+    */
   def handleConnection(sock: Socket): T
 
-  /**
-   * Blocks indefinitely for [[handleConnection]] to finish, and returns that result.  If
-   * handleConnection throws an exception, this will throw an exception which includes the original
-   * exception as a cause.
-   */
+  /** Blocks indefinitely for [[handleConnection]] to finish, and returns that result.  If
+    * handleConnection throws an exception, this will throw an exception which includes the original
+    * exception as a cause.
+    */
   def getResult(): T = {
     getResult(Duration.Inf)
   }
@@ -100,15 +102,15 @@ private[spark] abstract class SocketAuthServer[T](
 
 }
 
-/**
- * Create a socket server class and run user function on the socket in a background thread
- * that can read and write to the socket input/output streams. The function is passed in a
- * socket that has been connected and authenticated.
- */
+/** Create a socket server class and run user function on the socket in a background thread
+  * that can read and write to the socket input/output streams. The function is passed in a
+  * socket that has been connected and authenticated.
+  */
 private[spark] class SocketFuncServer(
     authHelper: SocketAuthHelper,
     threadName: String,
-    func: Socket => Unit) extends SocketAuthServer[Unit](authHelper, threadName) {
+    func: Socket => Unit
+) extends SocketAuthServer[Unit](authHelper, threadName) {
 
   override def handleConnection(sock: Socket): Unit = {
     func(sock)
@@ -117,23 +119,22 @@ private[spark] class SocketFuncServer(
 
 private[spark] object SocketAuthServer {
 
-  /**
-   * Convenience function to create a socket server and run a user function in a background
-   * thread to write to an output stream.
-   *
-   * The socket server can only accept one connection, or close if no connection
-   * in 15 seconds.
-   *
-   * @param threadName Name for the background serving thread.
-   * @param authHelper SocketAuthHelper for authentication
-   * @param writeFunc User function to write to a given OutputStream
-   * @return 3-tuple (as a Java array) with the port number of a local socket which serves the
-   *         data collected from this job, the secret for authentication, and a socket auth
-   *         server object that can be used to join the JVM serving thread in Python.
-   */
-  def serveToStream(
-      threadName: String,
-      authHelper: SocketAuthHelper)(writeFunc: OutputStream => Unit): Array[Any] = {
+  /** Convenience function to create a socket server and run a user function in a background
+    * thread to write to an output stream.
+    *
+    * The socket server can only accept one connection, or close if no connection
+    * in 15 seconds.
+    *
+    * @param threadName Name for the background serving thread.
+    * @param authHelper SocketAuthHelper for authentication
+    * @param writeFunc User function to write to a given OutputStream
+    * @return 3-tuple (as a Java array) with the port number of a local socket which serves the
+    *         data collected from this job, the secret for authentication, and a socket auth
+    *         server object that can be used to join the JVM serving thread in Python.
+    */
+  def serveToStream(threadName: String, authHelper: SocketAuthHelper)(
+      writeFunc: OutputStream => Unit
+  ): Array[Any] = {
     val handleFunc = (sock: Socket) => {
       val out = new BufferedOutputStream(sock.getOutputStream())
       Utils.tryWithSafeFinally {

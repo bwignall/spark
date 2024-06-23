@@ -26,34 +26,32 @@ import org.apache.spark.annotation.{Evolving, Since}
 import org.apache.spark.network.util.JavaUtils
 import org.apache.spark.resource.ResourceProfile._
 
-/**
- * A set of Executor resource requests. This is used in conjunction with the ResourceProfile to
- * programmatically specify the resources needed for an RDD that will be applied at the
- * stage level.
- */
+/** A set of Executor resource requests. This is used in conjunction with the ResourceProfile to
+  * programmatically specify the resources needed for an RDD that will be applied at the
+  * stage level.
+  */
 @Evolving
 @Since("3.1.0")
 class ExecutorResourceRequests() extends Serializable {
 
-  private val _executorResources = new ConcurrentHashMap[String, ExecutorResourceRequest]()
+  private val _executorResources =
+    new ConcurrentHashMap[String, ExecutorResourceRequest]()
 
-  /**
-   * Returns all the resource requests for the executor.
-   */
-  def requests: Map[String, ExecutorResourceRequest] = _executorResources.asScala.toMap
+  /** Returns all the resource requests for the executor.
+    */
+  def requests: Map[String, ExecutorResourceRequest] =
+    _executorResources.asScala.toMap
 
-  /**
-   * (Java-specific) Returns all the resource requests for the executor.
-   */
+  /** (Java-specific) Returns all the resource requests for the executor.
+    */
   def requestsJMap: JMap[String, ExecutorResourceRequest] = requests.asJava
 
-  /**
-   * Specify heap memory. The value specified will be converted to MiB.
-   * This is a convenient API to add [[ExecutorResourceRequest]] for "memory" resource.
-   *
-   * @param amount Amount of memory. In the same format as JVM memory strings (e.g. 512m, 2g).
-   *               Default unit is MiB if not specified.
-   */
+  /** Specify heap memory. The value specified will be converted to MiB.
+    * This is a convenient API to add [[ExecutorResourceRequest]] for "memory" resource.
+    *
+    * @param amount Amount of memory. In the same format as JVM memory strings (e.g. 512m, 2g).
+    *               Default unit is MiB if not specified.
+    */
   def memory(amount: String): this.type = {
     val amountMiB = JavaUtils.byteStringAsMb(amount)
     val req = new ExecutorResourceRequest(MEMORY, amountMiB)
@@ -61,14 +59,13 @@ class ExecutorResourceRequests() extends Serializable {
     this
   }
 
-  /**
-   * Specify off heap memory. The value specified will be converted to MiB.
-   * This value only take effect when MEMORY_OFFHEAP_ENABLED is true.
-   * This is a convenient API to add [[ExecutorResourceRequest]] for "offHeap" resource.
-   *
-   * @param amount Amount of memory. In the same format as JVM memory strings (e.g. 512m, 2g).
-   *               Default unit is MiB if not specified.
-   */
+  /** Specify off heap memory. The value specified will be converted to MiB.
+    * This value only take effect when MEMORY_OFFHEAP_ENABLED is true.
+    * This is a convenient API to add [[ExecutorResourceRequest]] for "offHeap" resource.
+    *
+    * @param amount Amount of memory. In the same format as JVM memory strings (e.g. 512m, 2g).
+    *               Default unit is MiB if not specified.
+    */
   def offHeapMemory(amount: String): this.type = {
     val amountMiB = JavaUtils.byteStringAsMb(amount)
     val req = new ExecutorResourceRequest(OFFHEAP_MEM, amountMiB)
@@ -76,13 +73,12 @@ class ExecutorResourceRequests() extends Serializable {
     this
   }
 
-  /**
-   * Specify overhead memory. The value specified will be converted to MiB.
-   * This is a convenient API to add [[ExecutorResourceRequest]] for "memoryOverhead" resource.
-   *
-   * @param amount Amount of memory. In the same format as JVM memory strings (e.g. 512m, 2g).
-   *               Default unit is MiB if not specified.
-   */
+  /** Specify overhead memory. The value specified will be converted to MiB.
+    * This is a convenient API to add [[ExecutorResourceRequest]] for "memoryOverhead" resource.
+    *
+    * @param amount Amount of memory. In the same format as JVM memory strings (e.g. 512m, 2g).
+    *               Default unit is MiB if not specified.
+    */
   def memoryOverhead(amount: String): this.type = {
     val amountMiB = JavaUtils.byteStringAsMb(amount)
     val req = new ExecutorResourceRequest(OVERHEAD_MEM, amountMiB)
@@ -90,13 +86,12 @@ class ExecutorResourceRequests() extends Serializable {
     this
   }
 
-  /**
-   * Specify pyspark memory. The value specified will be converted to MiB.
-   * This is a convenient API to add [[ExecutorResourceRequest]] for "pyspark.memory" resource.
-   *
-   * @param amount Amount of memory. In the same format as JVM memory strings (e.g. 512m, 2g).
-   *               Default unit is MiB if not specified.
-   */
+  /** Specify pyspark memory. The value specified will be converted to MiB.
+    * This is a convenient API to add [[ExecutorResourceRequest]] for "pyspark.memory" resource.
+    *
+    * @param amount Amount of memory. In the same format as JVM memory strings (e.g. 512m, 2g).
+    *               Default unit is MiB if not specified.
+    */
   def pysparkMemory(amount: String): this.type = {
     val amountMiB = JavaUtils.byteStringAsMb(amount)
     val req = new ExecutorResourceRequest(PYSPARK_MEM, amountMiB)
@@ -104,42 +99,42 @@ class ExecutorResourceRequests() extends Serializable {
     this
   }
 
-  /**
-   * Specify number of cores per Executor.
-   * This is a convenient API to add [[ExecutorResourceRequest]] for "cores" resource.
-   *
-   * @param amount Number of cores to allocate per Executor.
-   */
+  /** Specify number of cores per Executor.
+    * This is a convenient API to add [[ExecutorResourceRequest]] for "cores" resource.
+    *
+    * @param amount Number of cores to allocate per Executor.
+    */
   def cores(amount: Int): this.type = {
     val req = new ExecutorResourceRequest(CORES, amount)
     _executorResources.put(CORES, req)
     this
   }
 
-  /**
-   *  Amount of a particular custom resource(GPU, FPGA, etc) to use. The resource names supported
-   *  correspond to the regular Spark configs with the prefix removed. For instance, resources
-   *  like GPUs are gpu (spark configs spark.executor.resource.gpu.*). If you pass in a resource
-   *  that the cluster manager doesn't support the result is undefined, it may error or may just
-   *  be ignored.
-   *  This is a convenient API to add [[ExecutorResourceRequest]] for custom resources.
-   *
-   * @param resourceName Name of the resource.
-   * @param amount amount of that resource per executor to use.
-   * @param discoveryScript Optional script used to discover the resources. This is required on
-   *                        some cluster managers that don't tell Spark the addresses of
-   *                        the resources allocated. The script runs on Executors startup to
-   *                        of the resources available.
-   * @param vendor Optional vendor, required for some cluster managers
-   */
+  /**  Amount of a particular custom resource(GPU, FPGA, etc) to use. The resource names supported
+    *  correspond to the regular Spark configs with the prefix removed. For instance, resources
+    *  like GPUs are gpu (spark configs spark.executor.resource.gpu.*). If you pass in a resource
+    *  that the cluster manager doesn't support the result is undefined, it may error or may just
+    *  be ignored.
+    *  This is a convenient API to add [[ExecutorResourceRequest]] for custom resources.
+    *
+    * @param resourceName Name of the resource.
+    * @param amount amount of that resource per executor to use.
+    * @param discoveryScript Optional script used to discover the resources. This is required on
+    *                        some cluster managers that don't tell Spark the addresses of
+    *                        the resources allocated. The script runs on Executors startup to
+    *                        of the resources available.
+    * @param vendor Optional vendor, required for some cluster managers
+    */
   def resource(
       resourceName: String,
       amount: Long,
       discoveryScript: String = "",
-      vendor: String = ""): this.type = {
+      vendor: String = ""
+  ): this.type = {
     // a bit weird but for Java api use empty string as meaning None because empty
     // string is otherwise invalid for those parameters anyway
-    val req = new ExecutorResourceRequest(resourceName, amount, discoveryScript, vendor)
+    val req =
+      new ExecutorResourceRequest(resourceName, amount, discoveryScript, vendor)
     _executorResources.put(resourceName, req)
     this
   }

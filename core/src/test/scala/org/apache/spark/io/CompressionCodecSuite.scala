@@ -22,7 +22,11 @@ import java.util.Locale
 
 import com.google.common.io.ByteStreams
 
-import org.apache.spark.{SparkConf, SparkFunSuite, SparkIllegalArgumentException}
+import org.apache.spark.{
+  SparkConf,
+  SparkFunSuite,
+  SparkIllegalArgumentException
+}
 import org.apache.spark.internal.config.IO_COMPRESSION_ZSTD_BUFFERPOOL_ENABLED
 
 class CompressionCodecSuite extends SparkFunSuite {
@@ -53,7 +57,8 @@ class CompressionCodecSuite extends SparkFunSuite {
   }
 
   test("lz4 compression codec") {
-    val codec = CompressionCodec.createCodec(conf, classOf[LZ4CompressionCodec].getName)
+    val codec =
+      CompressionCodec.createCodec(conf, classOf[LZ4CompressionCodec].getName)
     assert(codec.getClass === classOf[LZ4CompressionCodec])
     testCodec(codec)
   }
@@ -65,13 +70,15 @@ class CompressionCodecSuite extends SparkFunSuite {
   }
 
   test("lz4 supports concatenation of serialized streams") {
-    val codec = CompressionCodec.createCodec(conf, classOf[LZ4CompressionCodec].getName)
+    val codec =
+      CompressionCodec.createCodec(conf, classOf[LZ4CompressionCodec].getName)
     assert(codec.getClass === classOf[LZ4CompressionCodec])
     testConcatenationOfSerializedStreams(codec)
   }
 
   test("lzf compression codec") {
-    val codec = CompressionCodec.createCodec(conf, classOf[LZFCompressionCodec].getName)
+    val codec =
+      CompressionCodec.createCodec(conf, classOf[LZFCompressionCodec].getName)
     assert(codec.getClass === classOf[LZFCompressionCodec])
     testCodec(codec)
   }
@@ -83,13 +90,17 @@ class CompressionCodecSuite extends SparkFunSuite {
   }
 
   test("lzf supports concatenation of serialized streams") {
-    val codec = CompressionCodec.createCodec(conf, classOf[LZFCompressionCodec].getName)
+    val codec =
+      CompressionCodec.createCodec(conf, classOf[LZFCompressionCodec].getName)
     assert(codec.getClass === classOf[LZFCompressionCodec])
     testConcatenationOfSerializedStreams(codec)
   }
 
   test("snappy compression codec") {
-    val codec = CompressionCodec.createCodec(conf, classOf[SnappyCompressionCodec].getName)
+    val codec = CompressionCodec.createCodec(
+      conf,
+      classOf[SnappyCompressionCodec].getName
+    )
     assert(codec.getClass === classOf[SnappyCompressionCodec])
     testCodec(codec)
   }
@@ -101,15 +112,22 @@ class CompressionCodecSuite extends SparkFunSuite {
   }
 
   test("snappy supports concatenation of serialized streams") {
-    val codec = CompressionCodec.createCodec(conf, classOf[SnappyCompressionCodec].getName)
+    val codec = CompressionCodec.createCodec(
+      conf,
+      classOf[SnappyCompressionCodec].getName
+    )
     assert(codec.getClass === classOf[SnappyCompressionCodec])
     testConcatenationOfSerializedStreams(codec)
   }
 
   test("zstd compression codec") {
     Seq("true", "false").foreach { flag =>
-      val conf = new SparkConf(false).set(IO_COMPRESSION_ZSTD_BUFFERPOOL_ENABLED.key, flag)
-      val codec = CompressionCodec.createCodec(conf, classOf[ZStdCompressionCodec].getName)
+      val conf = new SparkConf(false)
+        .set(IO_COMPRESSION_ZSTD_BUFFERPOOL_ENABLED.key, flag)
+      val codec = CompressionCodec.createCodec(
+        conf,
+        classOf[ZStdCompressionCodec].getName
+      )
       assert(codec.getClass === classOf[ZStdCompressionCodec])
       testCodec(codec)
     }
@@ -122,7 +140,8 @@ class CompressionCodecSuite extends SparkFunSuite {
   }
 
   test("zstd supports concatenation of serialized zstd") {
-    val codec = CompressionCodec.createCodec(conf, classOf[ZStdCompressionCodec].getName)
+    val codec =
+      CompressionCodec.createCodec(conf, classOf[ZStdCompressionCodec].getName)
     assert(codec.getClass === classOf[ZStdCompressionCodec])
     testConcatenationOfSerializedStreams(codec)
   }
@@ -141,7 +160,9 @@ class CompressionCodecSuite extends SparkFunSuite {
     )
   }
 
-  private def testConcatenationOfSerializedStreams(codec: CompressionCodec): Unit = {
+  private def testConcatenationOfSerializedStreams(
+      codec: CompressionCodec
+  ): Unit = {
     val bytes1: Array[Byte] = {
       val baos = new ByteArrayOutputStream()
       val out = codec.compressedOutputStream(baos)
@@ -156,23 +177,32 @@ class CompressionCodecSuite extends SparkFunSuite {
       out.close()
       baos.toByteArray
     }
-    val concatenatedBytes = codec.compressedInputStream(new ByteArrayInputStream(bytes1 ++ bytes2))
+    val concatenatedBytes =
+      codec.compressedInputStream(new ByteArrayInputStream(bytes1 ++ bytes2))
     val decompressed: Array[Byte] = new Array[Byte](128)
     ByteStreams.readFully(concatenatedBytes, decompressed)
     assert(decompressed.toSeq === (0 to 127))
   }
 
-  test("SPARK-48506: CompressionCodec getShortName is case insensitive for short names") {
-    CompressionCodec.shortCompressionCodecNames.foreach { case (shortName, codecClass) =>
-      assert(CompressionCodec.getShortName(shortName) === shortName)
-      assert(CompressionCodec.getShortName(shortName.toUpperCase(Locale.ROOT)) === shortName)
-      assert(CompressionCodec.getShortName(codecClass) === shortName)
-      checkError(
-        exception = intercept[SparkIllegalArgumentException] {
-          CompressionCodec.getShortName(codecClass.toUpperCase(Locale.ROOT))
-        },
-        errorClass = "CODEC_SHORT_NAME_NOT_FOUND",
-        parameters = Map("codecName" -> codecClass.toUpperCase(Locale.ROOT)))
+  test(
+    "SPARK-48506: CompressionCodec getShortName is case insensitive for short names"
+  ) {
+    CompressionCodec.shortCompressionCodecNames.foreach {
+      case (shortName, codecClass) =>
+        assert(CompressionCodec.getShortName(shortName) === shortName)
+        assert(
+          CompressionCodec.getShortName(
+            shortName.toUpperCase(Locale.ROOT)
+          ) === shortName
+        )
+        assert(CompressionCodec.getShortName(codecClass) === shortName)
+        checkError(
+          exception = intercept[SparkIllegalArgumentException] {
+            CompressionCodec.getShortName(codecClass.toUpperCase(Locale.ROOT))
+          },
+          errorClass = "CODEC_SHORT_NAME_NOT_FOUND",
+          parameters = Map("codecName" -> codecClass.toUpperCase(Locale.ROOT))
+        )
     }
   }
 }

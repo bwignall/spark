@@ -19,26 +19,27 @@ package org.apache.spark.resource
 
 import org.apache.spark.annotation.{Evolving, Since}
 
-/**
- * A task resource request. This is used in conjunction with the [[ResourceProfile]] to
- * programmatically specify the resources needed for an RDD that will be applied at the
- * stage level.
- *
- * Use [[TaskResourceRequests]] class as a convenience API.
- *
- * @param resourceName Resource name
- * @param amount Amount requesting as a Double to support fractional resource requests.
- *               Valid values are less than or equal to 1.0 or whole numbers. This essentially
- *               lets you configure X number of tasks to run on a single resource,
- *               ie amount equals 0.5 translates into 2 tasks per resource address.
- */
+/** A task resource request. This is used in conjunction with the [[ResourceProfile]] to
+  * programmatically specify the resources needed for an RDD that will be applied at the
+  * stage level.
+  *
+  * Use [[TaskResourceRequests]] class as a convenience API.
+  *
+  * @param resourceName Resource name
+  * @param amount Amount requesting as a Double to support fractional resource requests.
+  *               Valid values are less than or equal to 1.0 or whole numbers. This essentially
+  *               lets you configure X number of tasks to run on a single resource,
+  *               ie amount equals 0.5 translates into 2 tasks per resource address.
+  */
 @Evolving
 @Since("3.1.0")
 class TaskResourceRequest(val resourceName: String, val amount: Double)
-  extends Serializable {
+    extends Serializable {
 
-  assert(amount <= 1.0 || amount % 1 == 0,
-    s"The resource amount ${amount} must be either <= 1.0, or a whole number.")
+  assert(
+    amount <= 1.0 || amount % 1 == 0,
+    s"The resource amount ${amount} must be either <= 1.0, or a whole number."
+  )
 
   override def equals(obj: Any): Boolean = {
     obj match {

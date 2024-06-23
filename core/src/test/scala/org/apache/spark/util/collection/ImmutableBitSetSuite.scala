@@ -49,7 +49,7 @@ class ImmutableBitSetSuite extends SparkFunSuite {
     assert(bitset.nextSetBit(97) === -1)
   }
 
-  test( "xor len(bitsetX) < len(bitsetY)" ) {
+  test("xor len(bitsetX) < len(bitsetY)") {
     val bitsetX = new ImmutableBitSet(60, 0, 2, 3, 37, 41)
     val bitsetY = new ImmutableBitSet(100, 0, 1, 3, 37, 38, 41, 85)
 
@@ -67,7 +67,7 @@ class ImmutableBitSetSuite extends SparkFunSuite {
 
   }
 
-  test( "xor len(bitsetX) > len(bitsetY)" ) {
+  test("xor len(bitsetX) > len(bitsetY)") {
     val bitsetX = new ImmutableBitSet(100, 0, 1, 3, 37, 38, 41, 85)
     val bitsetY = new ImmutableBitSet(60, 0, 2, 3, 37, 41)
 
@@ -85,11 +85,11 @@ class ImmutableBitSetSuite extends SparkFunSuite {
 
   }
 
-  test( "andNot len(bitsetX) < len(bitsetY)" ) {
+  test("andNot len(bitsetX) < len(bitsetY)") {
     val bitsetX = new ImmutableBitSet(60, 0, 2, 3, 37, 41, 48)
     val bitsetY = new ImmutableBitSet(100, 0, 1, 3, 37, 38, 41, 85)
 
-    val bitsetDiff = bitsetX.andNot( bitsetY )
+    val bitsetDiff = bitsetX.andNot(bitsetY)
 
     assert(bitsetDiff.nextSetBit(0) === 2)
     assert(bitsetDiff.nextSetBit(1) === 2)
@@ -100,11 +100,11 @@ class ImmutableBitSetSuite extends SparkFunSuite {
     assert(bitsetDiff.nextSetBit(65) === -1)
   }
 
-  test( "andNot len(bitsetX) > len(bitsetY)" ) {
+  test("andNot len(bitsetX) > len(bitsetY)") {
     val bitsetX = new ImmutableBitSet(100, 0, 1, 3, 37, 38, 41, 85)
     val bitsetY = new ImmutableBitSet(60, 0, 2, 3, 37, 41, 48)
 
-    val bitsetDiff = bitsetX.andNot( bitsetY )
+    val bitsetDiff = bitsetX.andNot(bitsetY)
 
     assert(bitsetDiff.nextSetBit(0) === 1)
     assert(bitsetDiff.nextSetBit(1) === 1)
@@ -116,7 +116,7 @@ class ImmutableBitSetSuite extends SparkFunSuite {
     assert(bitsetDiff.nextSetBit(86) === -1)
   }
 
-  test( "immutability" ) {
+  test("immutability") {
     val bitset = new ImmutableBitSet(100)
     intercept[UnsupportedOperationException] {
       bitset.set(1)

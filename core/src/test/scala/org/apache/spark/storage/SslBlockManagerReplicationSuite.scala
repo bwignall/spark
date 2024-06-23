@@ -26,14 +26,15 @@ class SslBlockManagerReplicationSuite extends BlockManagerReplicationSuite {
   }
 }
 
-class SslBlockManagerProactiveReplicationSuite extends BlockManagerProactiveReplicationSuite {
+class SslBlockManagerProactiveReplicationSuite
+    extends BlockManagerProactiveReplicationSuite {
   override def createConf(): SparkConf = {
     SslTestUtils.updateWithSSLConfig(super.createConf())
   }
 }
 
 class SslBlockManagerBasicStrategyReplicationSuite
-  extends BlockManagerBasicStrategyReplicationSuite {
+    extends BlockManagerBasicStrategyReplicationSuite {
   override def createConf(): SparkConf = {
     SslTestUtils.updateWithSSLConfig(super.createConf())
   }

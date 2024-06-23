@@ -27,31 +27,34 @@ import scala.collection.mutable.{HashMap, Map}
 import scala.jdk.CollectionConverters._
 
 import org.apache.spark.{JobArtifactSet, JobArtifactState}
-import org.apache.spark.util.{ByteBufferInputStream, ByteBufferOutputStream, Utils}
+import org.apache.spark.util.{
+  ByteBufferInputStream,
+  ByteBufferOutputStream,
+  Utils
+}
 
-/**
- * Description of a task that gets passed onto executors to be executed, usually created by
- * `TaskSetManager.resourceOffer`.
- *
- * TaskDescriptions and the associated Task need to be serialized carefully for two reasons:
- *
- *     (1) When a TaskDescription is received by an Executor, the Executor needs to first get the
- *         list of JARs and files and add these to the classpath, and set the properties, before
- *         deserializing the Task object (serializedTask). This is why the Properties are included
- *         in the TaskDescription, even though they're also in the serialized task.
- *     (2) Because a TaskDescription is serialized and sent to an executor for each task, efficient
- *         serialization (both in terms of serialization time and serialized buffer size) is
- *         important. For this reason, we serialize TaskDescriptions ourselves with the
- *         TaskDescription.encode and TaskDescription.decode methods.  This results in a smaller
- *         serialized size because it avoids serializing unnecessary fields in the Map objects
- *         (which can introduce significant overhead when the maps are small).
- */
+/** Description of a task that gets passed onto executors to be executed, usually created by
+  * `TaskSetManager.resourceOffer`.
+  *
+  * TaskDescriptions and the associated Task need to be serialized carefully for two reasons:
+  *
+  *     (1) When a TaskDescription is received by an Executor, the Executor needs to first get the
+  *         list of JARs and files and add these to the classpath, and set the properties, before
+  *         deserializing the Task object (serializedTask). This is why the Properties are included
+  *         in the TaskDescription, even though they're also in the serialized task.
+  *     (2) Because a TaskDescription is serialized and sent to an executor for each task, efficient
+  *         serialization (both in terms of serialization time and serialized buffer size) is
+  *         important. For this reason, we serialize TaskDescriptions ourselves with the
+  *         TaskDescription.encode and TaskDescription.decode methods.  This results in a smaller
+  *         serialized size because it avoids serializing unnecessary fields in the Map objects
+  *         (which can introduce significant overhead when the maps are small).
+  */
 private[spark] class TaskDescription(
     val taskId: Long,
     val attemptNumber: Int,
     val executorId: String,
     val name: String,
-    val index: Int,    // Index within this task's TaskSet
+    val index: Int, // Index within this task's TaskSet
     val partitionId: Int,
     val artifacts: JobArtifactSet,
     val properties: Properties,
@@ -60,7 +63,8 @@ private[spark] class TaskDescription(
     // Eg, Map("gpu" -> Map("0" -> ResourceAmountUtils.toInternalResource(0.7))):
     // assign 0.7 of the gpu address "0" to this task
     val resources: immutable.Map[String, immutable.Map[String, Long]],
-    val serializedTask: ByteBuffer) {
+    val serializedTask: ByteBuffer
+) {
 
   assert(cpus > 0, "CPUs per task should be > 0")
 
@@ -68,7 +72,10 @@ private[spark] class TaskDescription(
 }
 
 private[spark] object TaskDescription {
-  private def serializeStringLongMap(map: Map[String, Long], dataOut: DataOutputStream): Unit = {
+  private def serializeStringLongMap(
+      map: Map[String, Long],
+      dataOut: DataOutputStream
+  ): Unit = {
     dataOut.writeInt(map.size)
     map.foreach { case (key, value) =>
       dataOut.writeUTF(key)
@@ -76,8 +83,10 @@ private[spark] object TaskDescription {
     }
   }
 
-  private def serializeResources(map: immutable.Map[String, immutable.Map[String, Long]],
-      dataOut: DataOutputStream): Unit = {
+  private def serializeResources(
+      map: immutable.Map[String, immutable.Map[String, Long]],
+      dataOut: DataOutputStream
+  ): Unit = {
     dataOut.writeInt(map.size)
     map.foreach { case (rName, addressAmountMap) =>
       dataOut.writeUTF(rName)
@@ -140,21 +149,29 @@ private[spark] object TaskDescription {
       state = deserializeOptionString(dataIn).map { uuid =>
         JobArtifactState(
           uuid = uuid,
-          replClassDirUri = deserializeOptionString(dataIn))
+          replClassDirUri = deserializeOptionString(dataIn)
+        )
       },
       jars = immutable.Map(deserializeStringLongMap(dataIn).toSeq: _*),
       files = immutable.Map(deserializeStringLongMap(dataIn).toSeq: _*),
-      archives = immutable.Map(deserializeStringLongMap(dataIn).toSeq: _*))
+      archives = immutable.Map(deserializeStringLongMap(dataIn).toSeq: _*)
+    )
   }
 
-  private def serializeOptionString(str: Option[String], out: DataOutputStream): Unit = {
+  private def serializeOptionString(
+      str: Option[String],
+      out: DataOutputStream
+  ): Unit = {
     out.writeBoolean(str.isDefined)
     if (str.isDefined) {
       out.writeUTF(str.get)
     }
   }
 
-  private def serializeArtifacts(artifacts: JobArtifactSet, dataOut: DataOutputStream): Unit = {
+  private def serializeArtifacts(
+      artifacts: JobArtifactSet,
+      dataOut: DataOutputStream
+  ): Unit = {
     serializeOptionString(artifacts.state.map(_.uuid), dataOut)
     artifacts.state.foreach { state =>
       serializeOptionString(state.replClassDirUri, dataOut)
@@ -164,7 +181,9 @@ private[spark] object TaskDescription {
     serializeStringLongMap(Map(artifacts.archives.toSeq: _*), dataOut)
   }
 
-  private def deserializeStringLongMap(dataIn: DataInputStream): HashMap[String, Long] = {
+  private def deserializeStringLongMap(
+      dataIn: DataInputStream
+  ): HashMap[String, Long] = {
     val map = new HashMap[String, Long]()
     val mapSize = dataIn.readInt()
     var i = 0
@@ -175,8 +194,9 @@ private[spark] object TaskDescription {
     map
   }
 
-  private def deserializeResources(dataIn: DataInputStream):
-      immutable.Map[String, immutable.Map[String, Long]] = {
+  private def deserializeResources(
+      dataIn: DataInputStream
+  ): immutable.Map[String, immutable.Map[String, Long]] = {
     val map = new HashMap[String, immutable.Map[String, Long]]()
     val mapSize = dataIn.readInt()
     var i = 0
@@ -217,7 +237,10 @@ private[spark] object TaskDescription {
       val valueLength = dataIn.readInt()
       val valueBytes = new Array[Byte](valueLength)
       dataIn.readFully(valueBytes)
-      properties.setProperty(key, new String(valueBytes, StandardCharsets.UTF_8))
+      properties.setProperty(
+        key,
+        new String(valueBytes, StandardCharsets.UTF_8)
+      )
     }
 
     // Read cpus.
@@ -229,7 +252,18 @@ private[spark] object TaskDescription {
     // Create a sub-buffer for the serialized task into its own buffer (to be deserialized later).
     val serializedTask = byteBuffer.slice()
 
-    new TaskDescription(taskId, attemptNumber, executorId, name, index, partitionId, artifacts,
-      properties, cpus, resources, serializedTask)
+    new TaskDescription(
+      taskId,
+      attemptNumber,
+      executorId,
+      name,
+      index,
+      partitionId,
+      artifacts,
+      properties,
+      cpus,
+      resources,
+      serializedTask
+    )
   }
 }

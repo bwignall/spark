@@ -22,15 +22,19 @@ import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
 import scala.jdk.CollectionConverters._
 
 import org.apache.spark.SparkContext
-import org.apache.spark.api.plugin.{DriverPlugin, ExecutorPlugin, PluginContext, SparkPlugin}
+import org.apache.spark.api.plugin.{
+  DriverPlugin,
+  ExecutorPlugin,
+  PluginContext,
+  SparkPlugin
+}
 import org.apache.spark.internal.{Logging, MDC}
 import org.apache.spark.internal.LogKeys._
 import org.apache.spark.internal.config.DRIVER_TIMEOUT
 import org.apache.spark.util.{SparkExitCode, ThreadUtils}
 
-/**
- * A built-in plugin to provide Driver timeout feature.
- */
+/** A built-in plugin to provide Driver timeout feature.
+  */
 class DriverTimeoutPlugin extends SparkPlugin {
   override def driverPlugin(): DriverPlugin = new DriverTimeoutDriverPlugin()
 
@@ -43,15 +47,20 @@ class DriverTimeoutDriverPlugin extends DriverPlugin with Logging {
   private val timeoutService: ScheduledExecutorService =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor("driver-timeout")
 
-  override def init(sc: SparkContext, ctx: PluginContext): JMap[String, String] = {
+  override def init(
+      sc: SparkContext,
+      ctx: PluginContext
+  ): JMap[String, String] = {
     val timeout = sc.conf.get(DRIVER_TIMEOUT)
     if (timeout == 0) {
       logWarning("Disabled with the timeout value 0.")
     } else {
       val task: Runnable = () => {
-        logWarning(log"Terminate Driver JVM because it runs after " +
-          log"${MDC(TIME_UNITS, timeout)} minute" +
-          (if (timeout == 1) log"" else log"s"))
+        logWarning(
+          log"Terminate Driver JVM because it runs after " +
+            log"${MDC(TIME_UNITS, timeout)} minute" +
+            (if (timeout == 1) log"" else log"s")
+        )
         // We cannot use 'SparkContext.stop' because SparkContext might be in abnormal situation.
         System.exit(SparkExitCode.DRIVER_TIMEOUT)
       }

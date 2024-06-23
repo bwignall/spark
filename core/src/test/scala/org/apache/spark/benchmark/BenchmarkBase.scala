@@ -21,23 +21,22 @@ import java.io.{File, FileOutputStream, OutputStream}
 
 import org.apache.spark.internal.config.Tests.IS_TESTING
 
-/**
- * A base class for generate benchmark results to a file.
- * For JDK 21+, JDK major version number is added to the file names to distinguish the results.
- */
+/** A base class for generate benchmark results to a file.
+  * For JDK 21+, JDK major version number is added to the file names to distinguish the results.
+  */
 abstract class BenchmarkBase {
   var output: Option[OutputStream] = None
 
-  /**
-   * Main process of the whole benchmark.
-   * Implementations of this method are supposed to use the wrapper method `runBenchmark`
-   * for each benchmark scenario.
-   */
+  /** Main process of the whole benchmark.
+    * Implementations of this method are supposed to use the wrapper method `runBenchmark`
+    * for each benchmark scenario.
+    */
   def runBenchmarkSuite(mainArgs: Array[String]): Unit
 
   final def runBenchmark(benchmarkName: String)(func: => Any): Unit = {
     val separator = "=" * 96
-    val testHeader = (separator + '\n' + benchmarkName + '\n' + separator + '\n' + '\n').getBytes
+    val testHeader =
+      (separator + '\n' + benchmarkName + '\n' + separator + '\n' + '\n').getBytes
     output.foreach(_.write(testHeader))
     func
     output.foreach(_.write('\n'))
@@ -48,7 +47,8 @@ abstract class BenchmarkBase {
     // be consistent, also allow users to turn on/off certain behavior such as
     // `spark.sql.codegen.factoryMode`
     System.setProperty(IS_TESTING.key, "true")
-    val regenerateBenchmarkFiles: Boolean = System.getenv("SPARK_GENERATE_BENCHMARK_FILES") == "1"
+    val regenerateBenchmarkFiles: Boolean =
+      System.getenv("SPARK_GENERATE_BENCHMARK_FILES") == "1"
     if (regenerateBenchmarkFiles) {
       val version = System.getProperty("java.version").split("\\D+")(0).toInt
       val jdkString = if (version > 17) s"-jdk$version" else ""
@@ -82,8 +82,7 @@ abstract class BenchmarkBase {
 
   def suffix: String = ""
 
-  /**
-   * Any shutdown code to ensure a clean shutdown
-   */
+  /** Any shutdown code to ensure a clean shutdown
+    */
   def afterAll(): Unit = {}
 }

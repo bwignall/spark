@@ -22,12 +22,12 @@ import org.openqa.selenium.chrome.{ChromeDriver, ChromeOptions}
 
 import org.apache.spark.tags.{ChromeUITest, WebBrowserTest}
 
-/**
- * Selenium tests for the Spark Web UI with Chrome.
- */
+/** Selenium tests for the Spark Web UI with Chrome.
+  */
 @WebBrowserTest
 @ChromeUITest
-class ChromeUISeleniumSuite extends RealBrowserUISeleniumSuite("webdriver.chrome.driver") {
+class ChromeUISeleniumSuite
+    extends RealBrowserUISeleniumSuite("webdriver.chrome.driver") {
 
   override var webDriver: WebDriver with JavascriptExecutor = _
 

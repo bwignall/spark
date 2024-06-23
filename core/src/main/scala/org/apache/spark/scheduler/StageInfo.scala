@@ -23,10 +23,9 @@ import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.executor.TaskMetrics
 import org.apache.spark.storage.RDDInfo
 
-/**
- * :: DeveloperApi ::
- * Stores information about a stage to pass from the scheduler to SparkListeners.
- */
+/** :: DeveloperApi ::
+  * Stores information about a stage to pass from the scheduler to SparkListeners.
+  */
 @DeveloperApi
 class StageInfo(
     val stageId: Int,
@@ -37,22 +36,26 @@ class StageInfo(
     val parentIds: Seq[Int],
     val details: String,
     val taskMetrics: TaskMetrics = null,
-    private[spark] val taskLocalityPreferences: Seq[Seq[TaskLocation]] = Seq.empty,
+    private[spark] val taskLocalityPreferences: Seq[Seq[TaskLocation]] =
+      Seq.empty,
     private[spark] val shuffleDepId: Option[Int] = None,
     val resourceProfileId: Int,
     private[spark] var isShufflePushEnabled: Boolean = false,
-    private[spark] var shuffleMergerCount: Int = 0) {
+    private[spark] var shuffleMergerCount: Int = 0
+) {
+
   /** When this stage was submitted from the DAGScheduler to a TaskScheduler. */
   var submissionTime: Option[Long] = None
+
   /** Time when the stage completed or when the stage was cancelled. */
   var completionTime: Option[Long] = None
+
   /** If the stage failed, the reason why. */
   var failureReason: Option[String] = None
 
-  /**
-   * Terminal values of accumulables updated during this stage, including all the user-defined
-   * accumulators.
-   */
+  /** Terminal values of accumulables updated during this stage, including all the user-defined
+    * accumulators.
+    */
   val accumulables = HashMap[Long, AccumulableInfo]()
 
   def stageFailed(reason: String): Unit = {
@@ -80,19 +83,21 @@ class StageInfo(
     shuffleMergerCount = mergers
   }
 
-  private[spark] def setPushBasedShuffleEnabled(pushBasedShuffleEnabled: Boolean): Unit = {
+  private[spark] def setPushBasedShuffleEnabled(
+      pushBasedShuffleEnabled: Boolean
+  ): Unit = {
     isShufflePushEnabled = pushBasedShuffleEnabled
   }
 }
 
 private[spark] object StageInfo {
-  /**
-   * Construct a StageInfo from a Stage.
-   *
-   * Each Stage is associated with one or many RDDs, with the boundary of a Stage marked by
-   * shuffle dependencies. Therefore, all ancestor RDDs related to this Stage's RDD through a
-   * sequence of narrow dependencies should also be associated with this Stage.
-   */
+
+  /** Construct a StageInfo from a Stage.
+    *
+    * Each Stage is associated with one or many RDDs, with the boundary of a Stage marked by
+    * shuffle dependencies. Therefore, all ancestor RDDs related to this Stage's RDD through a
+    * sequence of narrow dependencies should also be associated with this Stage.
+    */
   def fromStage(
       stage: Stage,
       attemptId: Int,
@@ -100,12 +105,12 @@ private[spark] object StageInfo {
       taskMetrics: TaskMetrics = null,
       taskLocalityPreferences: Seq[Seq[TaskLocation]] = Seq.empty,
       resourceProfileId: Int
-    ): StageInfo = {
+  ): StageInfo = {
     val ancestorRddInfos = stage.rdd.getNarrowAncestors.map(RDDInfo.fromRdd)
     val rddInfos = Seq(RDDInfo.fromRdd(stage.rdd)) ++ ancestorRddInfos
     val shuffleDepId = stage match {
       case sms: ShuffleMapStage => Option(sms.shuffleDep).map(_.shuffleId)
-      case _ => None
+      case _                    => None
     }
     new StageInfo(
       stage.id,
@@ -120,6 +125,7 @@ private[spark] object StageInfo {
       shuffleDepId,
       resourceProfileId,
       false,
-      0)
+      0
+    )
   }
 }

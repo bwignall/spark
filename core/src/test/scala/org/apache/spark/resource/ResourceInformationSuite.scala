@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 package org.apache.spark.resource
 
 import org.json4s.JsonDSL._
@@ -25,7 +24,8 @@ import org.apache.spark.{SparkException, SparkFunSuite}
 
 class ResourceInformationSuite extends SparkFunSuite {
   test("ResourceInformation.parseJson for valid JSON") {
-    val json1 = compact(render(("name" -> "p100") ~ ("addresses" -> Seq("0", "1"))))
+    val json1 =
+      compact(render(("name" -> "p100") ~ ("addresses" -> Seq("0", "1"))))
     val info1 = ResourceInformation.parseJson(json1)
     assert(info1.name === "p100")
     assert(info1.addresses === Array("0", "1"))
@@ -42,9 +42,14 @@ class ResourceInformationSuite extends SparkFunSuite {
       val ex = intercept[SparkException] {
         print(ResourceInformation.parseJson(invalidJson))
       }
-      assert(ex.getMessage.contains("Error parsing JSON into ResourceInformation"),
-        "Error message should provide context.")
-      assert(ex.getMessage.contains(invalidJson), "Error message should include input json.")
+      assert(
+        ex.getMessage.contains("Error parsing JSON into ResourceInformation"),
+        "Error message should provide context."
+      )
+      assert(
+        ex.getMessage.contains(invalidJson),
+        "Error message should include input json."
+      )
     }
   }
 

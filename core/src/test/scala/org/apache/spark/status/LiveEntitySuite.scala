@@ -55,7 +55,9 @@ class LiveEntitySuite extends SparkFunSuite {
     assert(!seq.exists(_.blockName == items(5).blockName))
   }
 
-  test("Only show few elements of CollectionAccumulator when converting to v1.AccumulableInfo") {
+  test(
+    "Only show few elements of CollectionAccumulator when converting to v1.AccumulableInfo"
+  ) {
     val acc = new CollectionAccumulator[Int]()
     val value = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
     acc.setValue(value)

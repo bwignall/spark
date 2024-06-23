@@ -40,24 +40,28 @@ class AppStatusUtilsSuite extends SparkFunSuite {
       speculative = false,
       accumulatorUpdates = Nil,
       errorMessage = None,
-      taskMetrics = Some(new TaskMetrics(
-        executorDeserializeTime = 0L,
-        executorDeserializeCpuTime = 0L,
-        executorRunTime = 0L,
-        executorCpuTime = 0L,
-        resultSize = 0L,
-        jvmGcTime = 0L,
-        resultSerializationTime = 0L,
-        memoryBytesSpilled = 0L,
-        diskBytesSpilled = 0L,
-        peakExecutionMemory = 0L,
-        inputMetrics = null,
-        outputMetrics = null,
-        shuffleReadMetrics = null,
-        shuffleWriteMetrics = null)),
+      taskMetrics = Some(
+        new TaskMetrics(
+          executorDeserializeTime = 0L,
+          executorDeserializeCpuTime = 0L,
+          executorRunTime = 0L,
+          executorCpuTime = 0L,
+          resultSize = 0L,
+          jvmGcTime = 0L,
+          resultSerializationTime = 0L,
+          memoryBytesSpilled = 0L,
+          diskBytesSpilled = 0L,
+          peakExecutionMemory = 0L,
+          inputMetrics = null,
+          outputMetrics = null,
+          shuffleReadMetrics = null,
+          shuffleWriteMetrics = null
+        )
+      ),
       executorLogs = null,
       schedulerDelay = 0L,
-      gettingResultTime = 0L)
+      gettingResultTime = 0L
+    )
     assert(AppStatusUtils.schedulerDelay(runningTask) === 0L)
 
     val finishedTask = new TaskData(
@@ -75,34 +79,54 @@ class AppStatusUtilsSuite extends SparkFunSuite {
       speculative = false,
       accumulatorUpdates = Nil,
       errorMessage = None,
-      taskMetrics = Some(new TaskMetrics(
-        executorDeserializeTime = 5L,
-        executorDeserializeCpuTime = 3L,
-        executorRunTime = 90L,
-        executorCpuTime = 10L,
-        resultSize = 100L,
-        jvmGcTime = 10L,
-        resultSerializationTime = 2L,
-        memoryBytesSpilled = 0L,
-        diskBytesSpilled = 0L,
-        peakExecutionMemory = 100L,
-        inputMetrics = null,
-        outputMetrics = null,
-        shuffleReadMetrics = null,
-        shuffleWriteMetrics = null)),
+      taskMetrics = Some(
+        new TaskMetrics(
+          executorDeserializeTime = 5L,
+          executorDeserializeCpuTime = 3L,
+          executorRunTime = 90L,
+          executorCpuTime = 10L,
+          resultSize = 100L,
+          jvmGcTime = 10L,
+          resultSerializationTime = 2L,
+          memoryBytesSpilled = 0L,
+          diskBytesSpilled = 0L,
+          peakExecutionMemory = 100L,
+          inputMetrics = null,
+          outputMetrics = null,
+          shuffleReadMetrics = null,
+          shuffleWriteMetrics = null
+        )
+      ),
       executorLogs = null,
       schedulerDelay = 0L,
-      gettingResultTime = 0L)
+      gettingResultTime = 0L
+    )
     assert(AppStatusUtils.schedulerDelay(finishedTask) === 3L)
   }
 
   test("getQuantilesValue") {
     val values = IndexedSeq(1.0, 2.0, 3.0, 4.0)
     val quantiles = Array(0.0, 0.25, 0.5, 0.75, 1.0)
-    assert(getQuantilesValue(values, quantiles) == IndexedSeq(1.0, 2.0, 3.0, 4.0, 4.0))
+    assert(
+      getQuantilesValue(values, quantiles) == IndexedSeq(
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        4.0
+      )
+    )
 
     // When values are empty
     val emptyValue = IndexedSeq()
-    assert(getQuantilesValue(emptyValue, quantiles) == IndexedSeq(0.0, 0.0, 0.0, 0.0, 0.0))
+    assert(
+      getQuantilesValue(emptyValue, quantiles) == IndexedSeq(
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      )
+    )
   }
 }

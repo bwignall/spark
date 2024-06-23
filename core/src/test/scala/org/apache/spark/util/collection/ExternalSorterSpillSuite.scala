@@ -30,8 +30,18 @@ import org.apache.spark.{SparkConf, SparkEnv, SparkFunSuite, TaskContext}
 import org.apache.spark.executor.ShuffleWriteMetrics
 import org.apache.spark.internal.config
 import org.apache.spark.memory.{TaskMemoryManager, TestMemoryManager}
-import org.apache.spark.serializer.{KryoSerializer, SerializerInstance, SerializerManager}
-import org.apache.spark.storage.{BlockId, BlockManager, DiskBlockManager, DiskBlockObjectWriter, TempShuffleBlockId}
+import org.apache.spark.serializer.{
+  KryoSerializer,
+  SerializerInstance,
+  SerializerManager
+}
+import org.apache.spark.storage.{
+  BlockId,
+  BlockManager,
+  DiskBlockManager,
+  DiskBlockObjectWriter,
+  TempShuffleBlockId
+}
 import org.apache.spark.util.{Utils => UUtils}
 
 class ExternalSorterSpillSuite extends SparkFunSuite {
@@ -104,13 +114,15 @@ class ExternalSorterSpillSuite extends SparkFunSuite {
     // Mock the answer of `blockManager.getDiskWriter` and let the `close()` method of
     // `DiskBlockObjectWriter` throw IOException.
     val errorMessage = "Spill file close failed"
-    when(blockManager.getDiskWriter(
-      any(classOf[BlockId]),
-      any(classOf[File]),
-      any(classOf[SerializerInstance]),
-      anyInt(),
-      any(classOf[ShuffleWriteMetrics])
-    )).thenAnswer((invocation: InvocationOnMock) => {
+    when(
+      blockManager.getDiskWriter(
+        any(classOf[BlockId]),
+        any(classOf[File]),
+        any(classOf[SerializerInstance]),
+        anyInt(),
+        any(classOf[ShuffleWriteMetrics])
+      )
+    ).thenAnswer((invocation: InvocationOnMock) => {
       val args = invocation.getArguments
       new DiskBlockObjectWriter(
         args(1).asInstanceOf[File],
@@ -136,11 +148,12 @@ class ExternalSorterSpillSuite extends SparkFunSuite {
   }
 }
 
-/**
- * `TestExternalSorter` used to expand the access scope of the spill method.
- */
+/** `TestExternalSorter` used to expand the access scope of the spill method.
+  */
 private[this] class TestExternalSorter[K, V, C](context: TaskContext)
-  extends ExternalSorter[K, V, C](context) {
-  override def spill(collection: WritablePartitionedPairCollection[K, C]): Unit =
+    extends ExternalSorter[K, V, C](context) {
+  override def spill(
+      collection: WritablePartitionedPairCollection[K, C]
+  ): Unit =
     super.spill(collection)
 }

@@ -31,24 +31,36 @@ import org.apache.spark.io.CompressionCodec
 import org.apache.spark.memory.MemoryTestingUtils
 import org.apache.spark.util.CompletionIterator
 
-class ExternalAppendOnlyMapSuite extends SparkFunSuite
-  with LocalSparkContext
-  with Eventually
-  with Matchers {
+class ExternalAppendOnlyMapSuite
+    extends SparkFunSuite
+    with LocalSparkContext
+    with Eventually
+    with Matchers {
   import TestUtils.{assertNotSpilled, assertSpilled}
 
   private def createCombiner[T](i: T) = ArrayBuffer[T](i)
-  private def mergeValue[T](buffer: ArrayBuffer[T], i: T): ArrayBuffer[T] = buffer += i
-  private def mergeCombiners[T](buf1: ArrayBuffer[T], buf2: ArrayBuffer[T]): ArrayBuffer[T] =
+  private def mergeValue[T](buffer: ArrayBuffer[T], i: T): ArrayBuffer[T] =
+    buffer += i
+  private def mergeCombiners[T](
+      buf1: ArrayBuffer[T],
+      buf2: ArrayBuffer[T]
+  ): ArrayBuffer[T] =
     buf1 ++= buf2
 
   private def createExternalMap[T] = {
     val context = MemoryTestingUtils.fakeTaskContext(sc.env)
     new ExternalAppendOnlyMap[T, T, ArrayBuffer[T]](
-      createCombiner[T], mergeValue[T], mergeCombiners[T], context = context)
+      createCombiner[T],
+      mergeValue[T],
+      mergeCombiners[T],
+      context = context
+    )
   }
 
-  private def createSparkConf(loadDefaults: Boolean, codec: Option[String] = None): SparkConf = {
+  private def createSparkConf(
+      loadDefaults: Boolean,
+      codec: Option[String] = None
+  ): SparkConf = {
     val conf = new SparkConf(loadDefaults)
     // Make the Java serializer write a reset instruction (TC_RESET) after each object to test
     // for a bug we had with bytes written past the last object in a batch (SPARK-2792)
@@ -84,10 +96,13 @@ class ExternalAppendOnlyMapSuite extends SparkFunSuite
     map.insert(3, 30)
     val it = map.iterator
     assert(it.hasNext)
-    assert(it.toSet === Set[(Int, ArrayBuffer[Int])](
-      (1, ArrayBuffer[Int](10)),
-      (2, ArrayBuffer[Int](20)),
-      (3, ArrayBuffer[Int](30))))
+    assert(
+      it.toSet === Set[(Int, ArrayBuffer[Int])](
+        (1, ArrayBuffer[Int](10)),
+        (2, ArrayBuffer[Int](20)),
+        (3, ArrayBuffer[Int](30))
+      )
+    )
     sc.stop()
   }
 
@@ -96,20 +111,18 @@ class ExternalAppendOnlyMapSuite extends SparkFunSuite
     sc = new SparkContext("local", "test", conf)
     val map = createExternalMap[Int]
 
-    map.insertAll(Seq(
-      (1, 10),
-      (2, 20),
-      (3, 30),
-      (1, 100),
-      (2, 200),
-      (1, 1000)))
+    map.insertAll(Seq((1, 10), (2, 20), (3, 30), (1, 100), (2, 200), (1, 1000)))
     val it = map.iterator
     assert(it.hasNext)
-    val result = it.toSet[(Int, ArrayBuffer[Int])].map(kv => (kv._1, kv._2.toSet))
-    assert(result === Set[(Int, Set[Int])](
-      (1, Set[Int](10, 100, 1000)),
-      (2, Set[Int](20, 200)),
-      (3, Set[Int](30))))
+    val result =
+      it.toSet[(Int, ArrayBuffer[Int])].map(kv => (kv._1, kv._2.toSet))
+    assert(
+      result === Set[(Int, Set[Int])](
+        (1, Set[Int](10, 100, 1000)),
+        (2, Set[Int](20, 200)),
+        (3, Set[Int](30))
+      )
+    )
     sc.stop()
   }
 
@@ -168,14 +181,18 @@ class ExternalAppendOnlyMapSuite extends SparkFunSuite
     map.insert(4, nullInt)
     map.insert(nullInt, 8)
     map.insert(nullInt, nullInt)
-      val result = map.iterator.toSet[(Int, ArrayBuffer[Int])].map(kv => (kv._1, kv._2.sorted))
-    assert(result === Set[(Int, Seq[Int])](
-      (1, Seq[Int](5)),
-      (2, Seq[Int](6)),
-      (3, Seq[Int](7)),
-      (4, Seq[Int](nullInt)),
-      (nullInt, Seq[Int](nullInt, 8))
-    ))
+    val result = map.iterator
+      .toSet[(Int, ArrayBuffer[Int])]
+      .map(kv => (kv._1, kv._2.sorted))
+    assert(
+      result === Set[(Int, Seq[Int])](
+        (1, Seq[Int](5)),
+        (2, Seq[Int](6)),
+        (3, Seq[Int](7)),
+        (4, Seq[Int](nullInt)),
+        (nullInt, Seq[Int](nullInt, 8))
+      )
+    )
 
     sc.stop()
   }
@@ -185,14 +202,18 @@ class ExternalAppendOnlyMapSuite extends SparkFunSuite
     sc = new SparkContext("local", "test", conf)
 
     // reduceByKey
-    val rdd = sc.parallelize(1 to 10).map(i => (i%2, 1))
+    val rdd = sc.parallelize(1 to 10).map(i => (i % 2, 1))
     val result1 = rdd.reduceByKey(_ + _).collect()
     assert(result1.toSet === Set[(Int, Int)]((0, 5), (1, 5)))
 
     // groupByKey
     val result2 = rdd.groupByKey().collect().map(x => (x._1, x._2.toList)).toSet
-    assert(result2.toSet === Set[(Int, Seq[Int])]
-      ((0, List[Int](1, 1, 1, 1, 1)), (1, List[Int](1, 1, 1, 1, 1))))
+    assert(
+      result2.toSet === Set[(Int, Seq[Int])](
+        (0, List[Int](1, 1, 1, 1, 1)),
+        (1, List[Int](1, 1, 1, 1, 1))
+      )
+    )
     sc.stop()
   }
 
@@ -200,16 +221,21 @@ class ExternalAppendOnlyMapSuite extends SparkFunSuite
     val conf = createSparkConf(loadDefaults = false)
     sc = new SparkContext("local", "test", conf)
     val rdd1 = sc.parallelize(1 to 4).map(i => (i, i))
-    val rdd2 = sc.parallelize(1 to 4).map(i => (i%2, i))
+    val rdd2 = sc.parallelize(1 to 4).map(i => (i % 2, i))
     val result = rdd1.cogroup(rdd2).collect()
 
     result.foreach { case (i, (seq1, seq2)) =>
       i match {
-        case 0 => assert(seq1.toSet === Set[Int]() && seq2.toSet === Set[Int](2, 4))
-        case 1 => assert(seq1.toSet === Set[Int](1) && seq2.toSet === Set[Int](1, 3))
-        case 2 => assert(seq1.toSet === Set[Int](2) && seq2.toSet === Set[Int]())
-        case 3 => assert(seq1.toSet === Set[Int](3) && seq2.toSet === Set[Int]())
-        case 4 => assert(seq1.toSet === Set[Int](4) && seq2.toSet === Set[Int]())
+        case 0 =>
+          assert(seq1.toSet === Set[Int]() && seq2.toSet === Set[Int](2, 4))
+        case 1 =>
+          assert(seq1.toSet === Set[Int](1) && seq2.toSet === Set[Int](1, 3))
+        case 2 =>
+          assert(seq1.toSet === Set[Int](2) && seq2.toSet === Set[Int]())
+        case 3 =>
+          assert(seq1.toSet === Set[Int](3) && seq2.toSet === Set[Int]())
+        case 4 =>
+          assert(seq1.toSet === Set[Int](4) && seq2.toSet === Set[Int]())
       }
     }
     sc.stop()
@@ -234,7 +260,9 @@ class ExternalAppendOnlyMapSuite extends SparkFunSuite
         val compressionMessage = lastCompressionCodec
           .map { c => "with compression using codec " + c }
           .getOrElse("without compression")
-        val newException = new Exception(s"Test failed $compressionMessage:\n\n${t.getMessage}")
+        val newException = new Exception(
+          s"Test failed $compressionMessage:\n\n${t.getMessage}"
+        )
         newException.setStackTrace(t.getStackTrace)
         throw newException
     }
@@ -248,34 +276,52 @@ class ExternalAppendOnlyMapSuite extends SparkFunSuite
     testSimpleSpillingForAllCodecs(encrypt = true)
   }
 
-  /**
-   * Test spilling through simple aggregations and cogroups.
-   * If a compression codec is provided, use it. Otherwise, do not compress spills.
-   */
-  private def testSimpleSpilling(codec: Option[String] = None, encrypt: Boolean = false): Unit = {
+  /** Test spilling through simple aggregations and cogroups.
+    * If a compression codec is provided, use it. Otherwise, do not compress spills.
+    */
+  private def testSimpleSpilling(
+      codec: Option[String] = None,
+      encrypt: Boolean = false
+  ): Unit = {
     val size = 1000
-    val conf = createSparkConf(loadDefaults = true, codec)  // Load defaults for Spark home
+    val conf = createSparkConf(
+      loadDefaults = true,
+      codec
+    ) // Load defaults for Spark home
     conf.set(SHUFFLE_SPILL_NUM_ELEMENTS_FORCE_SPILL_THRESHOLD, size / 4)
     conf.set(IO_ENCRYPTION_ENABLED, encrypt)
     sc = new SparkContext("local-cluster[1,1,1024]", "test", conf)
 
     assertSpilled(sc, "reduceByKey") {
-      val result = sc.parallelize(0 until size)
-        .map { i => (i / 2, i) }.reduceByKey(math.max).collect()
+      val result = sc
+        .parallelize(0 until size)
+        .map { i => (i / 2, i) }
+        .reduceByKey(math.max)
+        .collect()
       assert(result.length === size / 2)
       result.foreach { case (k, v) =>
         val expected = k * 2 + 1
-        assert(v === expected, s"Value for $k was wrong: expected $expected, got $v")
+        assert(
+          v === expected,
+          s"Value for $k was wrong: expected $expected, got $v"
+        )
       }
     }
 
     assertSpilled(sc, "groupByKey") {
-      val result = sc.parallelize(0 until size).map { i => (i / 2, i) }.groupByKey().collect()
+      val result = sc
+        .parallelize(0 until size)
+        .map { i => (i / 2, i) }
+        .groupByKey()
+        .collect()
       assert(result.length == size / 2)
       result.foreach { case (i, seq) =>
         val actual = seq.toSet
         val expected = Set(i * 2, i * 2 + 1)
-        assert(actual === expected, s"Value for $i was wrong: expected $expected, got $actual")
+        assert(
+          actual === expected,
+          s"Value for $i was wrong: expected $expected, got $actual"
+        )
       }
     }
 
@@ -288,15 +334,23 @@ class ExternalAppendOnlyMapSuite extends SparkFunSuite
         val actual1 = seq1.toSet
         val actual2 = seq2.toSet
         val expected = Set(i * 2, i * 2 + 1)
-        assert(actual1 === expected, s"Value 1 for $i was wrong: expected $expected, got $actual1")
-        assert(actual2 === expected, s"Value 2 for $i was wrong: expected $expected, got $actual2")
+        assert(
+          actual1 === expected,
+          s"Value 1 for $i was wrong: expected $expected, got $actual1"
+        )
+        assert(
+          actual2 === expected,
+          s"Value 2 for $i was wrong: expected $expected, got $actual2"
+        )
       }
     }
 
     sc.stop()
   }
 
-  test("ExternalAppendOnlyMap shouldn't fail when forced to spill before calling its iterator") {
+  test(
+    "ExternalAppendOnlyMap shouldn't fail when forced to spill before calling its iterator"
+  ) {
     val size = 1000
     val conf = createSparkConf(loadDefaults = true)
     conf.set(SHUFFLE_SPILL_NUM_ELEMENTS_FORCE_SPILL_THRESHOLD, size / 2)
@@ -315,18 +369,18 @@ class ExternalAppendOnlyMapSuite extends SparkFunSuite
     val map = createExternalMap[String]
 
     val collisionPairs = Seq(
-      ("Aa", "BB"),                   // 2112
-      ("to", "v1"),                   // 3707
-      ("variants", "gelato"),         // -1249574770
-      ("Teheran", "Siblings"),        // 231609873
-      ("misused", "horsemints"),      // 1069518484
-      ("isohel", "epistolaries"),     // -1179291542
-      ("righto", "buzzards"),         // -931102253
-      ("hierarch", "crinolines"),     // -1732884796
-      ("inwork", "hypercatalexes"),   // -1183663690
-      ("wainages", "presentencing"),  // 240183619
-      ("trichothecenes", "locular"),  // 339006536
-      ("pomatoes", "eructation")      // 568647356
+      ("Aa", "BB"), // 2112
+      ("to", "v1"), // 3707
+      ("variants", "gelato"), // -1249574770
+      ("Teheran", "Siblings"), // 231609873
+      ("misused", "horsemints"), // 1069518484
+      ("isohel", "epistolaries"), // -1179291542
+      ("righto", "buzzards"), // -931102253
+      ("hierarch", "crinolines"), // -1732884796
+      ("inwork", "hypercatalexes"), // -1183663690
+      ("wainages", "presentencing"), // 240183619
+      ("trichothecenes", "locular"), // 339006536
+      ("pomatoes", "eructation") // 568647356
     )
 
     collisionPairs.foreach { case (w1, w2) =>
@@ -350,7 +404,8 @@ class ExternalAppendOnlyMapSuite extends SparkFunSuite
     val it = map.iterator
     while (it.hasNext) {
       val kv = it.next()
-      val expectedValue = ArrayBuffer[String](collisionPairsMap.getOrElse(kv._1, kv._1))
+      val expectedValue =
+        ArrayBuffer[String](collisionPairsMap.getOrElse(kv._1, kv._1))
       assert(kv._2.equals(expectedValue))
       count += 1
     }
@@ -365,7 +420,12 @@ class ExternalAppendOnlyMapSuite extends SparkFunSuite
     sc = new SparkContext("local-cluster[1,1,1024]", "test", conf)
     val context = MemoryTestingUtils.fakeTaskContext(sc.env)
     val map =
-      new ExternalAppendOnlyMap[FixedHashObject, Int, Int](_ => 1, _ + _, _ + _, context = context)
+      new ExternalAppendOnlyMap[FixedHashObject, Int, Int](
+        _ => 1,
+        _ + _,
+        _ + _,
+        context = context
+      )
 
     // Insert 10 copies each of lots of objects whose hash codes are either 0 or 1. This causes
     // problems if the map fails to group together the objects with the same code (SPARK-2043).
@@ -449,7 +509,7 @@ class ExternalAppendOnlyMapSuite extends SparkFunSuite
       assert(!tmpIsNull)
     }
 
-    val first50Keys = for ( _ <- 0 until 50) yield {
+    val first50Keys = for (_ <- 0 until 50) yield {
       val (k, vs) = it.next()
       val sortedVs = vs.sorted
       assert(sortedVs == (0 until 10).map(10 * k + _))
@@ -469,8 +529,7 @@ class ExternalAppendOnlyMapSuite extends SparkFunSuite
       assert(tmpIsNull)
     }
 
-
-    val next50Keys = for ( _ <- 0 until 50) yield {
+    val next50Keys = for (_ <- 0 until 50) yield {
       val (k, vs) = it.next()
       val sortedVs = vs.sorted
       assert(sortedVs == (0 until 10).map(10 * k + _))
@@ -481,7 +540,9 @@ class ExternalAppendOnlyMapSuite extends SparkFunSuite
     assert(keys == (0 until 100))
   }
 
-  test("drop all references to the underlying map once the iterator is exhausted") {
+  test(
+    "drop all references to the underlying map once the iterator is exhausted"
+  ) {
     val size = 1000
     val conf = createSparkConf(loadDefaults = true)
     sc = new SparkContext("local-cluster[1,1,1024]", "test", conf)
@@ -499,17 +560,16 @@ class ExternalAppendOnlyMapSuite extends SparkFunSuite
     }
 
     val it = map.iterator
-    assert( it.isInstanceOf[CompletionIterator[_, _]])
+    assert(it.isInstanceOf[CompletionIterator[_, _]])
 
-
-    val keys = it.map{
-      case (k, vs) =>
+    val keys = it
+      .map { case (k, vs) =>
         val sortedVs = vs.sorted
         assert(sortedVs == (0 until 10).map(10 * k + _))
         k
-    }
-    .toList
-    .sorted
+      }
+      .toList
+      .sorted
 
     assert(it.isEmpty)
     assert(keys == (0 until 100).toList)
@@ -538,15 +598,27 @@ class ExternalAppendOnlyMapSuite extends SparkFunSuite
       .set(SHUFFLE_SPILL_NUM_ELEMENTS_FORCE_SPILL_THRESHOLD, spillThreshold)
     sc = new SparkContext("local", "test", conf)
     // No spilling
-    AccumulatorSuite.verifyPeakExecutionMemorySet(sc, "external map without spilling") {
+    AccumulatorSuite.verifyPeakExecutionMemorySet(
+      sc,
+      "external map without spilling"
+    ) {
       assertNotSpilled(sc, "verify peak memory") {
-        sc.parallelize(1 to spillThreshold / 2, 2).map { i => (i, i) }.reduceByKey(_ + _).count()
+        sc.parallelize(1 to spillThreshold / 2, 2)
+          .map { i => (i, i) }
+          .reduceByKey(_ + _)
+          .count()
       }
     }
     // With spilling
-    AccumulatorSuite.verifyPeakExecutionMemorySet(sc, "external map with spilling") {
+    AccumulatorSuite.verifyPeakExecutionMemorySet(
+      sc,
+      "external map with spilling"
+    ) {
       assertSpilled(sc, "verify peak memory") {
-        sc.parallelize(1 to spillThreshold * 3, 2).map { i => (i, i) }.reduceByKey(_ + _).count()
+        sc.parallelize(1 to spillThreshold * 3, 2)
+          .map { i => (i, i) }
+          .reduceByKey(_ + _)
+          .count()
       }
     }
   }

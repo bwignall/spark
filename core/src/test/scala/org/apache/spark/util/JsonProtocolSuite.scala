@@ -48,83 +48,218 @@ class JsonProtocolSuite extends SparkFunSuite {
   test("SparkListenerEvent") {
     val stageSubmitted =
       SparkListenerStageSubmitted(
-        makeStageInfo(100, 200, 300, 400L, 500L, includeAccumulables = false), properties)
+        makeStageInfo(100, 200, 300, 400L, 500L, includeAccumulables = false),
+        properties
+      )
     val stageSubmittedWithNullProperties =
       SparkListenerStageSubmitted(
-        makeStageInfo(100, 200, 300, 400L, 500L, includeAccumulables = false), properties = null)
-    val stageCompleted = SparkListenerStageCompleted(makeStageInfo(101, 201, 301, 401L, 501L))
+        makeStageInfo(100, 200, 300, 400L, 500L, includeAccumulables = false),
+        properties = null
+      )
+    val stageCompleted =
+      SparkListenerStageCompleted(makeStageInfo(101, 201, 301, 401L, 501L))
     val taskStart =
       SparkListenerTaskStart(
         111,
         0,
-        makeTaskInfo(222L, 333, 1, 333, 444L, speculative = false, includeAccumulables = false))
+        makeTaskInfo(
+          222L,
+          333,
+          1,
+          333,
+          444L,
+          speculative = false,
+          includeAccumulables = false
+        )
+      )
     val taskGettingResult = SparkListenerTaskGettingResult(
-        makeTaskInfo(1000L, 2000, 5, 2000, 3000L, speculative = true, includeAccumulables = false))
-    val taskEnd = SparkListenerTaskEnd(1, 0, "ShuffleMapTask", Success,
+      makeTaskInfo(
+        1000L,
+        2000,
+        5,
+        2000,
+        3000L,
+        speculative = true,
+        includeAccumulables = false
+      )
+    )
+    val taskEnd = SparkListenerTaskEnd(
+      1,
+      0,
+      "ShuffleMapTask",
+      Success,
       makeTaskInfo(123L, 234, 67, 234, 345L, false),
-      new ExecutorMetrics(Array(543L, 123456L, 12345L, 1234L, 123L, 12L, 432L,
-        321L, 654L, 765L, 256912L, 123456L, 123456L, 61728L, 30364L, 15182L,
-        0, 0, 0, 0, 80001L, 3, 3)),
-      makeTaskMetrics(300L, 400L, 500L, 600L, 700, 800, 0,
-        hasHadoopInput = false, hasOutput = false))
-    val taskEndWithHadoopInput = SparkListenerTaskEnd(1, 0, "ShuffleMapTask", Success,
+      new ExecutorMetrics(
+        Array(543L, 123456L, 12345L, 1234L, 123L, 12L, 432L, 321L, 654L, 765L,
+          256912L, 123456L, 123456L, 61728L, 30364L, 15182L, 0, 0, 0, 0, 80001L,
+          3, 3)
+      ),
+      makeTaskMetrics(
+        300L,
+        400L,
+        500L,
+        600L,
+        700,
+        800,
+        0,
+        hasHadoopInput = false,
+        hasOutput = false
+      )
+    )
+    val taskEndWithHadoopInput = SparkListenerTaskEnd(
+      1,
+      0,
+      "ShuffleMapTask",
+      Success,
       makeTaskInfo(123L, 234, 67, 234, 345L, false),
-      new ExecutorMetrics(Array(543L, 123456L, 12345L, 1234L, 123L, 12L, 432L,
-        321L, 654L, 765L, 256912L, 123456L, 123456L, 61728L, 30364L, 15182L,
-        0, 0, 0, 0, 80001L, 3, 3)),
-      makeTaskMetrics(300L, 400L, 500L, 600L, 700, 800, 0,
-        hasHadoopInput = true, hasOutput = false))
-    val taskEndWithOutput = SparkListenerTaskEnd(1, 0, "ResultTask", Success,
+      new ExecutorMetrics(
+        Array(543L, 123456L, 12345L, 1234L, 123L, 12L, 432L, 321L, 654L, 765L,
+          256912L, 123456L, 123456L, 61728L, 30364L, 15182L, 0, 0, 0, 0, 80001L,
+          3, 3)
+      ),
+      makeTaskMetrics(
+        300L,
+        400L,
+        500L,
+        600L,
+        700,
+        800,
+        0,
+        hasHadoopInput = true,
+        hasOutput = false
+      )
+    )
+    val taskEndWithOutput = SparkListenerTaskEnd(
+      1,
+      0,
+      "ResultTask",
+      Success,
       makeTaskInfo(123L, 234, 67, 234, 345L, false),
-      new ExecutorMetrics(Array(543L, 123456L, 12345L, 1234L, 123L, 12L, 432L,
-        321L, 654L, 765L, 256912L, 123456L, 123456L, 61728L, 30364L, 15182L,
-        0, 0, 0, 0, 80001L, 3, 3)),
-      makeTaskMetrics(300L, 400L, 500L, 600L, 700, 800, 0,
-        hasHadoopInput = true, hasOutput = true))
+      new ExecutorMetrics(
+        Array(543L, 123456L, 12345L, 1234L, 123L, 12L, 432L, 321L, 654L, 765L,
+          256912L, 123456L, 123456L, 61728L, 30364L, 15182L, 0, 0, 0, 0, 80001L,
+          3, 3)
+      ),
+      makeTaskMetrics(
+        300L,
+        400L,
+        500L,
+        600L,
+        700,
+        800,
+        0,
+        hasHadoopInput = true,
+        hasOutput = true
+      )
+    )
     val jobStart = {
       val stageIds = Seq[Int](1, 2, 3, 4)
       val stageInfos = stageIds.map(x =>
-        makeStageInfo(x, x * 200, x * 300, x * 400L, x * 500L))
+        makeStageInfo(x, x * 200, x * 300, x * 400L, x * 500L)
+      )
       SparkListenerJobStart(10, jobSubmissionTime, stageInfos, properties)
     }
     val jobStartWithNullProperties = {
-      SparkListenerJobStart(10, jobSubmissionTime, stageInfos = Seq.empty, properties = null)
+      SparkListenerJobStart(
+        10,
+        jobSubmissionTime,
+        stageInfos = Seq.empty,
+        properties = null
+      )
     }
     val jobEnd = SparkListenerJobEnd(20, jobCompletionTime, JobSucceeded)
-    val environmentUpdate = SparkListenerEnvironmentUpdate(Map[String, Seq[(String, String)]](
-      "JVM Information" -> Seq(("GC speed", "9999 objects/s"), ("Java home", "Land of coffee")),
-      "Spark Properties" -> Seq(("Job throughput", "80000 jobs/s, regardless of job type")),
-      "Hadoop Properties" -> Seq(("hadoop.tmp.dir", "/usr/local/hadoop/tmp")),
-      "System Properties" -> Seq(("Username", "guest"), ("Password", "guest")),
-      "Metrics Properties" ->
-        Seq(("*.sink.servlet.class", "org.apache.spark.metrics.sink.MetricsServlet")),
-      "Classpath Entries" -> Seq(("Super library", "/tmp/super_library"))
-    ))
-    val blockManagerAdded = SparkListenerBlockManagerAdded(1L,
-      BlockManagerId("Stars", "In your multitude...", 300), 500)
-    val blockManagerRemoved = SparkListenerBlockManagerRemoved(2L,
-      BlockManagerId("Scarce", "to be counted...", 100))
+    val environmentUpdate = SparkListenerEnvironmentUpdate(
+      Map[String, Seq[(String, String)]](
+        "JVM Information" -> Seq(
+          ("GC speed", "9999 objects/s"),
+          ("Java home", "Land of coffee")
+        ),
+        "Spark Properties" -> Seq(
+          ("Job throughput", "80000 jobs/s, regardless of job type")
+        ),
+        "Hadoop Properties" -> Seq(("hadoop.tmp.dir", "/usr/local/hadoop/tmp")),
+        "System Properties" -> Seq(
+          ("Username", "guest"),
+          ("Password", "guest")
+        ),
+        "Metrics Properties" ->
+          Seq(
+            (
+              "*.sink.servlet.class",
+              "org.apache.spark.metrics.sink.MetricsServlet"
+            )
+          ),
+        "Classpath Entries" -> Seq(("Super library", "/tmp/super_library"))
+      )
+    )
+    val blockManagerAdded = SparkListenerBlockManagerAdded(
+      1L,
+      BlockManagerId("Stars", "In your multitude...", 300),
+      500
+    )
+    val blockManagerRemoved = SparkListenerBlockManagerRemoved(
+      2L,
+      BlockManagerId("Scarce", "to be counted...", 100)
+    )
     val unpersistRdd = SparkListenerUnpersistRDD(12345)
     val logUrlMap = Map("stderr" -> "mystderr", "stdout" -> "mystdout")
     val attributes = Map("ContainerId" -> "ct1", "User" -> "spark")
-    val resources = Map(ResourceUtils.GPU ->
-      new ResourceInformation(ResourceUtils.GPU, Array("0", "1")))
-    val applicationStart = SparkListenerApplicationStart("The winner of all", Some("appId"),
-      42L, "Garfield", Some("appAttempt"))
-    val applicationStartWithLogs = SparkListenerApplicationStart("The winner of all", Some("appId"),
-      42L, "Garfield", Some("appAttempt"), Some(logUrlMap))
+    val resources = Map(
+      ResourceUtils.GPU ->
+        new ResourceInformation(ResourceUtils.GPU, Array("0", "1"))
+    )
+    val applicationStart = SparkListenerApplicationStart(
+      "The winner of all",
+      Some("appId"),
+      42L,
+      "Garfield",
+      Some("appAttempt")
+    )
+    val applicationStartWithLogs = SparkListenerApplicationStart(
+      "The winner of all",
+      Some("appId"),
+      42L,
+      "Garfield",
+      Some("appAttempt"),
+      Some(logUrlMap)
+    )
     val applicationEnd = SparkListenerApplicationEnd(42L)
-    val executorAdded = SparkListenerExecutorAdded(executorAddedTime, "exec1",
-      new ExecutorInfo("Hostee.awesome.com", 11, logUrlMap, attributes, resources, 4))
-    val executorAddedWithTime = SparkListenerExecutorAdded(executorAddedTime, "exec1",
-      new ExecutorInfo("Hostee.awesome.com", 11, logUrlMap, attributes, resources, 4,
-        Some(1), Some(0)))
-    val executorRemoved = SparkListenerExecutorRemoved(executorRemovedTime, "exec2", "test reason")
-    val executorBlacklisted = SparkListenerExecutorBlacklisted(executorExcludedTime, "exec1", 22)
+    val executorAdded = SparkListenerExecutorAdded(
+      executorAddedTime,
+      "exec1",
+      new ExecutorInfo(
+        "Hostee.awesome.com",
+        11,
+        logUrlMap,
+        attributes,
+        resources,
+        4
+      )
+    )
+    val executorAddedWithTime = SparkListenerExecutorAdded(
+      executorAddedTime,
+      "exec1",
+      new ExecutorInfo(
+        "Hostee.awesome.com",
+        11,
+        logUrlMap,
+        attributes,
+        resources,
+        4,
+        Some(1),
+        Some(0)
+      )
+    )
+    val executorRemoved =
+      SparkListenerExecutorRemoved(executorRemovedTime, "exec2", "test reason")
+    val executorBlacklisted =
+      SparkListenerExecutorBlacklisted(executorExcludedTime, "exec1", 22)
     val executorUnblacklisted =
       SparkListenerExecutorUnblacklisted(executorUnexcludedTime, "exec1")
-    val nodeBlacklisted = SparkListenerNodeBlacklisted(nodeExcludedTime, "node1", 33)
-    val executorExcluded = SparkListenerExecutorExcluded(executorExcludedTime, "exec1", 22)
+    val nodeBlacklisted =
+      SparkListenerNodeBlacklisted(nodeExcludedTime, "node1", 33)
+    val executorExcluded =
+      SparkListenerExecutorExcluded(executorExcludedTime, "exec1", 22)
     val executorUnexcluded =
       SparkListenerExecutorUnexcluded(executorUnexcludedTime, "exec1")
     val nodeExcluded = SparkListenerNodeExcluded(nodeExcludedTime, "node1", 33)
@@ -135,25 +270,53 @@ class JsonProtocolSuite extends SparkFunSuite {
     val executorMetricsUpdate = {
       // Use custom accum ID for determinism
       val accumUpdates =
-        makeTaskMetrics(300L, 400L, 500L, 600L, 700, 800, 0,
-          hasHadoopInput = true, hasOutput = true)
-          .accumulators().map(AccumulatorSuite.makeInfo)
-          .zipWithIndex.map { case (a, i) => a.copy(id = i) }
+        makeTaskMetrics(
+          300L,
+          400L,
+          500L,
+          600L,
+          700,
+          800,
+          0,
+          hasHadoopInput = true,
+          hasOutput = true
+        )
+          .accumulators()
+          .map(AccumulatorSuite.makeInfo)
+          .zipWithIndex
+          .map { case (a, i) => a.copy(id = i) }
       val executorUpdates = new ExecutorMetrics(
-        Array(543L, 123456L, 12345L, 1234L, 123L, 12L, 432L,
-          321L, 654L, 765L, 256912L, 123456L, 123456L, 61728L,
-          30364L, 15182L, 10L, 90L, 2L, 20L, 80001L, 3, 3))
-      SparkListenerExecutorMetricsUpdate("exec3", Seq((1L, 2, 3, accumUpdates)),
-        Map((0, 0) -> executorUpdates))
+        Array(543L, 123456L, 12345L, 1234L, 123L, 12L, 432L, 321L, 654L, 765L,
+          256912L, 123456L, 123456L, 61728L, 30364L, 15182L, 10L, 90L, 2L, 20L,
+          80001L, 3, 3)
+      )
+      SparkListenerExecutorMetricsUpdate(
+        "exec3",
+        Seq((1L, 2, 3, accumUpdates)),
+        Map((0, 0) -> executorUpdates)
+      )
     }
     val blockUpdated =
-      SparkListenerBlockUpdated(BlockUpdatedInfo(BlockManagerId("Stars",
-        "In your multitude...", 300), RDDBlockId(0, 0), StorageLevel.MEMORY_ONLY, 100L, 0L))
+      SparkListenerBlockUpdated(
+        BlockUpdatedInfo(
+          BlockManagerId("Stars", "In your multitude...", 300),
+          RDDBlockId(0, 0),
+          StorageLevel.MEMORY_ONLY,
+          100L,
+          0L
+        )
+      )
     val stageExecutorMetrics =
-      SparkListenerStageExecutorMetrics("1", 2, 3,
-        new ExecutorMetrics(Array(543L, 123456L, 12345L, 1234L, 123L, 12L, 432L,
-          321L, 654L, 765L, 256912L, 123456L, 123456L, 61728L,
-          30364L, 15182L, 10L, 90L, 2L, 20L, 80001L, 3, 3)))
+      SparkListenerStageExecutorMetrics(
+        "1",
+        2,
+        3,
+        new ExecutorMetrics(
+          Array(543L, 123456L, 12345L, 1234L, 123L, 12L, 432L, 321L, 654L, 765L,
+            256912L, 123456L, 123456L, 61728L, 30364L, 15182L, 10L, 90L, 2L,
+            20L, 80001L, 3, 3)
+        )
+      )
     val rprofBuilder = new ResourceProfileBuilder()
     val taskReq = new TaskResourceRequests()
       .cpus(1)
@@ -162,13 +325,21 @@ class JsonProtocolSuite extends SparkFunSuite {
     val execReq: ExecutorResourceRequests = new ExecutorResourceRequests()
       .cores(2)
       .resource("gpu", 2, "myscript")
-      .resource("myCustomResource", amount = Int.MaxValue + 1L, discoveryScript = "myscript2")
+      .resource(
+        "myCustomResource",
+        amount = Int.MaxValue + 1L,
+        discoveryScript = "myscript2"
+      )
     rprofBuilder.require(taskReq).require(execReq)
     val resourceProfile = rprofBuilder.build()
     resourceProfile.setResourceProfileId(21)
-    val resourceProfileAdded = SparkListenerResourceProfileAdded(resourceProfile)
+    val resourceProfileAdded =
+      SparkListenerResourceProfileAdded(resourceProfile)
     testEvent(stageSubmitted, stageSubmittedJsonString)
-    testEvent(stageSubmittedWithNullProperties, stageSubmittedWithNullPropertiesJsonString)
+    testEvent(
+      stageSubmittedWithNullProperties,
+      stageSubmittedWithNullPropertiesJsonString
+    )
     testEvent(stageCompleted, stageCompletedJsonString)
     testEvent(taskStart, taskStartJsonString)
     testEvent(taskGettingResult, taskGettingResultJsonString)
@@ -209,12 +380,33 @@ class JsonProtocolSuite extends SparkFunSuite {
     testRDDInfo(makeRddInfo(2, 3, 4, 5L, 6L, DeterministicLevel.DETERMINATE))
     testStageInfo(makeStageInfo(10, 20, 30, 40L, 50L))
     testTaskInfo(makeTaskInfo(999L, 888, 55, 888, 777L, false))
-    testTaskMetrics(makeTaskMetrics(
-      33333L, 44444L, 55555L, 66666L, 7, 8, 0, hasHadoopInput = false, hasOutput = false))
+    testTaskMetrics(
+      makeTaskMetrics(
+        33333L,
+        44444L,
+        55555L,
+        66666L,
+        7,
+        8,
+        0,
+        hasHadoopInput = false,
+        hasOutput = false
+      )
+    )
     testBlockManagerId(BlockManagerId("Hong", "Kong", 500))
     testExecutorInfo(new ExecutorInfo("host", 43, logUrlMap, attributes))
-    testExecutorInfo(new ExecutorInfo("host", 43, logUrlMap, attributes,
-      rinfo, 1, Some(1), Some(0)))
+    testExecutorInfo(
+      new ExecutorInfo(
+        "host",
+        43,
+        logUrlMap,
+        attributes,
+        rinfo,
+        1,
+        Some(1),
+        Some(0)
+      )
+    )
 
     // StorageLevel
     testStorageLevel(StorageLevel.NONE)
@@ -239,11 +431,21 @@ class JsonProtocolSuite extends SparkFunSuite {
     testJobResult(jobFailed)
 
     // TaskEndReason
-    val fetchFailed = FetchFailed(BlockManagerId("With or", "without you", 15), 17, 16L, 18, 19,
-      "Some exception")
-    val fetchMetadataFailed = new MetadataFetchFailedException(17,
-      19, "metadata Fetch failed exception").toTaskFailedReason
-    val exceptionFailure = new ExceptionFailure(exception, Seq.empty[AccumulableInfo])
+    val fetchFailed = FetchFailed(
+      BlockManagerId("With or", "without you", 15),
+      17,
+      16L,
+      18,
+      19,
+      "Some exception"
+    )
+    val fetchMetadataFailed = new MetadataFetchFailedException(
+      17,
+      19,
+      "metadata Fetch failed exception"
+    ).toTaskFailedReason
+    val exceptionFailure =
+      new ExceptionFailure(exception, Seq.empty[AccumulableInfo])
     testTaskEndReason(Success)
     testTaskEndReason(Resubmitted)
     testTaskEndReason(fetchFailed)
@@ -268,15 +470,19 @@ class JsonProtocolSuite extends SparkFunSuite {
    * ============================== */
 
   test("ExceptionFailure backward compatibility: full stack trace") {
-    val exceptionFailure = ExceptionFailure("To be", "or not to be", stackTrace, null, None)
-    val oldEvent = toJsonString(JsonProtocol.taskEndReasonToJson(exceptionFailure, _))
-      .removeField("Full Stack Trace")
+    val exceptionFailure =
+      ExceptionFailure("To be", "or not to be", stackTrace, null, None)
+    val oldEvent =
+      toJsonString(JsonProtocol.taskEndReasonToJson(exceptionFailure, _))
+        .removeField("Full Stack Trace")
     assertEquals(exceptionFailure, JsonProtocol.taskEndReasonFromJson(oldEvent))
   }
 
   test("StageInfo backward compatibility (details, accumulables)") {
     val info = makeStageInfo(1, 2, 3, 4L, 5L)
-    val newJson = toJsonString(JsonProtocol.stageInfoToJson(info, _, includeAccumulables = true))
+    val newJson = toJsonString(
+      JsonProtocol.stageInfoToJson(info, _, includeAccumulables = true)
+    )
 
     // Fields added after 1.0.0.
     assert(info.details.nonEmpty)
@@ -294,7 +500,9 @@ class JsonProtocolSuite extends SparkFunSuite {
 
   test("StageInfo resourceProfileId") {
     val info = makeStageInfo(1, 2, 3, 4L, 5L, 5)
-    val json = toJsonString(JsonProtocol.stageInfoToJson(info, _, includeAccumulables = true))
+    val json = toJsonString(
+      JsonProtocol.stageInfoToJson(info, _, includeAccumulables = true)
+    )
 
     // Fields added after 1.0.0.
     assert(info.details.nonEmpty)
@@ -308,7 +516,17 @@ class JsonProtocolSuite extends SparkFunSuite {
 
   test("InputMetrics backward compatibility") {
     // InputMetrics were added after 1.0.1.
-    val metrics = makeTaskMetrics(1L, 2L, 3L, 4L, 5, 6, 0, hasHadoopInput = true, hasOutput = false)
+    val metrics = makeTaskMetrics(
+      1L,
+      2L,
+      3L,
+      4L,
+      5,
+      6,
+      0,
+      hasHadoopInput = true,
+      hasOutput = false
+    )
     val newJson = toJsonString(JsonProtocol.taskMetricsToJson(metrics, _))
     val oldJson = newJson.removeField("Input Metrics")
     val newMetrics = JsonProtocol.taskMetricsFromJson(oldJson)
@@ -318,8 +536,18 @@ class JsonProtocolSuite extends SparkFunSuite {
 
   test("Input/Output records backwards compatibility") {
     // records read were added after 1.2
-    val metrics = makeTaskMetrics(1L, 2L, 3L, 4L, 5, 6, 0,
-      hasHadoopInput = true, hasOutput = true, hasRecords = false)
+    val metrics = makeTaskMetrics(
+      1L,
+      2L,
+      3L,
+      4L,
+      5,
+      6,
+      0,
+      hasHadoopInput = true,
+      hasOutput = true,
+      hasRecords = false
+    )
     val newJson = toJsonString(JsonProtocol.taskMetricsToJson(metrics, _))
     val oldJson = newJson
       .removeField("Records Read")
@@ -332,8 +560,18 @@ class JsonProtocolSuite extends SparkFunSuite {
   test("Shuffle Read/Write records backwards compatibility") {
     // records read were added after 1.2
     // "Remote Bytes Read To Disk" was added in 2.3.0
-    val metrics = makeTaskMetrics(1L, 2L, 3L, 4L, 5, 6, 0,
-      hasHadoopInput = false, hasOutput = false, hasRecords = false)
+    val metrics = makeTaskMetrics(
+      1L,
+      2L,
+      3L,
+      4L,
+      5,
+      6,
+      0,
+      hasHadoopInput = false,
+      hasOutput = false,
+      hasRecords = false
+    )
     val newJson = toJsonString(JsonProtocol.taskMetricsToJson(metrics, _))
     val oldJson = newJson
       .removeField("Total Records Read")
@@ -347,7 +585,17 @@ class JsonProtocolSuite extends SparkFunSuite {
 
   test("OutputMetrics backward compatibility") {
     // OutputMetrics were added after 1.1
-    val metrics = makeTaskMetrics(1L, 2L, 3L, 4L, 5, 6, 0, hasHadoopInput = false, hasOutput = true)
+    val metrics = makeTaskMetrics(
+      1L,
+      2L,
+      3L,
+      4L,
+      5,
+      6,
+      0,
+      hasHadoopInput = false,
+      hasOutput = true
+    )
     val newJson = toJsonString(JsonProtocol.taskMetricsToJson(metrics, _))
     val oldJson = newJson.removeField("Output Metrics")
     val newMetrics = JsonProtocol.taskMetricsFromJson(oldJson)
@@ -358,7 +606,17 @@ class JsonProtocolSuite extends SparkFunSuite {
   test("TaskMetrics backward compatibility") {
     // "Executor Deserialize CPU Time" and "Executor CPU Time" were introduced in Spark 2.1.0
     // "Peak Execution Memory" was introduced in Spark 3.0.0
-    val metrics = makeTaskMetrics(1L, 2L, 3L, 4L, 5, 6, 0, hasHadoopInput = false, hasOutput = true)
+    val metrics = makeTaskMetrics(
+      1L,
+      2L,
+      3L,
+      4L,
+      5,
+      6,
+      0,
+      hasHadoopInput = false,
+      hasOutput = true
+    )
     metrics.setExecutorDeserializeCpuTime(100L)
     metrics.setExecutorCpuTime(100L)
     metrics.setPeakExecutionMemory(100L)
@@ -390,52 +648,107 @@ class JsonProtocolSuite extends SparkFunSuite {
 
   test("BlockManager events backward compatibility") {
     // SparkListenerBlockManagerAdded/Removed in Spark 1.0.0 do not have a "time" property.
-    val blockManagerAdded = SparkListenerBlockManagerAdded(1L,
-      BlockManagerId("Stars", "In your multitude...", 300), 500)
-    val blockManagerRemoved = SparkListenerBlockManagerRemoved(2L,
-      BlockManagerId("Scarce", "to be counted...", 100))
+    val blockManagerAdded = SparkListenerBlockManagerAdded(
+      1L,
+      BlockManagerId("Stars", "In your multitude...", 300),
+      500
+    )
+    val blockManagerRemoved = SparkListenerBlockManagerRemoved(
+      2L,
+      BlockManagerId("Scarce", "to be counted...", 100)
+    )
 
-    val oldBmAdded = toJsonString(JsonProtocol.blockManagerAddedToJson(blockManagerAdded, _))
-      .removeField("Timestamp")
+    val oldBmAdded =
+      toJsonString(JsonProtocol.blockManagerAddedToJson(blockManagerAdded, _))
+        .removeField("Timestamp")
 
     val deserializedBmAdded = JsonProtocol.blockManagerAddedFromJson(oldBmAdded)
-    assert(SparkListenerBlockManagerAdded(-1L, blockManagerAdded.blockManagerId,
-      blockManagerAdded.maxMem) === deserializedBmAdded)
+    assert(
+      SparkListenerBlockManagerAdded(
+        -1L,
+        blockManagerAdded.blockManagerId,
+        blockManagerAdded.maxMem
+      ) === deserializedBmAdded
+    )
 
-    val oldBmRemoved = toJsonString(JsonProtocol.blockManagerRemovedToJson(blockManagerRemoved, _))
+    val oldBmRemoved = toJsonString(
+      JsonProtocol.blockManagerRemovedToJson(blockManagerRemoved, _)
+    )
       .removeField("Timestamp")
 
-    val deserializedBmRemoved = JsonProtocol.blockManagerRemovedFromJson(oldBmRemoved)
-    assert(SparkListenerBlockManagerRemoved(-1L, blockManagerRemoved.blockManagerId) ===
-      deserializedBmRemoved)
+    val deserializedBmRemoved =
+      JsonProtocol.blockManagerRemovedFromJson(oldBmRemoved)
+    assert(
+      SparkListenerBlockManagerRemoved(
+        -1L,
+        blockManagerRemoved.blockManagerId
+      ) ===
+        deserializedBmRemoved
+    )
   }
 
   test("FetchFailed backwards compatibility") {
     // FetchFailed in Spark 1.1.0 does not have a "Message" property.
-    val fetchFailed = FetchFailed(BlockManagerId("With or", "without you", 15), 17, 16L, 18, 19,
-      "ignored")
-    val oldEvent = toJsonString(JsonProtocol.taskEndReasonToJson(fetchFailed, _))
-      .removeField("Message")
-    val expectedFetchFailed = FetchFailed(BlockManagerId("With or", "without you", 15), 17, 16L,
-      18, 19, "Unknown reason")
+    val fetchFailed = FetchFailed(
+      BlockManagerId("With or", "without you", 15),
+      17,
+      16L,
+      18,
+      19,
+      "ignored"
+    )
+    val oldEvent =
+      toJsonString(JsonProtocol.taskEndReasonToJson(fetchFailed, _))
+        .removeField("Message")
+    val expectedFetchFailed = FetchFailed(
+      BlockManagerId("With or", "without you", 15),
+      17,
+      16L,
+      18,
+      19,
+      "Unknown reason"
+    )
     assert(expectedFetchFailed === JsonProtocol.taskEndReasonFromJson(oldEvent))
   }
 
   test("SPARK-32124: FetchFailed Map Index backwards compatibility") {
     // FetchFailed in Spark 2.4.0 does not have "Map Index" property.
-    val fetchFailed = FetchFailed(BlockManagerId("With or", "without you", 15), 17, 16L, 18, 19,
-      "ignored")
-    val oldEvent = toJsonString(JsonProtocol.taskEndReasonToJson(fetchFailed, _))
-      .removeField("Map Index")
-    val expectedFetchFailed = FetchFailed(BlockManagerId("With or", "without you", 15), 17, 16L,
-      Int.MinValue, 19, "ignored")
+    val fetchFailed = FetchFailed(
+      BlockManagerId("With or", "without you", 15),
+      17,
+      16L,
+      18,
+      19,
+      "ignored"
+    )
+    val oldEvent =
+      toJsonString(JsonProtocol.taskEndReasonToJson(fetchFailed, _))
+        .removeField("Map Index")
+    val expectedFetchFailed = FetchFailed(
+      BlockManagerId("With or", "without you", 15),
+      17,
+      16L,
+      Int.MinValue,
+      19,
+      "ignored"
+    )
     assert(expectedFetchFailed === JsonProtocol.taskEndReasonFromJson(oldEvent))
   }
 
   test("ShuffleReadMetrics: Local bytes read backwards compatibility") {
     // Metrics about local shuffle bytes read were added in 1.3.1.
-    val metrics = makeTaskMetrics(1L, 2L, 3L, 4L, 5, 6, 0,
-      hasHadoopInput = false, hasOutput = false, hasRecords = false)
+    val metrics = makeTaskMetrics(
+      1L,
+      2L,
+      3L,
+      4L,
+      5,
+      6,
+      0,
+      hasHadoopInput = false,
+      hasOutput = false,
+      hasRecords = false
+    )
     val newJson = toJsonString(JsonProtocol.taskMetricsToJson(metrics, _))
     val oldJson = newJson.removeField("Local Bytes Read")
     val newMetrics = JsonProtocol.taskMetricsFromJson(oldJson)
@@ -446,32 +759,54 @@ class JsonProtocolSuite extends SparkFunSuite {
     // SparkListenerApplicationStart in Spark 1.0.0 do not have an "appId" property.
     // SparkListenerApplicationStart pre-Spark 1.4 does not have "appAttemptId".
     // SparkListenerApplicationStart pre-Spark 1.5 does not have "driverLogs
-    val applicationStart = SparkListenerApplicationStart("test", None, 1L, "user", None, None)
-    val oldEvent = toJsonString(JsonProtocol.applicationStartToJson(applicationStart, _))
-      .removeField("App ID")
-      .removeField("App Attempt ID")
-      .removeField( "Driver Logs")
+    val applicationStart =
+      SparkListenerApplicationStart("test", None, 1L, "user", None, None)
+    val oldEvent =
+      toJsonString(JsonProtocol.applicationStartToJson(applicationStart, _))
+        .removeField("App ID")
+        .removeField("App Attempt ID")
+        .removeField("Driver Logs")
     assert(applicationStart === JsonProtocol.applicationStartFromJson(oldEvent))
   }
 
   test("ExecutorLostFailure backward compatibility") {
     // ExecutorLostFailure in Spark 1.1.0 does not have an "Executor ID" property.
-    val executorLostFailure = ExecutorLostFailure("100", true, Some("Induced failure"))
-    val oldEvent = toJsonString(JsonProtocol.taskEndReasonToJson(executorLostFailure, _))
-      .removeField("Executor ID")
-    val expectedExecutorLostFailure = ExecutorLostFailure("Unknown", true, Some("Induced failure"))
-    assert(expectedExecutorLostFailure === JsonProtocol.taskEndReasonFromJson(oldEvent))
+    val executorLostFailure =
+      ExecutorLostFailure("100", true, Some("Induced failure"))
+    val oldEvent =
+      toJsonString(JsonProtocol.taskEndReasonToJson(executorLostFailure, _))
+        .removeField("Executor ID")
+    val expectedExecutorLostFailure =
+      ExecutorLostFailure("Unknown", true, Some("Induced failure"))
+    assert(
+      expectedExecutorLostFailure === JsonProtocol.taskEndReasonFromJson(
+        oldEvent
+      )
+    )
   }
 
   test("SparkListenerJobStart backward compatibility") {
     // Prior to Spark 1.2.0, SparkListenerJobStart did not have a "Stage Infos" property.
     val stageIds = Seq[Int](1, 2, 3, 4)
-    val stageInfos = stageIds.map(x => makeStageInfo(x, x * 200, x * 300, x * 400L, x * 500L))
+    val stageInfos =
+      stageIds.map(x => makeStageInfo(x, x * 200, x * 300, x * 400L, x * 500L))
     val dummyStageInfos =
-      stageIds.map(id => new StageInfo(id, 0, "unknown", 0, Seq.empty, Seq.empty, "unknown",
-        resourceProfileId = ResourceProfile.DEFAULT_RESOURCE_PROFILE_ID))
-    val jobStart = SparkListenerJobStart(10, jobSubmissionTime, stageInfos, properties)
-    val oldEvent = toJsonString(JsonProtocol.jobStartToJson(jobStart, _)).removeField("Stage Infos")
+      stageIds.map(id =>
+        new StageInfo(
+          id,
+          0,
+          "unknown",
+          0,
+          Seq.empty,
+          Seq.empty,
+          "unknown",
+          resourceProfileId = ResourceProfile.DEFAULT_RESOURCE_PROFILE_ID
+        )
+      )
+    val jobStart =
+      SparkListenerJobStart(10, jobSubmissionTime, stageInfos, properties)
+    val oldEvent = toJsonString(JsonProtocol.jobStartToJson(jobStart, _))
+      .removeField("Stage Infos")
     val expectedJobStart =
       SparkListenerJobStart(10, jobSubmissionTime, dummyStageInfos, properties)
     assertEquals(expectedJobStart, JsonProtocol.jobStartFromJson(oldEvent))
@@ -481,8 +816,10 @@ class JsonProtocolSuite extends SparkFunSuite {
     // Prior to Spark 1.3.0, SparkListenerJobStart did not have a "Submission Time" property.
     // Also, SparkListenerJobEnd did not have a "Completion Time" property.
     val stageIds = Seq[Int](1, 2, 3, 4)
-    val stageInfos = stageIds.map(x => makeStageInfo(x * 10, x * 20, x * 30, x * 40L, x * 50L))
-    val jobStart = SparkListenerJobStart(11, jobSubmissionTime, stageInfos, properties)
+    val stageInfos =
+      stageIds.map(x => makeStageInfo(x * 10, x * 20, x * 30, x * 40L, x * 50L))
+    val jobStart =
+      SparkListenerJobStart(11, jobSubmissionTime, stageInfos, properties)
     val oldStartEvent = toJsonString(JsonProtocol.jobStartToJson(jobStart, _))
       .removeField("Submission Time")
     val expectedJobStart = SparkListenerJobStart(11, -1, stageInfos, properties)
@@ -500,8 +837,17 @@ class JsonProtocolSuite extends SparkFunSuite {
     // "Callsite" was introduced in Spark 1.6.0
     // "Barrier" was introduced in Spark 3.0.0
     // "DeterministicLevel" was introduced in Spark 3.2.0
-    val rddInfo = new RDDInfo(1, "one", 100, StorageLevel.NONE, true, Seq(1, 6, 8),
-      "callsite", Some(new RDDOperationScope("fable")), DeterministicLevel.INDETERMINATE)
+    val rddInfo = new RDDInfo(
+      1,
+      "one",
+      100,
+      StorageLevel.NONE,
+      true,
+      Seq(1, 6, 8),
+      "callsite",
+      Some(new RDDOperationScope("fable")),
+      DeterministicLevel.INDETERMINATE
+    )
     val oldRddInfoJson = toJsonString(JsonProtocol.rddInfoToJson(rddInfo, _))
       .removeField("Parent IDs")
       .removeField("Scope")
@@ -509,21 +855,50 @@ class JsonProtocolSuite extends SparkFunSuite {
       .removeField("Barrier")
       .removeField("DeterministicLevel")
     val expectedRddInfo = new RDDInfo(
-      1, "one", 100, StorageLevel.NONE, false, Seq.empty, "", scope = None,
-      outputDeterministicLevel = DeterministicLevel.INDETERMINATE)
+      1,
+      "one",
+      100,
+      StorageLevel.NONE,
+      false,
+      Seq.empty,
+      "",
+      scope = None,
+      outputDeterministicLevel = DeterministicLevel.INDETERMINATE
+    )
     assertEquals(expectedRddInfo, JsonProtocol.rddInfoFromJson(oldRddInfoJson))
   }
 
   test("StageInfo backward compatibility (parent IDs)") {
     // Prior to Spark 1.4.0, StageInfo did not have the "Parent IDs" property
-    val stageInfo = new StageInfo(1, 1, "me-stage", 1, Seq.empty, Seq(1, 2, 3), "details",
-      resourceProfileId = ResourceProfile.DEFAULT_RESOURCE_PROFILE_ID)
+    val stageInfo = new StageInfo(
+      1,
+      1,
+      "me-stage",
+      1,
+      Seq.empty,
+      Seq(1, 2, 3),
+      "details",
+      resourceProfileId = ResourceProfile.DEFAULT_RESOURCE_PROFILE_ID
+    )
     val oldStageInfo =
-      toJsonString(JsonProtocol.stageInfoToJson(stageInfo, _, includeAccumulables = true))
+      toJsonString(
+        JsonProtocol.stageInfoToJson(stageInfo, _, includeAccumulables = true)
+      )
         .removeField("Parent IDs")
-    val expectedStageInfo = new StageInfo(1, 1, "me-stage", 1, Seq.empty, Seq.empty, "details",
-      resourceProfileId = ResourceProfile.DEFAULT_RESOURCE_PROFILE_ID)
-    assertEquals(expectedStageInfo, JsonProtocol.stageInfoFromJson(oldStageInfo))
+    val expectedStageInfo = new StageInfo(
+      1,
+      1,
+      "me-stage",
+      1,
+      Seq.empty,
+      Seq.empty,
+      "details",
+      resourceProfileId = ResourceProfile.DEFAULT_RESOURCE_PROFILE_ID
+    )
+    assertEquals(
+      expectedStageInfo,
+      JsonProtocol.stageInfoFromJson(oldStageInfo)
+    )
   }
 
   // `TaskCommitDenied` was added in 1.3.0 but JSON de/serialization logic was added in 1.5.1
@@ -539,8 +914,10 @@ class JsonProtocolSuite extends SparkFunSuite {
 
   test("AccumulableInfo backward compatibility") {
     // "Internal" property of AccumulableInfo was added in 1.5.1
-    val accumulableInfo = makeAccumulableInfo(1, internal = true, countFailedValues = true)
-    val accumulableInfoJson = toJsonString(JsonProtocol.accumulableInfoToJson(accumulableInfo, _))
+    val accumulableInfo =
+      makeAccumulableInfo(1, internal = true, countFailedValues = true)
+    val accumulableInfoJson =
+      toJsonString(JsonProtocol.accumulableInfoToJson(accumulableInfo, _))
     val oldJson = accumulableInfoJson.removeField("Internal")
     val oldInfo = JsonProtocol.accumulableInfoFromJson(oldJson)
     assert(!oldInfo.internal)
@@ -558,87 +935,147 @@ class JsonProtocolSuite extends SparkFunSuite {
     // "Task Metrics" was replaced with "Accumulator Updates" in 2.0.0. For older event logs,
     // we should still be able to fallback to constructing the accumulator updates from the
     // "Task Metrics" field, if it exists.
-    val tm = makeTaskMetrics(1L, 2L, 3L, 4L, 5, 6, 0, hasHadoopInput = true, hasOutput = true)
+    val tm = makeTaskMetrics(
+      1L,
+      2L,
+      3L,
+      4L,
+      5,
+      6,
+      0,
+      hasHadoopInput = true,
+      hasOutput = true
+    )
     val tmJson = toJsonString(JsonProtocol.taskMetricsToJson(tm, _))
     val accumUpdates = tm.accumulators().map(AccumulatorSuite.makeInfo)
     val exception = new SparkException("sentimental")
     val exceptionFailure = new ExceptionFailure(exception, accumUpdates)
-    val exceptionFailureJson = toJsonString(JsonProtocol.taskEndReasonToJson(exceptionFailure, _))
+    val exceptionFailureJson =
+      toJsonString(JsonProtocol.taskEndReasonToJson(exceptionFailure, _))
     val oldExceptionFailureJson =
       exceptionFailureJson
         .removeField("Accumulator Updates")
         .addStringField("Task Metrics", tmJson)
     val oldExceptionFailure =
-      JsonProtocol.taskEndReasonFromJson(oldExceptionFailureJson).asInstanceOf[ExceptionFailure]
+      JsonProtocol
+        .taskEndReasonFromJson(oldExceptionFailureJson)
+        .asInstanceOf[ExceptionFailure]
     assert(exceptionFailure.className === oldExceptionFailure.className)
     assert(exceptionFailure.description === oldExceptionFailure.description)
     assertSeqEquals[StackTraceElement](
-      exceptionFailure.stackTrace, oldExceptionFailure.stackTrace, assertStackTraceElementEquals)
-    assert(exceptionFailure.fullStackTrace === oldExceptionFailure.fullStackTrace)
+      exceptionFailure.stackTrace,
+      oldExceptionFailure.stackTrace,
+      assertStackTraceElementEquals
+    )
+    assert(
+      exceptionFailure.fullStackTrace === oldExceptionFailure.fullStackTrace
+    )
     assertSeqEquals[AccumulableInfo](
-      exceptionFailure.accumUpdates, oldExceptionFailure.accumUpdates, (x, y) => x == y)
+      exceptionFailure.accumUpdates,
+      oldExceptionFailure.accumUpdates,
+      (x, y) => x == y
+    )
   }
 
   test("TaskKilled backward compatibility") {
     // The "Kill Reason" field was added in Spark 2.2.0
     // The "Accumulator Updates" field was added in Spark 2.4.0
-    val tm = makeTaskMetrics(1L, 2L, 3L, 4L, 5, 6, 0, hasHadoopInput = true, hasOutput = true)
+    val tm = makeTaskMetrics(
+      1L,
+      2L,
+      3L,
+      4L,
+      5,
+      6,
+      0,
+      hasHadoopInput = true,
+      hasOutput = true
+    )
     val accumUpdates = tm.accumulators().map(AccumulatorSuite.makeInfo)
     val taskKilled = TaskKilled(reason = "test", accumUpdates)
-    val taskKilledJson = toJsonString(JsonProtocol.taskEndReasonToJson(taskKilled, _))
+    val taskKilledJson =
+      toJsonString(JsonProtocol.taskEndReasonToJson(taskKilled, _))
     val oldExceptionFailureJson =
       taskKilledJson
         .removeField("Kill Reason")
         .removeField("Accumulator Updates")
     val oldTaskKilled =
-      JsonProtocol.taskEndReasonFromJson(oldExceptionFailureJson).asInstanceOf[TaskKilled]
+      JsonProtocol
+        .taskEndReasonFromJson(oldExceptionFailureJson)
+        .asInstanceOf[TaskKilled]
     assert(oldTaskKilled.reason === "unknown reason")
     assert(oldTaskKilled.accums.isEmpty)
     assert(oldTaskKilled.accumUpdates.isEmpty)
   }
 
-  test("ExecutorMetricsUpdate backward compatibility: executor metrics update") {
+  test(
+    "ExecutorMetricsUpdate backward compatibility: executor metrics update"
+  ) {
     // executorMetricsUpdate was added in 2.4.0.
     val executorMetricsUpdate = makeExecutorMetricsUpdate("1", true, true)
     val oldExecutorMetricsUpdateJson =
-      toJsonString(JsonProtocol.executorMetricsUpdateToJson(executorMetricsUpdate, _))
+      toJsonString(
+        JsonProtocol.executorMetricsUpdateToJson(executorMetricsUpdate, _)
+      )
         .removeField("Executor Metrics Updated")
-    val expectedExecutorMetricsUpdate = makeExecutorMetricsUpdate("1", true, false)
-    assertEquals(expectedExecutorMetricsUpdate,
-      JsonProtocol.executorMetricsUpdateFromJson(oldExecutorMetricsUpdateJson))
+    val expectedExecutorMetricsUpdate =
+      makeExecutorMetricsUpdate("1", true, false)
+    assertEquals(
+      expectedExecutorMetricsUpdate,
+      JsonProtocol.executorMetricsUpdateFromJson(oldExecutorMetricsUpdateJson)
+    )
   }
 
-  test("executorMetricsFromJson backward compatibility: handle missing metrics") {
+  test(
+    "executorMetricsFromJson backward compatibility: handle missing metrics"
+  ) {
     // any missing metrics should be set to 0
-    val executorMetrics = new ExecutorMetrics(Array(12L, 23L, 45L, 67L, 78L, 89L,
-      90L, 123L, 456L, 789L, 40L, 20L, 20L, 10L, 20L, 10L, 301L))
+    val executorMetrics = new ExecutorMetrics(
+      Array(12L, 23L, 45L, 67L, 78L, 89L, 90L, 123L, 456L, 789L, 40L, 20L, 20L,
+        10L, 20L, 10L, 301L)
+    )
     val oldExecutorMetricsJson =
       toJsonString(JsonProtocol.executorMetricsToJson(executorMetrics, _))
         .removeField("MappedPoolMemory")
-    val expectedExecutorMetrics = new ExecutorMetrics(Array(12L, 23L, 45L, 67L,
-      78L, 89L, 90L, 123L, 456L, 0L, 40L, 20L, 20L, 10L, 20L, 10L, 301L))
-    assertEquals(expectedExecutorMetrics,
-      JsonProtocol.executorMetricsFromJson(oldExecutorMetricsJson))
+    val expectedExecutorMetrics = new ExecutorMetrics(
+      Array(12L, 23L, 45L, 67L, 78L, 89L, 90L, 123L, 456L, 0L, 40L, 20L, 20L,
+        10L, 20L, 10L, 301L)
+    )
+    assertEquals(
+      expectedExecutorMetrics,
+      JsonProtocol.executorMetricsFromJson(oldExecutorMetricsJson)
+    )
   }
 
-  test("EnvironmentUpdate backward compatibility: handle missing metrics properties") {
+  test(
+    "EnvironmentUpdate backward compatibility: handle missing metrics properties"
+  ) {
     // The "Metrics Properties" field was added in Spark 3.4.0:
     val expectedEvent: SparkListenerEnvironmentUpdate = {
-      val e = JsonProtocol.environmentUpdateFromJson(environmentUpdateJsonString)
+      val e =
+        JsonProtocol.environmentUpdateFromJson(environmentUpdateJsonString)
       e.copy(environmentDetails =
-        e.environmentDetails ++ Map("Metrics Properties" -> Seq.empty[(String, String)]))
+        e.environmentDetails ++ Map(
+          "Metrics Properties" -> Seq.empty[(String, String)]
+        )
+      )
     }
     val oldEnvironmentUpdateJson = environmentUpdateJsonString
       .removeField("Metrics Properties")
-    assertEquals(expectedEvent, JsonProtocol.environmentUpdateFromJson(oldEnvironmentUpdateJson))
+    assertEquals(
+      expectedEvent,
+      JsonProtocol.environmentUpdateFromJson(oldEnvironmentUpdateJson)
+    )
   }
 
   test("ExecutorInfo backward compatibility") {
     // The "Attributes" and "Resources" fields were added in Spark 3.0.0
     // The "Resource Profile Id", "Registration Time", and "Request Time"
     // fields were added in Spark 3.4.0
-    val resourcesInfo = Map(ResourceUtils.GPU ->
-      new ResourceInformation(ResourceUtils.GPU, Array("0", "1")))
+    val resourcesInfo = Map(
+      ResourceUtils.GPU ->
+        new ResourceInformation(ResourceUtils.GPU, Array("0", "1"))
+    )
     val attributes = Map("ContainerId" -> "ct1", "User" -> "spark")
     val executorInfo =
       new ExecutorInfo(
@@ -649,13 +1086,15 @@ class JsonProtocolSuite extends SparkFunSuite {
         resourcesInfo = resourcesInfo,
         resourceProfileId = 123,
         registrationTime = Some(2L),
-        requestTime = Some(1L))
-    val oldExecutorInfoJson = toJsonString(JsonProtocol.executorInfoToJson(executorInfo, _))
-      .removeField("Attributes")
-      .removeField("Resources")
-      .removeField("Resource Profile Id")
-      .removeField("Registration Time")
-      .removeField("Request Time")
+        requestTime = Some(1L)
+      )
+    val oldExecutorInfoJson =
+      toJsonString(JsonProtocol.executorInfoToJson(executorInfo, _))
+        .removeField("Attributes")
+        .removeField("Resources")
+        .removeField("Resource Profile Id")
+        .removeField("Registration Time")
+        .removeField("Request Time")
     val oldEvent = JsonProtocol.executorInfoFromJson(oldExecutorInfoJson)
     assert(oldEvent.attributes.isEmpty)
     assert(oldEvent.resourcesInfo.isEmpty)
@@ -702,10 +1141,13 @@ class JsonProtocolSuite extends SparkFunSuite {
     import InternalAccumulator._
     val blocks = Seq[(BlockId, BlockStatus)](
       (TestBlockId("meebo"), BlockStatus(StorageLevel.MEMORY_ONLY, 1L, 2L)),
-      (TestBlockId("feebo"), BlockStatus(StorageLevel.DISK_ONLY, 3L, 4L)))
+      (TestBlockId("feebo"), BlockStatus(StorageLevel.DISK_ONLY, 3L, 4L))
+    )
     val blocksJson = JArray(blocks.toList.map { case (id, status) =>
       ("Block ID" -> id.toString) ~
-      ("Status" -> parse(toJsonString(JsonProtocol.blockStatusToJson(status, _))))
+        ("Status" -> parse(
+          toJsonString(JsonProtocol.blockStatusToJson(status, _))
+        ))
     })
     testAccumValue(Some(RESULT_SIZE), 3L, JInt(3))
     testAccumValue(Some(shuffleRead.REMOTE_BLOCKS_FETCHED), 2, JInt(2))
@@ -719,7 +1161,8 @@ class JsonProtocolSuite extends SparkFunSuite {
   private def testAccumulableInfo(
       name: String,
       value: Option[Any],
-      expectedValue: Option[Any]): Unit = {
+      expectedValue: Option[Any]
+  ): Unit = {
     val isInternal = name.startsWith(InternalAccumulator.METRICS_PREFIX)
     val accum = AccumulableInfo(
       123L,
@@ -727,10 +1170,13 @@ class JsonProtocolSuite extends SparkFunSuite {
       update = value,
       value = value,
       internal = isInternal,
-      countFailedValues = false)
+      countFailedValues = false
+    )
     val json = toJsonString(JsonProtocol.accumulableInfoToJson(accum, _))
     val newAccum = JsonProtocol.accumulableInfoFromJson(json)
-    assert(newAccum == accum.copy(update = expectedValue, value = expectedValue))
+    assert(
+      newAccum == accum.copy(update = expectedValue, value = expectedValue)
+    )
   }
 
   test("SPARK-31923: unexpected value type of internal accumulator") {
@@ -740,7 +1186,8 @@ class JsonProtocolSuite extends SparkFunSuite {
     testAccumulableInfo(
       METRICS_PREFIX + "fooString",
       value = Some("foo"),
-      expectedValue = None)
+      expectedValue = None
+    )
     testAccumulableInfo(
       METRICS_PREFIX + "fooList",
       value = Some(java.util.Arrays.asList("string")),
@@ -748,19 +1195,18 @@ class JsonProtocolSuite extends SparkFunSuite {
     )
     val blocks = Seq(
       (TestBlockId("block1"), BlockStatus(StorageLevel.MEMORY_ONLY, 1L, 2L)),
-      (TestBlockId("block2"), BlockStatus(StorageLevel.DISK_ONLY, 3L, 4L)))
+      (TestBlockId("block2"), BlockStatus(StorageLevel.DISK_ONLY, 3L, 4L))
+    )
     testAccumulableInfo(
       METRICS_PREFIX + "fooList",
-      value = Some(java.util.Arrays.asList(
-        "string",
-        blocks(0),
-        blocks(1))),
+      value = Some(java.util.Arrays.asList("string", blocks(0), blocks(1))),
       expectedValue = Some(blocks.asJava)
     )
     testAccumulableInfo(
       METRICS_PREFIX + "fooSet",
       value = Some(Set("foo")),
-      expectedValue = None)
+      expectedValue = None
+    )
   }
 
   test("SPARK-30936: forwards compatibility - ignore unknown fields") {
@@ -775,7 +1221,9 @@ class JsonProtocolSuite extends SparkFunSuite {
     assert(JsonProtocol.sparkEventFromJson(unknownFieldsJson) === expected)
   }
 
-  test("SPARK-30936: backwards compatibility - set default values for missing fields") {
+  test(
+    "SPARK-30936: backwards compatibility - set default values for missing fields"
+  ) {
     val expected = TestListenerEvent("foo", 0)
     val unknownFieldsJson =
       """{
@@ -800,7 +1248,11 @@ class JsonProtocolSuite extends SparkFunSuite {
         |]
         |""".stripMargin
     val stackTrace = JsonProtocol.stackTraceFromJson(stackTraceJson)
-    assert(stackTrace === Array(new StackTraceElement("someClass", "someMethod", null, -1)))
+    assert(
+      stackTrace === Array(
+        new StackTraceElement("someClass", "someMethod", null, -1)
+      )
+    )
 
     val exceptionFailureJson =
       """
@@ -813,7 +1265,9 @@ class JsonProtocolSuite extends SparkFunSuite {
         |}
         |""".stripMargin
     val exceptionFailure =
-      JsonProtocol.taskEndReasonFromJson(exceptionFailureJson).asInstanceOf[ExceptionFailure]
+      JsonProtocol
+        .taskEndReasonFromJson(exceptionFailureJson)
+        .asInstanceOf[ExceptionFailure]
     assert(exceptionFailure.description == null)
   }
 
@@ -878,11 +1332,14 @@ class JsonProtocolSuite extends SparkFunSuite {
         |   }
         |}
         |""".stripMargin
-    val jobFailedEvent = JsonProtocol.sparkEventFromJson(exJobFailureNoStackJson)
+    val jobFailedEvent =
+      JsonProtocol.sparkEventFromJson(exJobFailureNoStackJson)
     testEvent(jobFailedEvent, exJobFailureExpectedJson)
   }
 
-  test("SPARK-42205: don't log accumulables in start and getting result events") {
+  test(
+    "SPARK-42205: don't log accumulables in start and getting result events"
+  ) {
     // Simulate case where a job / stage / task completes before the event logging
     // listener logs the event. In this case, the TaskInfo / StageInfo will have
     // accumulables from the finished task / stage, but we want to skip logging
@@ -896,23 +1353,31 @@ class JsonProtocolSuite extends SparkFunSuite {
 
     val stageSubmitted = SparkListenerStageSubmitted(stageInfo)
     val taskStart = SparkListenerTaskStart(1, 0, taskInfo)
-    val jobStart = SparkListenerJobStart(10, jobSubmissionTime, Seq(stageInfo), properties)
+    val jobStart =
+      SparkListenerJobStart(10, jobSubmissionTime, Seq(stageInfo), properties)
     val gettingResult = SparkListenerTaskGettingResult(taskInfo)
 
     assert(
-      stageSubmittedFromJson(sparkEventToJsonString(stageSubmitted)).stageInfo.accumulables.isEmpty)
+      stageSubmittedFromJson(
+        sparkEventToJsonString(stageSubmitted)
+      ).stageInfo.accumulables.isEmpty
+    )
     assert(
-      taskStartFromJson(sparkEventToJsonString(taskStart)).taskInfo.accumulables.isEmpty)
+      taskStartFromJson(
+        sparkEventToJsonString(taskStart)
+      ).taskInfo.accumulables.isEmpty
+    )
     assert(
-      taskGettingResultFromJson(sparkEventToJsonString(gettingResult))
-        .taskInfo.accumulables.isEmpty)
+      taskGettingResultFromJson(
+        sparkEventToJsonString(gettingResult)
+      ).taskInfo.accumulables.isEmpty
+    )
 
     // Deliberately not fixed for job starts because a job might legitimately reference
     // stages that have completed even before the job start event is emitted.
     testEvent(jobStart, sparkEventToJsonString(jobStart))
   }
 }
-
 
 private[spark] object JsonProtocolSuite extends Assertions {
   import InternalAccumulator._
@@ -923,7 +1388,8 @@ private[spark] object JsonProtocolSuite extends Assertions {
   private implicit class JsonStringImplicits(json: String) {
     def removeField(field: String): String = {
       val tree = mapper.readTree(json)
-      Option(tree.asInstanceOf[ObjectNode].findParent(field)).foreach(_.remove(field))
+      Option(tree.asInstanceOf[ObjectNode].findParent(field))
+        .foreach(_.remove(field))
       tree.toString
     }
 
@@ -954,55 +1420,71 @@ private[spark] object JsonProtocolSuite extends Assertions {
   private def testEvent(event: SparkListenerEvent, jsonString: String): Unit = {
     val actualJsonString = JsonProtocol.sparkEventToJsonString(event)
     val newEvent = JsonProtocol.sparkEventFromJson(actualJsonString)
-    assertJsonStringEquals(jsonString, actualJsonString, event.getClass.getSimpleName)
+    assertJsonStringEquals(
+      jsonString,
+      actualJsonString,
+      event.getClass.getSimpleName
+    )
     assertEquals(event, newEvent)
   }
 
   private def testRDDInfo(info: RDDInfo): Unit = {
     val newInfo = JsonProtocol.rddInfoFromJson(
-      toJsonString(JsonProtocol.rddInfoToJson(info, _)))
+      toJsonString(JsonProtocol.rddInfoToJson(info, _))
+    )
     assertEquals(info, newInfo)
   }
 
   private def testStageInfo(info: StageInfo): Unit = {
     val newInfo = JsonProtocol.stageInfoFromJson(
-      toJsonString(JsonProtocol.stageInfoToJson(info, _, includeAccumulables = true)))
+      toJsonString(
+        JsonProtocol.stageInfoToJson(info, _, includeAccumulables = true)
+      )
+    )
     assertEquals(info, newInfo)
   }
 
   private def testStorageLevel(level: StorageLevel): Unit = {
     val newLevel = JsonProtocol.storageLevelFromJson(
-      toJsonString(JsonProtocol.storageLevelToJson(level, _)))
+      toJsonString(JsonProtocol.storageLevelToJson(level, _))
+    )
     assertEquals(level, newLevel)
   }
 
   private def testTaskMetrics(metrics: TaskMetrics): Unit = {
     val newMetrics = JsonProtocol.taskMetricsFromJson(
-      toJsonString(JsonProtocol.taskMetricsToJson(metrics, _)))
+      toJsonString(JsonProtocol.taskMetricsToJson(metrics, _))
+    )
     assertEquals(metrics, newMetrics)
   }
 
   private def testBlockManagerId(id: BlockManagerId): Unit = {
     val newId = JsonProtocol.blockManagerIdFromJson(
-      toJsonString(JsonProtocol.blockManagerIdToJson(id, _)))
+      toJsonString(JsonProtocol.blockManagerIdToJson(id, _))
+    )
     assert(id === newId)
   }
 
   private def testTaskInfo(info: TaskInfo): Unit = {
     val newInfo = JsonProtocol.taskInfoFromJson(
-      toJsonString(JsonProtocol.taskInfoToJson(info, _, includeAccumulables = true)))
+      toJsonString(
+        JsonProtocol.taskInfoToJson(info, _, includeAccumulables = true)
+      )
+    )
     assertEquals(info, newInfo)
   }
 
   private def testJobResult(result: JobResult): Unit = {
     val newResult = JsonProtocol.jobResultFromJson(
-      toJsonString(JsonProtocol.jobResultToJson(result, _)))
+      toJsonString(JsonProtocol.jobResultToJson(result, _))
+    )
     assertEquals(result, newResult)
   }
 
   private def testTaskEndReason(reason: TaskEndReason): Unit = {
     val newReason = JsonProtocol.taskEndReasonFromJson(
-      toJsonString(JsonProtocol.taskEndReasonToJson(reason, _)))
+      toJsonString(JsonProtocol.taskEndReasonToJson(reason, _))
+    )
     assertEquals(reason, newReason)
   }
 
@@ -1013,29 +1495,42 @@ private[spark] object JsonProtocolSuite extends Assertions {
 
   private def testExecutorInfo(info: ExecutorInfo): Unit = {
     val newInfo = JsonProtocol.executorInfoFromJson(
-      toJsonString(JsonProtocol.executorInfoToJson(info, _)))
+      toJsonString(JsonProtocol.executorInfoToJson(info, _))
+    )
     assertEquals(info, newInfo)
   }
 
-  private def testAccumValue(name: Option[String], value: Any, expectedJson: JValue): Unit = {
-    val json = parse(toJsonString(JsonProtocol.accumValueToJson(name, value, _)))
+  private def testAccumValue(
+      name: Option[String],
+      value: Any,
+      expectedJson: JValue
+  ): Unit = {
+    val json = parse(
+      toJsonString(JsonProtocol.accumValueToJson(name, value, _))
+    )
     assert(json === expectedJson)
     val newValue = JsonProtocol.accumValueFromJson(name, json)
-    val expectedValue = if (name.exists(_.startsWith(METRICS_PREFIX))) value else value.toString
+    val expectedValue =
+      if (name.exists(_.startsWith(METRICS_PREFIX))) value else value.toString
     assert(newValue === expectedValue)
   }
 
   private def testException(exception: Exception): Unit = {
     val newException = JsonProtocol.exceptionFromJson(
-      toJsonString(JsonProtocol.exceptionToJson(exception, _)))
+      toJsonString(JsonProtocol.exceptionToJson(exception, _))
+    )
     assertEquals(exception, newException)
   }
 
   /** -------------------------------- *
-   | Util methods for comparing events |
-   * --------------------------------- */
+    *   | Util methods for comparing events |
+    * ---------------------------------
+    */
 
-  private[spark] def assertEquals(event1: SparkListenerEvent, event2: SparkListenerEvent): Unit = {
+  private[spark] def assertEquals(
+      event1: SparkListenerEvent,
+      event2: SparkListenerEvent
+  ): Unit = {
     (event1, event2) match {
       case (e1: SparkListenerStageSubmitted, e2: SparkListenerStageSubmitted) =>
         assert(e1.properties === e2.properties)
@@ -1045,7 +1540,10 @@ private[spark] object JsonProtocolSuite extends Assertions {
       case (e1: SparkListenerTaskStart, e2: SparkListenerTaskStart) =>
         assert(e1.stageId === e2.stageId)
         assertEquals(e1.taskInfo, e2.taskInfo)
-      case (e1: SparkListenerTaskGettingResult, e2: SparkListenerTaskGettingResult) =>
+      case (
+            e1: SparkListenerTaskGettingResult,
+            e2: SparkListenerTaskGettingResult
+          ) =>
         assertEquals(e1.taskInfo, e2.taskInfo)
       case (e1: SparkListenerTaskEnd, e2: SparkListenerTaskEnd) =>
         assert(e1.stageId === e2.stageId)
@@ -1062,14 +1560,23 @@ private[spark] object JsonProtocolSuite extends Assertions {
       case (e1: SparkListenerJobEnd, e2: SparkListenerJobEnd) =>
         assert(e1.jobId === e2.jobId)
         assertEquals(e1.jobResult, e2.jobResult)
-      case (e1: SparkListenerEnvironmentUpdate, e2: SparkListenerEnvironmentUpdate) =>
+      case (
+            e1: SparkListenerEnvironmentUpdate,
+            e2: SparkListenerEnvironmentUpdate
+          ) =>
         assertEquals(e1.environmentDetails.toMap, e2.environmentDetails.toMap)
       case (e1: SparkListenerExecutorAdded, e2: SparkListenerExecutorAdded) =>
         assert(e1.executorId === e2.executorId)
         assertEquals(e1.executorInfo, e2.executorInfo)
-      case (e1: SparkListenerExecutorRemoved, e2: SparkListenerExecutorRemoved) =>
+      case (
+            e1: SparkListenerExecutorRemoved,
+            e2: SparkListenerExecutorRemoved
+          ) =>
         assert(e1.executorId === e2.executorId)
-      case (e1: SparkListenerExecutorMetricsUpdate, e2: SparkListenerExecutorMetricsUpdate) =>
+      case (
+            e1: SparkListenerExecutorMetricsUpdate,
+            e2: SparkListenerExecutorMetricsUpdate
+          ) =>
         assert(e1.execId === e2.execId)
         assertSeqEquals[(Long, Int, Int, Seq[AccumulableInfo])](
           e1.accumUpdates,
@@ -1080,8 +1587,13 @@ private[spark] object JsonProtocolSuite extends Assertions {
             assert(taskId1 === taskId2)
             assert(stageId1 === stageId2)
             assert(stageAttemptId1 === stageAttemptId2)
-            assertSeqEquals[AccumulableInfo](updates1, updates2, (a, b) => a.equals(b))
-          })
+            assertSeqEquals[AccumulableInfo](
+              updates1,
+              updates2,
+              (a, b) => a.equals(b)
+            )
+          }
+        )
         assertSeqEquals[((Int, Int), ExecutorMetrics)](
           e1.executorUpdates.toSeq.sortBy(_._1),
           e2.executorUpdates.toSeq.sortBy(_._1),
@@ -1092,7 +1604,10 @@ private[spark] object JsonProtocolSuite extends Assertions {
             assertEquals(v1, v2)
           }
         )
-      case (e1: SparkListenerStageExecutorMetrics, e2: SparkListenerStageExecutorMetrics) =>
+      case (
+            e1: SparkListenerStageExecutorMetrics,
+            e2: SparkListenerStageExecutorMetrics
+          ) =>
         assert(e1.execId === e2.execId)
         assert(e1.stageId === e2.stageId)
         assert(e1.stageAttemptId === e2.stageAttemptId)
@@ -1156,35 +1671,56 @@ private[spark] object JsonProtocolSuite extends Assertions {
     assert(info1.totalCores == info2.totalCores)
   }
 
-  private def assertEquals(metrics1: TaskMetrics, metrics2: TaskMetrics): Unit = {
-    assert(metrics1.executorDeserializeTime === metrics2.executorDeserializeTime)
-    assert(metrics1.executorDeserializeCpuTime === metrics2.executorDeserializeCpuTime)
+  private def assertEquals(
+      metrics1: TaskMetrics,
+      metrics2: TaskMetrics
+  ): Unit = {
+    assert(
+      metrics1.executorDeserializeTime === metrics2.executorDeserializeTime
+    )
+    assert(
+      metrics1.executorDeserializeCpuTime === metrics2.executorDeserializeCpuTime
+    )
     assert(metrics1.executorRunTime === metrics2.executorRunTime)
     assert(metrics1.executorCpuTime === metrics2.executorCpuTime)
     assert(metrics1.resultSize === metrics2.resultSize)
     assert(metrics1.jvmGCTime === metrics2.jvmGCTime)
-    assert(metrics1.resultSerializationTime === metrics2.resultSerializationTime)
+    assert(
+      metrics1.resultSerializationTime === metrics2.resultSerializationTime
+    )
     assert(metrics1.memoryBytesSpilled === metrics2.memoryBytesSpilled)
     assert(metrics1.diskBytesSpilled === metrics2.diskBytesSpilled)
     assertEquals(metrics1.shuffleReadMetrics, metrics2.shuffleReadMetrics)
     assertEquals(metrics1.shuffleWriteMetrics, metrics2.shuffleWriteMetrics)
     assertEquals(metrics1.inputMetrics, metrics2.inputMetrics)
-    assertBlocksEquals(metrics1.updatedBlockStatuses, metrics2.updatedBlockStatuses)
+    assertBlocksEquals(
+      metrics1.updatedBlockStatuses,
+      metrics2.updatedBlockStatuses
+    )
   }
 
-  private def assertEquals(metrics1: ShuffleReadMetrics, metrics2: ShuffleReadMetrics): Unit = {
+  private def assertEquals(
+      metrics1: ShuffleReadMetrics,
+      metrics2: ShuffleReadMetrics
+  ): Unit = {
     assert(metrics1.remoteBlocksFetched === metrics2.remoteBlocksFetched)
     assert(metrics1.localBlocksFetched === metrics2.localBlocksFetched)
     assert(metrics1.fetchWaitTime === metrics2.fetchWaitTime)
     assert(metrics1.remoteBytesRead === metrics2.remoteBytesRead)
   }
 
-  private def assertEquals(metrics1: ShuffleWriteMetrics, metrics2: ShuffleWriteMetrics): Unit = {
+  private def assertEquals(
+      metrics1: ShuffleWriteMetrics,
+      metrics2: ShuffleWriteMetrics
+  ): Unit = {
     assert(metrics1.bytesWritten === metrics2.bytesWritten)
     assert(metrics1.writeTime === metrics2.writeTime)
   }
 
-  private def assertEquals(metrics1: InputMetrics, metrics2: InputMetrics): Unit = {
+  private def assertEquals(
+      metrics1: InputMetrics,
+      metrics2: InputMetrics
+  ): Unit = {
     assert(metrics1.bytesRead === metrics2.bytesRead)
   }
 
@@ -1197,9 +1733,12 @@ private[spark] object JsonProtocolSuite extends Assertions {
     }
   }
 
-  private def assertEquals(reason1: TaskEndReason, reason2: TaskEndReason): Unit = {
+  private def assertEquals(
+      reason1: TaskEndReason,
+      reason2: TaskEndReason
+  ): Unit = {
     (reason1, reason2) match {
-      case (Success, Success) =>
+      case (Success, Success)         =>
       case (Resubmitted, Resubmitted) =>
       case (r1: FetchFailed, r2: FetchFailed) =>
         assert(r1.shuffleId === r2.shuffleId)
@@ -1211,49 +1750,75 @@ private[spark] object JsonProtocolSuite extends Assertions {
       case (r1: ExceptionFailure, r2: ExceptionFailure) =>
         assert(r1.className === r2.className)
         assert(r1.description === r2.description)
-        assertSeqEquals(r1.stackTrace, r2.stackTrace, assertStackTraceElementEquals)
+        assertSeqEquals(
+          r1.stackTrace,
+          r2.stackTrace,
+          assertStackTraceElementEquals
+        )
         assert(r1.fullStackTrace === r2.fullStackTrace)
-        assertSeqEquals[AccumulableInfo](r1.accumUpdates, r2.accumUpdates, (a, b) => a.equals(b))
+        assertSeqEquals[AccumulableInfo](
+          r1.accumUpdates,
+          r2.accumUpdates,
+          (a, b) => a.equals(b)
+        )
       case (TaskResultLost, TaskResultLost) =>
       case (r1: TaskKilled, r2: TaskKilled) =>
         assert(r1.reason == r2.reason)
-      case (TaskCommitDenied(jobId1, partitionId1, attemptNumber1),
-          TaskCommitDenied(jobId2, partitionId2, attemptNumber2)) =>
+      case (
+            TaskCommitDenied(jobId1, partitionId1, attemptNumber1),
+            TaskCommitDenied(jobId2, partitionId2, attemptNumber2)
+          ) =>
         assert(jobId1 === jobId2)
         assert(partitionId1 === partitionId2)
         assert(attemptNumber1 === attemptNumber2)
-      case (ExecutorLostFailure(execId1, exit1CausedByApp, reason1),
-          ExecutorLostFailure(execId2, exit2CausedByApp, reason2)) =>
+      case (
+            ExecutorLostFailure(execId1, exit1CausedByApp, reason1),
+            ExecutorLostFailure(execId2, exit2CausedByApp, reason2)
+          ) =>
         assert(execId1 === execId2)
         assert(exit1CausedByApp === exit2CausedByApp)
         assert(reason1 === reason2)
       case (UnknownReason, UnknownReason) =>
-      case _ => fail("Task end reasons don't match in types!")
+      case _                              => fail("Task end reasons don't match in types!")
     }
   }
 
   private def assertEquals(
       details1: Map[String, scala.collection.Seq[(String, String)]],
-      details2: Map[String, scala.collection.Seq[(String, String)]]): Unit = {
+      details2: Map[String, scala.collection.Seq[(String, String)]]
+  ): Unit = {
     details1.zip(details2).foreach {
-      case ((key1, values1: scala.collection.Seq[(String, String)]),
-        (key2, values2: scala.collection.Seq[(String, String)])) =>
+      case (
+            (key1, values1: scala.collection.Seq[(String, String)]),
+            (key2, values2: scala.collection.Seq[(String, String)])
+          ) =>
         assert(key1 === key2)
         values1.zip(values2).foreach { case (v1, v2) => assert(v1 === v2) }
     }
   }
 
-  private def assertEquals(exception1: Exception, exception2: Exception): Unit = {
+  private def assertEquals(
+      exception1: Exception,
+      exception2: Exception
+  ): Unit = {
     assert(exception1.getMessage === exception2.getMessage)
     assertSeqEquals(
       exception1.getStackTrace,
       exception2.getStackTrace,
-      assertStackTraceElementEquals)
+      assertStackTraceElementEquals
+    )
   }
 
-  private def assertEquals(metrics1: ExecutorMetrics, metrics2: ExecutorMetrics): Unit = {
+  private def assertEquals(
+      metrics1: ExecutorMetrics,
+      metrics2: ExecutorMetrics
+  ): Unit = {
     ExecutorMetricType.metricToOffset.foreach { metric =>
-      assert(metrics1.getMetricValue(metric._1) === metrics2.getMetricValue(metric._1))
+      assert(
+        metrics1.getMetricValue(metric._1) === metrics2.getMetricValue(
+          metric._1
+        )
+      )
     }
   }
 
@@ -1261,7 +1826,11 @@ private[spark] object JsonProtocolSuite extends Assertions {
     mapper.writerWithDefaultPrettyPrinter().writeValueAsString(json)
   }
 
-  private def assertJsonStringEquals(expected: String, actual: String, metadata: String): Unit = {
+  private def assertJsonStringEquals(
+      expected: String,
+      actual: String,
+      metadata: String
+  ): Unit = {
     val expectedJson = mapper.readTree(expected)
     val actualJson = mapper.readTree(actual)
     if (expectedJson != actualJson) {
@@ -1277,7 +1846,8 @@ private[spark] object JsonProtocolSuite extends Assertions {
   private def assertSeqEquals[T](
       seq1: scala.collection.Seq[T],
       seq2: scala.collection.Seq[T],
-      assertEquals: (T, T) => Unit): Unit = {
+      assertEquals: (T, T) => Unit
+  ): Unit = {
     assert(seq1.length === seq2.length)
     seq1.zip(seq2).foreach { case (t1, t2) =>
       assertEquals(t1, t2)
@@ -1287,7 +1857,8 @@ private[spark] object JsonProtocolSuite extends Assertions {
   private def assertOptionEquals[T](
       opt1: Option[T],
       opt2: Option[T],
-      assertEquals: (T, T) => Unit): Unit = {
+      assertEquals: (T, T) => Unit
+  ): Unit = {
     if (opt1.isDefined) {
       assert(opt2.isDefined)
       assertEquals(opt1.get, opt2.get)
@@ -1296,22 +1867,27 @@ private[spark] object JsonProtocolSuite extends Assertions {
     }
   }
 
-  /**
-   * Use different names for methods we pass in to assertSeqEquals or assertOptionEquals
-   */
+  /** Use different names for methods we pass in to assertSeqEquals or assertOptionEquals
+    */
 
   private def assertBlocksEquals(
       blocks1: Seq[(BlockId, BlockStatus)],
-      blocks2: Seq[(BlockId, BlockStatus)]) = {
+      blocks2: Seq[(BlockId, BlockStatus)]
+  ) = {
     assertSeqEquals(blocks1, blocks2, assertBlockEquals)
   }
 
-  private def assertBlockEquals(b1: (BlockId, BlockStatus), b2: (BlockId, BlockStatus)): Unit = {
+  private def assertBlockEquals(
+      b1: (BlockId, BlockStatus),
+      b2: (BlockId, BlockStatus)
+  ): Unit = {
     assert(b1 === b2)
   }
 
-  private def assertStackTraceElementEquals(ste1: StackTraceElement,
-      ste2: StackTraceElement): Unit = {
+  private def assertStackTraceElementEquals(
+      ste1: StackTraceElement,
+      ste2: StackTraceElement
+  ): Unit = {
     // This mimics the equals() method from Java 8 and earlier. Java 9 adds checks for
     // class loader and module, which will cause them to be not equal, when we don't
     // care about those
@@ -1326,8 +1902,9 @@ private[spark] object JsonProtocolSuite extends Assertions {
   }
 
   /** ----------------------------------- *
-   | Util methods for constructing events |
-   * ------------------------------------ */
+    *   | Util methods for constructing events |
+    * ------------------------------------
+    */
 
   private val properties = {
     val p = new Properties
@@ -1341,16 +1918,36 @@ private[spark] object JsonProtocolSuite extends Assertions {
   private val stackTrace = {
     Array[StackTraceElement](
       new StackTraceElement("Apollo", "Venus", "Mercury", 42),
-      new StackTraceElement("Afollo", "Vemus", "Mercurry", 420), /* odd spellings intentional */
-      new StackTraceElement("Ayollo", "Vesus", "Blackberry", 4200) /* odd spellings intentional */
+      new StackTraceElement("Afollo", "Vemus", "Mercurry", 420),
+      /* odd spellings intentional */
+      new StackTraceElement(
+        "Ayollo",
+        "Vesus",
+        "Blackberry",
+        4200
+      ) /* odd spellings intentional */
     )
   }
 
-  private def makeRddInfo(a: Int, b: Int, c: Int, d: Long, e: Long,
-      deterministic: DeterministicLevel.Value) = {
+  private def makeRddInfo(
+      a: Int,
+      b: Int,
+      c: Int,
+      d: Long,
+      e: Long,
+      deterministic: DeterministicLevel.Value
+  ) = {
     val r =
-      new RDDInfo(a, "mayor", b, StorageLevel.MEMORY_AND_DISK, false, Seq(1, 4, 7), a.toString,
-        outputDeterministicLevel = deterministic)
+      new RDDInfo(
+        a,
+        "mayor",
+        b,
+        StorageLevel.MEMORY_AND_DISK,
+        false,
+        Seq(1, 4, 7),
+        a.toString,
+        outputDeterministicLevel = deterministic
+      )
     r.numCachedPartitions = c
     r.memSize = d
     r.diskSize = e
@@ -1364,16 +1961,39 @@ private[spark] object JsonProtocolSuite extends Assertions {
       d: Long,
       e: Long,
       rpId: Int = ResourceProfile.DEFAULT_RESOURCE_PROFILE_ID,
-      includeAccumulables: Boolean = true) = {
+      includeAccumulables: Boolean = true
+  ) = {
     val rddInfos = (0 until a % 5).map { i =>
       if (i == (a % 5) - 1) {
-        makeRddInfo(a + i, b + i, c + i, d + i, e + i, DeterministicLevel.INDETERMINATE)
+        makeRddInfo(
+          a + i,
+          b + i,
+          c + i,
+          d + i,
+          e + i,
+          DeterministicLevel.INDETERMINATE
+        )
       } else {
-        makeRddInfo(a + i, b + i, c + i, d + i, e + i, DeterministicLevel.DETERMINATE)
+        makeRddInfo(
+          a + i,
+          b + i,
+          c + i,
+          d + i,
+          e + i,
+          DeterministicLevel.DETERMINATE
+        )
       }
     }
-    val stageInfo = new StageInfo(a, 0, "greetings", b, rddInfos, Seq(100, 200, 300), "details",
-      resourceProfileId = rpId)
+    val stageInfo = new StageInfo(
+      a,
+      0,
+      "greetings",
+      b,
+      rddInfos,
+      Seq(100, 200, 300),
+      "details",
+      resourceProfileId = rpId
+    )
     if (includeAccumulables) {
       val (acc1, acc2) = (makeAccumulableInfo(1), makeAccumulableInfo(2))
       stageInfo.accumulables(acc1.id) = acc1
@@ -1389,14 +2009,27 @@ private[spark] object JsonProtocolSuite extends Assertions {
       d: Int,
       e: Long,
       speculative: Boolean,
-      includeAccumulables: Boolean = true) = {
-    val taskInfo = new TaskInfo(a, b, c, d, e,
-      "executor", "your kind sir", TaskLocality.NODE_LOCAL, speculative)
+      includeAccumulables: Boolean = true
+  ) = {
+    val taskInfo = new TaskInfo(
+      a,
+      b,
+      c,
+      d,
+      e,
+      "executor",
+      "your kind sir",
+      TaskLocality.NODE_LOCAL,
+      speculative
+    )
     if (includeAccumulables) {
-      taskInfo.setAccumulables(List(
-        makeAccumulableInfo(1),
-        makeAccumulableInfo(2),
-        makeAccumulableInfo(3, internal = true)))
+      taskInfo.setAccumulables(
+        List(
+          makeAccumulableInfo(1),
+          makeAccumulableInfo(2),
+          makeAccumulableInfo(3, internal = true)
+        )
+      )
     }
     taskInfo
   }
@@ -1405,36 +2038,61 @@ private[spark] object JsonProtocolSuite extends Assertions {
       id: Int,
       internal: Boolean = false,
       countFailedValues: Boolean = false,
-      metadata: Option[String] = None): AccumulableInfo =
-    new AccumulableInfo(id, Some(s"Accumulable$id"), Some(s"delta$id"), Some(s"val$id"),
-      internal, countFailedValues, metadata)
+      metadata: Option[String] = None
+  ): AccumulableInfo =
+    new AccumulableInfo(
+      id,
+      Some(s"Accumulable$id"),
+      Some(s"delta$id"),
+      Some(s"val$id"),
+      internal,
+      countFailedValues,
+      metadata
+    )
 
   /** Creates an SparkListenerExecutorMetricsUpdate event */
   private def makeExecutorMetricsUpdate(
       execId: String,
       includeTaskMetrics: Boolean,
-      includeExecutorMetrics: Boolean): SparkListenerExecutorMetricsUpdate = {
+      includeExecutorMetrics: Boolean
+  ): SparkListenerExecutorMetricsUpdate = {
     val taskMetrics =
       if (includeTaskMetrics) {
-        Seq((1L, 1, 1, Seq(makeAccumulableInfo(1, false, false, None),
-          makeAccumulableInfo(2, false, false, None))))
-       } else {
+        Seq(
+          (
+            1L,
+            1,
+            1,
+            Seq(
+              makeAccumulableInfo(1, false, false, None),
+              makeAccumulableInfo(2, false, false, None)
+            )
+          )
+        )
+      } else {
         Seq()
       }
     val executorMetricsUpdate: Map[(Int, Int), ExecutorMetrics] =
       if (includeExecutorMetrics) {
-        Map((0, 0) -> new ExecutorMetrics(Array(123456L, 543L, 0L, 0L, 0L, 0L, 0L,
-          0L, 0L, 0L, 256912L, 123456L, 123456L, 61728L, 30364L, 15182L, 10L, 90L, 2L, 20L, 301L)))
+        Map(
+          (0, 0) -> new ExecutorMetrics(
+            Array(123456L, 543L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 256912L,
+              123456L, 123456L, 61728L, 30364L, 15182L, 10L, 90L, 2L, 20L, 301L)
+          )
+        )
       } else {
         Map.empty
       }
-    SparkListenerExecutorMetricsUpdate(execId, taskMetrics, executorMetricsUpdate)
+    SparkListenerExecutorMetricsUpdate(
+      execId,
+      taskMetrics,
+      executorMetricsUpdate
+    )
   }
 
-  /**
-   * Creates a TaskMetrics object describing a task that read data from Hadoop (if hasHadoopInput is
-   * set to true) or read data from a shuffle otherwise.
-   */
+  /** Creates a TaskMetrics object describing a task that read data from Hadoop (if hasHadoopInput is
+    * set to true) or read data from a shuffle otherwise.
+    */
   private def makeTaskMetrics(
       a: Long,
       b: Long,
@@ -1445,7 +2103,8 @@ private[spark] object JsonProtocolSuite extends Assertions {
       g: Int,
       hasHadoopInput: Boolean,
       hasOutput: Boolean,
-      hasRecords: Boolean = true) = {
+      hasRecords: Boolean = true
+  ) = {
     val t = TaskMetrics.registered
     // Set CPU times same as wall times for testing purpose
     t.setExecutorDeserializeTime(a)
@@ -1479,7 +2138,9 @@ private[spark] object JsonProtocolSuite extends Assertions {
     }
     if (hasOutput) {
       t.outputMetrics.setBytesWritten(a + b + c)
-      t.outputMetrics.setRecordsWritten(if (hasRecords) (a + b + c) / 100 else -1)
+      t.outputMetrics.setRecordsWritten(
+        if (hasRecords) (a + b + c) / 100 else -1
+      )
     } else {
       val sw = t.shuffleWriteMetrics
       sw.incBytesWritten(a + b + c)
@@ -1488,15 +2149,18 @@ private[spark] object JsonProtocolSuite extends Assertions {
     }
     // Make at most 6 blocks
     t.setUpdatedBlockStatuses((1 to (e % 5 + 1)).map { i =>
-      (RDDBlockId(e % i, f % i), BlockStatus(StorageLevel.MEMORY_AND_DISK_SER_2, a % i, b % i))
+      (
+        RDDBlockId(e % i, f % i),
+        BlockStatus(StorageLevel.MEMORY_AND_DISK_SER_2, a % i, b % i)
+      )
     }.toSeq)
     t
   }
 
-
   /** --------------------------------------- *
-   | JSON string representation of each event |
-   * ---------------------------------------- */
+    *   | JSON string representation of each event |
+    * ----------------------------------------
+    */
 
   private val stageSubmittedJsonString =
     """

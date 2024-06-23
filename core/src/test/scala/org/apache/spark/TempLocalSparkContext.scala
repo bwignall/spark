@@ -17,7 +17,10 @@
 
 package org.apache.spark
 
-import _root_.io.netty.util.internal.logging.{InternalLoggerFactory, Slf4JLoggerFactory}
+import _root_.io.netty.util.internal.logging.{
+  InternalLoggerFactory,
+  Slf4JLoggerFactory
+}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.Suite
@@ -25,18 +28,19 @@ import org.scalatest.Suite
 import org.apache.spark.internal.Logging
 import org.apache.spark.resource.ResourceProfile
 
-/**
- * Manages a local `sc` `SparkContext` variable, correctly stopping it after each test.
- *
- * Note: this class is a copy of [[LocalSparkContext]]. Why copy it? Reduce conflict. Because
- * many test suites use [[LocalSparkContext]] and overwrite some variable or function (e.g.
- * sc of LocalSparkContext), there occurs conflict when we refactor the `sc` as a new function.
- * After migrating all test suites that use [[LocalSparkContext]] to use
- * [[TempLocalSparkContext]], we will delete the original [[LocalSparkContext]] and rename
- * [[TempLocalSparkContext]] to [[LocalSparkContext]].
- */
-trait TempLocalSparkContext extends BeforeAndAfterEach
-  with BeforeAndAfterAll with Logging { self: Suite =>
+/** Manages a local `sc` `SparkContext` variable, correctly stopping it after each test.
+  *
+  * Note: this class is a copy of [[LocalSparkContext]]. Why copy it? Reduce conflict. Because
+  * many test suites use [[LocalSparkContext]] and overwrite some variable or function (e.g.
+  * sc of LocalSparkContext), there occurs conflict when we refactor the `sc` as a new function.
+  * After migrating all test suites that use [[LocalSparkContext]] to use
+  * [[TempLocalSparkContext]], we will delete the original [[LocalSparkContext]] and rename
+  * [[TempLocalSparkContext]] to [[LocalSparkContext]].
+  */
+trait TempLocalSparkContext
+    extends BeforeAndAfterEach
+    with BeforeAndAfterAll
+    with Logging { self: Suite =>
 
   private var _conf: SparkConf = defaultSparkConf
 
@@ -44,11 +48,10 @@ trait TempLocalSparkContext extends BeforeAndAfterEach
 
   def conf: SparkConf = _conf
 
-  /**
-   * Currently, we are focusing on the reconstruction of LocalSparkContext, so this method
-   * was created temporarily. When the migration work is completed, this method will be
-   * renamed to `sc` and the variable `sc` will be deleted.
-   */
+  /** Currently, we are focusing on the reconstruction of LocalSparkContext, so this method
+    * was created temporarily. When the migration work is completed, this method will be
+    * renamed to `sc` and the variable `sc` will be deleted.
+    */
   def sc: SparkContext = {
     if (_sc == null) {
       _sc = new SparkContext(conf)
@@ -77,7 +80,8 @@ trait TempLocalSparkContext extends BeforeAndAfterEach
   }
 
   private def defaultSparkConf: SparkConf = new SparkConf()
-    .setMaster("local[2]").setAppName(s"${this.getClass.getSimpleName}")
+    .setMaster("local[2]")
+    .setAppName(s"${this.getClass.getSimpleName}")
 }
 
 object TempLocalSparkContext {

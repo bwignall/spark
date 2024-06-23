@@ -29,7 +29,8 @@ class SplitInfo(
     val hostLocation: String,
     val path: String,
     val length: Long,
-    val underlyingSplit: Any) {
+    val underlyingSplit: Any
+) {
   override def toString(): String = {
     "SplitInfo " + super.toString + " .. inputFormatClazz " + inputFormatClazz +
       ", hostLocation : " + hostLocation + ", path : " + path +
@@ -62,8 +63,11 @@ class SplitInfo(
 
 object SplitInfo {
 
-  def toSplitInfo(inputFormatClazz: Class[_], path: String,
-                  mapredSplit: org.apache.hadoop.mapred.InputSplit): Seq[SplitInfo] = {
+  def toSplitInfo(
+      inputFormatClazz: Class[_],
+      path: String,
+      mapredSplit: org.apache.hadoop.mapred.InputSplit
+  ): Seq[SplitInfo] = {
     val retval = new ArrayBuffer[SplitInfo]()
     val length = mapredSplit.getLength
     for (host <- mapredSplit.getLocations) {
@@ -72,12 +76,21 @@ object SplitInfo {
     retval.toSeq
   }
 
-  def toSplitInfo(inputFormatClazz: Class[_], path: String,
-                  mapreduceSplit: org.apache.hadoop.mapreduce.InputSplit): Seq[SplitInfo] = {
+  def toSplitInfo(
+      inputFormatClazz: Class[_],
+      path: String,
+      mapreduceSplit: org.apache.hadoop.mapreduce.InputSplit
+  ): Seq[SplitInfo] = {
     val retval = new ArrayBuffer[SplitInfo]()
     val length = mapreduceSplit.getLength
     for (host <- mapreduceSplit.getLocations) {
-      retval += new SplitInfo(inputFormatClazz, host, path, length, mapreduceSplit)
+      retval += new SplitInfo(
+        inputFormatClazz,
+        host,
+        path,
+        length,
+        mapreduceSplit
+      )
     }
     retval.toSeq
   }

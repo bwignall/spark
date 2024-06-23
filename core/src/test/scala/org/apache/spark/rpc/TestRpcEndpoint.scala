@@ -34,29 +34,34 @@ class TestRpcEndpoint extends ThreadSafeRpcEndpoint with TripleEquals {
 
   @volatile private var onDisconnectedMessages = ArrayBuffer[RpcAddress]()
 
-  @volatile private var onNetworkErrorMessages = ArrayBuffer[(Throwable, RpcAddress)]()
+  @volatile private var onNetworkErrorMessages =
+    ArrayBuffer[(Throwable, RpcAddress)]()
 
   @volatile private var started = false
 
   @volatile private var stopped = false
 
-  override def receive: PartialFunction[Any, Unit] = {
-    case message: Any => receiveMessages += message
+  override def receive: PartialFunction[Any, Unit] = { case message: Any =>
+    receiveMessages += message
   }
 
-  override def receiveAndReply(context: RpcCallContext): PartialFunction[Any, Unit] = {
-    case message: Any => receiveAndReplyMessages += message
+  override def receiveAndReply(
+      context: RpcCallContext
+  ): PartialFunction[Any, Unit] = { case message: Any =>
+    receiveAndReplyMessages += message
   }
 
   override def onConnected(remoteAddress: RpcAddress): Unit = {
     onConnectedMessages += remoteAddress
   }
 
-  /**
-   * Invoked when some network error happens in the connection between the current node and
-   * `remoteAddress`.
-   */
-  override def onNetworkError(cause: Throwable, remoteAddress: RpcAddress): Unit = {
+  /** Invoked when some network error happens in the connection between the current node and
+    * `remoteAddress`.
+    */
+  override def onNetworkError(
+      cause: Throwable,
+      remoteAddress: RpcAddress
+  ): Unit = {
     onNetworkErrorMessages += cause -> remoteAddress
   }
 
@@ -114,11 +119,16 @@ class TestRpcEndpoint extends ThreadSafeRpcEndpoint with TripleEquals {
     assert(onDisconnectedMessages === expected)
   }
 
-  def verifySingleOnNetworkErrorMessage(cause: Throwable, remoteAddress: RpcAddress): Unit = {
+  def verifySingleOnNetworkErrorMessage(
+      cause: Throwable,
+      remoteAddress: RpcAddress
+  ): Unit = {
     verifyOnNetworkErrorMessages(List(cause -> remoteAddress))
   }
 
-  def verifyOnNetworkErrorMessages(expected: Seq[(Throwable, RpcAddress)]): Unit = {
+  def verifyOnNetworkErrorMessages(
+      expected: Seq[(Throwable, RpcAddress)]
+  ): Unit = {
     assert(onNetworkErrorMessages === expected)
   }
 }

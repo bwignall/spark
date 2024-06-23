@@ -76,7 +76,11 @@ class SizeTrackerSuite extends SparkFunSuite {
     for (i <- 0 until numElements) {
       val item = makeElement(i)
       vector += item
-      expectWithinError(vector, vector.estimateSize(), if (i < 32) HIGH_ERROR else NORMAL_ERROR)
+      expectWithinError(
+        vector,
+        vector.estimateSize(),
+        if (i < 32) HIGH_ERROR else NORMAL_ERROR
+      )
     }
   }
 
@@ -85,24 +89,35 @@ class SizeTrackerSuite extends SparkFunSuite {
     for (i <- 0 until numElements) {
       val (k, v) = makeElement(i)
       map(k) = v
-      expectWithinError(map, map.estimateSize(), if (i < 32) HIGH_ERROR else NORMAL_ERROR)
+      expectWithinError(
+        map,
+        map.estimateSize(),
+        if (i < 32) HIGH_ERROR else NORMAL_ERROR
+      )
     }
   }
 
-  def expectWithinError(obj: AnyRef, estimatedSize: Long, error: Double): Unit = {
+  def expectWithinError(
+      obj: AnyRef,
+      estimatedSize: Long,
+      error: Double
+  ): Unit = {
     val betterEstimatedSize = SizeEstimator.estimate(obj)
-    assert(betterEstimatedSize * (1 - error) < estimatedSize,
-      s"Estimated size $estimatedSize was less than expected size $betterEstimatedSize")
-    assert(betterEstimatedSize * (1 + 2 * error) > estimatedSize,
-      s"Estimated size $estimatedSize was greater than expected size $betterEstimatedSize")
+    assert(
+      betterEstimatedSize * (1 - error) < estimatedSize,
+      s"Estimated size $estimatedSize was less than expected size $betterEstimatedSize"
+    )
+    assert(
+      betterEstimatedSize * (1 + 2 * error) > estimatedSize,
+      s"Estimated size $estimatedSize was greater than expected size $betterEstimatedSize"
+    )
   }
 }
 
 private object SizeTrackerSuite {
 
-  /**
-   * Run speed tests for size tracking collections.
-   */
+  /** Run speed tests for size tracking collections.
+    */
   def main(args: Array[String]): Unit = {
     if (args.length < 1) {
       // scalastyle:off println
@@ -115,14 +130,13 @@ private object SizeTrackerSuite {
     mapSpeedTest(numElements)
   }
 
-  /**
-   * Speed test for SizeTrackingVector.
-   *
-   * Results for 100000 elements (possibly non-deterministic):
-   *   PrimitiveVector  15 ms
-   *   SizeTracker      51 ms
-   *   SizeEstimator    2000 ms
-   */
+  /** Speed test for SizeTrackingVector.
+    *
+    * Results for 100000 elements (possibly non-deterministic):
+    *   PrimitiveVector  15 ms
+    *   SizeTracker      51 ms
+    *   SizeEstimator    2000 ms
+    */
   def vectorSpeedTest(numElements: Int): Unit = {
     val baseTimes = for (i <- 0 until 10) yield time {
       val vector = new PrimitiveVector[LargeDummyClass]
@@ -144,17 +158,21 @@ private object SizeTrackerSuite {
         SizeEstimator.estimate(vector)
       }
     }
-    printSpeedTestResult("SizeTrackingVector", baseTimes, sampledTimes, unsampledTimes)
+    printSpeedTestResult(
+      "SizeTrackingVector",
+      baseTimes,
+      sampledTimes,
+      unsampledTimes
+    )
   }
 
-  /**
-   * Speed test for SizeTrackingAppendOnlyMap.
-   *
-   * Results for 100000 elements (possibly non-deterministic):
-   *   AppendOnlyMap  30 ms
-   *   SizeTracker    41 ms
-   *   SizeEstimator  1666 ms
-   */
+  /** Speed test for SizeTrackingAppendOnlyMap.
+    *
+    * Results for 100000 elements (possibly non-deterministic):
+    *   AppendOnlyMap  30 ms
+    *   SizeTracker    41 ms
+    *   SizeEstimator  1666 ms
+    */
   def mapSpeedTest(numElements: Int): Unit = {
     val baseTimes = for (i <- 0 until 10) yield time {
       val map = new AppendOnlyMap[Int, LargeDummyClass]
@@ -176,14 +194,20 @@ private object SizeTrackerSuite {
         SizeEstimator.estimate(map)
       }
     }
-    printSpeedTestResult("SizeTrackingAppendOnlyMap", baseTimes, sampledTimes, unsampledTimes)
+    printSpeedTestResult(
+      "SizeTrackingAppendOnlyMap",
+      baseTimes,
+      sampledTimes,
+      unsampledTimes
+    )
   }
 
   def printSpeedTestResult(
       testName: String,
       baseTimes: Seq[Long],
       sampledTimes: Seq[Long],
-      unsampledTimes: Seq[Long]): Unit = {
+      unsampledTimes: Seq[Long]
+  ): Unit = {
     // scalastyle:off println
     println(s"Average times for $testName (ms):")
     println("  Base - " + averageTime(baseTimes))

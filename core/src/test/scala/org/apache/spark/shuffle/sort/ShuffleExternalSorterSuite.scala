@@ -29,7 +29,10 @@ import org.apache.spark.internal.config.Tests._
 import org.apache.spark.memory._
 import org.apache.spark.unsafe.Platform
 
-class ShuffleExternalSorterSuite extends SparkFunSuite with LocalSparkContext with MockitoSugar {
+class ShuffleExternalSorterSuite
+    extends SparkFunSuite
+    with LocalSparkContext
+    with MockitoSugar {
 
   test("nested spill should be no-op") {
     val conf = new SparkConf()
@@ -48,20 +51,30 @@ class ShuffleExternalSorterSuite extends SparkFunSuite with LocalSparkContext wi
     // Mock `TaskMemoryManager` to allocate free memory when `shouldAllocate` is true.
     // This will trigger a nested spill and expose issues if we don't handle this case properly.
     val taskMemoryManager = new TaskMemoryManager(memoryManager, 0) {
-      override def acquireExecutionMemory(required: Long, consumer: MemoryConsumer): Long = {
+      override def acquireExecutionMemory(
+          required: Long,
+          consumer: MemoryConsumer
+      ): Long = {
         // ExecutionMemoryPool.acquireMemory will wait until there are 400 bytes for a task to use.
         // So we leave 400 bytes for the task.
-        if (shouldAllocate &&
-          memoryManager.maxHeapMemory - memoryManager.executionMemoryUsed > 400) {
+        if (
+          shouldAllocate &&
+          memoryManager.maxHeapMemory - memoryManager.executionMemoryUsed > 400
+        ) {
           val acquireExecutionMemoryMethod =
-            memoryManager.getClass.getMethods.filter(_.getName == "acquireExecutionMemory").head
-          acquireExecutionMemoryMethod.invoke(
-            memoryManager,
-            JLong.valueOf(
-              memoryManager.maxHeapMemory - memoryManager.executionMemoryUsed - 400),
-            JLong.valueOf(1L), // taskAttemptId
-            MemoryMode.ON_HEAP
-          ).asInstanceOf[java.lang.Long]
+            memoryManager.getClass.getMethods
+              .filter(_.getName == "acquireExecutionMemory")
+              .head
+          acquireExecutionMemoryMethod
+            .invoke(
+              memoryManager,
+              JLong.valueOf(
+                memoryManager.maxHeapMemory - memoryManager.executionMemoryUsed - 400
+              ),
+              JLong.valueOf(1L), // taskAttemptId
+              MemoryMode.ON_HEAP
+            )
+            .asInstanceOf[java.lang.Long]
         }
         super.acquireExecutionMemory(required, consumer)
       }
@@ -76,7 +89,8 @@ class ShuffleExternalSorterSuite extends SparkFunSuite with LocalSparkContext wi
       100, // initialSize - This will require ShuffleInMemorySorter to acquire at least 800 bytes
       1, // numPartitions
       conf,
-      new ShuffleWriteMetrics)
+      new ShuffleWriteMetrics
+    )
     val inMemSorter = {
       val field = sorter.getClass.getDeclaredField("inMemSorter")
       field.setAccessible(true)
@@ -112,6 +126,7 @@ class ShuffleExternalSorterSuite extends SparkFunSuite with LocalSparkContext wi
         sorter.insertRecord(bytes, Platform.BYTE_ARRAY_OFFSET, 1, 0)
       },
       errorClass = "UNABLE_TO_ACQUIRE_MEMORY",
-      parameters = Map("requestedBytes" -> "800", "receivedBytes" -> "400"))
+      parameters = Map("requestedBytes" -> "800", "receivedBytes" -> "400")
+    )
   }
 }

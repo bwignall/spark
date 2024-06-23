@@ -24,18 +24,23 @@ import org.apache.spark.util.Utils
 
 private[spark] object ShuffleDataIOUtils {
 
-  /**
-   * The prefix of spark config keys that are passed from the driver to the executor.
-   */
+  /** The prefix of spark config keys that are passed from the driver to the executor.
+    */
   val SHUFFLE_SPARK_CONF_PREFIX = "spark.shuffle.plugin.__config__."
 
   def loadShuffleDataIO(conf: SparkConf): ShuffleDataIO = {
     val configuredPluginClass = conf.get(SHUFFLE_IO_PLUGIN_CLASS)
     val maybeIO = Utils.loadExtensions(
-      classOf[ShuffleDataIO], Seq(configuredPluginClass), conf)
-    require(maybeIO.nonEmpty, s"A valid shuffle plugin must be specified by config " +
-      s"${SHUFFLE_IO_PLUGIN_CLASS.key}, but $configuredPluginClass resulted in zero valid " +
-      s"plugins.")
+      classOf[ShuffleDataIO],
+      Seq(configuredPluginClass),
+      conf
+    )
+    require(
+      maybeIO.nonEmpty,
+      s"A valid shuffle plugin must be specified by config " +
+        s"${SHUFFLE_IO_PLUGIN_CLASS.key}, but $configuredPluginClass resulted in zero valid " +
+        s"plugins."
+    )
     maybeIO.head
   }
 

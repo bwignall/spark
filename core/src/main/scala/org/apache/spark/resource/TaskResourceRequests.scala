@@ -25,58 +25,53 @@ import scala.jdk.CollectionConverters._
 import org.apache.spark.annotation.{Evolving, Since}
 import org.apache.spark.resource.ResourceProfile._
 
-/**
- * A set of task resource requests. This is used in conjunction with the ResourceProfile to
- * programmatically specify the resources needed for an RDD that will be applied at the
- * stage level.
- */
+/** A set of task resource requests. This is used in conjunction with the ResourceProfile to
+  * programmatically specify the resources needed for an RDD that will be applied at the
+  * stage level.
+  */
 @Evolving
 @Since("3.1.0")
 class TaskResourceRequests() extends Serializable {
 
-  private val _taskResources = new ConcurrentHashMap[String, TaskResourceRequest]()
+  private val _taskResources =
+    new ConcurrentHashMap[String, TaskResourceRequest]()
 
-  /**
-   * Returns all the resource requests for the task.
-   */
+  /** Returns all the resource requests for the task.
+    */
   def requests: Map[String, TaskResourceRequest] = _taskResources.asScala.toMap
 
-  /**
-   * (Java-specific) Returns all the resource requests for the task.
-   */
+  /** (Java-specific) Returns all the resource requests for the task.
+    */
   def requestsJMap: JMap[String, TaskResourceRequest] = requests.asJava
 
-  /**
-   * Specify number of cpus per Task.
-   * This is a convenient API to add [[TaskResourceRequest]] for cpus.
-   *
-   * @param amount Number of cpus to allocate per Task.
-   */
+  /** Specify number of cpus per Task.
+    * This is a convenient API to add [[TaskResourceRequest]] for cpus.
+    *
+    * @param amount Number of cpus to allocate per Task.
+    */
   def cpus(amount: Int): this.type = {
     val treq = new TaskResourceRequest(CPUS, amount)
     _taskResources.put(CPUS, treq)
     this
   }
 
-  /**
-   * Amount of a particular custom resource(GPU, FPGA, etc) to use.
-   * This is a convenient API to add [[TaskResourceRequest]] for custom resources.
-   *
-   * @param resourceName Name of the resource.
-   * @param amount Amount requesting as a Double to support fractional resource requests.
-   *               Valid values are less than or equal to 0.5 or whole numbers. This essentially
-   *               lets you configure X number of tasks to run on a single resource,
-   *               ie amount equals 0.5 translates into 2 tasks per resource address.
-   */
+  /** Amount of a particular custom resource(GPU, FPGA, etc) to use.
+    * This is a convenient API to add [[TaskResourceRequest]] for custom resources.
+    *
+    * @param resourceName Name of the resource.
+    * @param amount Amount requesting as a Double to support fractional resource requests.
+    *               Valid values are less than or equal to 0.5 or whole numbers. This essentially
+    *               lets you configure X number of tasks to run on a single resource,
+    *               ie amount equals 0.5 translates into 2 tasks per resource address.
+    */
   def resource(resourceName: String, amount: Double): this.type = {
     val treq = new TaskResourceRequest(resourceName, amount)
     _taskResources.put(resourceName, treq)
     this
   }
 
-  /**
-   * Add a certain [[TaskResourceRequest]] to the request set.
-   */
+  /** Add a certain [[TaskResourceRequest]] to the request set.
+    */
   def addRequest(treq: TaskResourceRequest): this.type = {
     _taskResources.put(treq.resourceName, treq)
     this

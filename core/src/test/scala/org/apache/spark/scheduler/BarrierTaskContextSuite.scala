@@ -29,9 +29,15 @@ import org.apache.spark._
 import org.apache.spark.internal.config.LEGACY_LOCALITY_WAIT_RESET
 import org.apache.spark.internal.config.Tests.TEST_NO_STAGE_RETRY
 
-class BarrierTaskContextSuite extends SparkFunSuite with LocalSparkContext with Eventually {
+class BarrierTaskContextSuite
+    extends SparkFunSuite
+    with LocalSparkContext
+    with Eventually {
 
-  def initLocalClusterSparkContext(numWorker: Int = 4, conf: SparkConf = new SparkConf()): Unit = {
+  def initLocalClusterSparkContext(
+      numWorker: Int = 4,
+      conf: SparkConf = new SparkConf()
+  ): Unit = {
     conf
       // Init local cluster here so each barrier task runs in a separated process, thus `barrier()`
       // call is actually useful.
@@ -76,7 +82,9 @@ class BarrierTaskContextSuite extends SparkFunSuite with LocalSparkContext with 
     assert(messages.forall(_ == List("0", "1", "2", "3")))
   }
 
-  test("throw exception if we attempt to synchronize with different blocking calls") {
+  test(
+    "throw exception if we attempt to synchronize with different blocking calls"
+  ) {
     initLocalClusterSparkContext()
     val rdd = sc.makeRDD(1 to 10, 4)
     val rdd2 = rdd.barrier().mapPartitions { it =>
@@ -165,7 +173,9 @@ class BarrierTaskContextSuite extends SparkFunSuite with LocalSparkContext with 
     val error = intercept[SparkException] {
       rdd2.collect()
     }.getMessage
-    assert(error.contains("The coordinator didn't get all barrier sync requests"))
+    assert(
+      error.contains("The coordinator didn't get all barrier sync requests")
+    )
     assert(error.contains("within 1 second(s)"))
   }
 
@@ -184,11 +194,15 @@ class BarrierTaskContextSuite extends SparkFunSuite with LocalSparkContext with 
     val error = intercept[SparkException] {
       rdd2.collect()
     }.getMessage
-    assert(error.contains("The coordinator didn't get all barrier sync requests"))
+    assert(
+      error.contains("The coordinator didn't get all barrier sync requests")
+    )
     assert(error.contains("within 1 second(s)"))
   }
 
-  test("throw exception if the number of barrier() calls are not the same on every task") {
+  test(
+    "throw exception if the number of barrier() calls are not the same on every task"
+  ) {
     initLocalClusterSparkContext()
     sc.conf.set("spark.barrier.sync.timeout", "5")
     val rdd = sc.makeRDD(1 to 10, 4)
@@ -212,7 +226,9 @@ class BarrierTaskContextSuite extends SparkFunSuite with LocalSparkContext with 
     val error = intercept[SparkException] {
       rdd2.collect()
     }.getMessage
-    assert(error.contains("The coordinator didn't get all barrier sync requests"))
+    assert(
+      error.contains("The coordinator didn't get all barrier sync requests")
+    )
     assert(error.contains("within 5 second(s)"))
   }
 
@@ -246,7 +262,10 @@ class BarrierTaskContextSuite extends SparkFunSuite with LocalSparkContext with 
               override def run: Unit = {
                 eventually(timeout(10.seconds)) {
                   assert(new File(dir, runningFlagFile).exists())
-                  sc.killTaskAttempt(taskStart.taskInfo.taskId, interruptThread = interruptOnKill)
+                  sc.killTaskAttempt(
+                    taskStart.taskInfo.taskId,
+                    interruptThread = interruptOnKill
+                  )
                 }
               }
             }.start()
@@ -261,7 +280,10 @@ class BarrierTaskContextSuite extends SparkFunSuite with LocalSparkContext with 
 
       sc.removeSparkListener(listener)
 
-      assert(new File(dir, killedFlagFile).exists(), "Expect barrier task being killed.")
+      assert(
+        new File(dir, killedFlagFile).exists(),
+        "Expect barrier task being killed."
+      )
     }
   }
 
@@ -294,30 +316,53 @@ class BarrierTaskContextSuite extends SparkFunSuite with LocalSparkContext with 
       // for scheduling. So, the first task can always get the best locality (PROCESS_LOCAL),
       // but the second task may not get the best locality depends whether it's a barrier stage
       // or not.
-      val rdd = new MyRDD(sc, 2, List(dep), Seq(Seq(s"executor_h_$id"), Seq(s"executor_h_$id"))) {
-        override def compute(split: Partition, context: TaskContext): Iterator[(Int, Int)] = {
+      val rdd = new MyRDD(
+        sc,
+        2,
+        List(dep),
+        Seq(Seq(s"executor_h_$id"), Seq(s"executor_h_$id"))
+      ) {
+        override def compute(
+            split: Partition,
+            context: TaskContext
+        ): Iterator[(Int, Int)] = {
           Iterator.single((split.index, split.index + 1))
         }
       }
 
       // run a barrier stage
-      rdd.barrier().mapPartitions { iter =>
-        BarrierTaskContext.get().barrier()
-        iter
-      }.collect()
+      rdd
+        .barrier()
+        .mapPartitions { iter =>
+          BarrierTaskContext.get().barrier()
+          iter
+        }
+        .collect()
 
       // The delay scheduling for barrier TaskSetManager has been disabled. So, the second task
       // would not wait for any time but just launch at ANY locality level.
-      assert(taskLocality.sorted === Seq(TaskLocality.PROCESS_LOCAL, TaskLocality.ANY))
+      assert(
+        taskLocality.sorted === Seq(
+          TaskLocality.PROCESS_LOCAL,
+          TaskLocality.ANY
+        )
+      )
       taskLocality.clear()
 
       // run a common stage
-      rdd.mapPartitions { iter =>
-        iter
-      }.collect()
+      rdd
+        .mapPartitions { iter =>
+          iter
+        }
+        .collect()
       // The delay scheduling works for the common stage. So, the second task would be delayed
       // in order to get the better locality.
-      assert(taskLocality.sorted === Seq(TaskLocality.PROCESS_LOCAL, TaskLocality.PROCESS_LOCAL))
+      assert(
+        taskLocality.sorted === Seq(
+          TaskLocality.PROCESS_LOCAL,
+          TaskLocality.PROCESS_LOCAL
+        )
+      )
 
     } finally {
       taskLocality.clear()
@@ -325,8 +370,11 @@ class BarrierTaskContextSuite extends SparkFunSuite with LocalSparkContext with 
     }
   }
 
-  test("SPARK-34069: Kill barrier tasks should respect SPARK_JOB_INTERRUPT_ON_CANCEL") {
-    sc = new SparkContext(new SparkConf().setAppName("test").setMaster("local[2]"))
+  test(
+    "SPARK-34069: Kill barrier tasks should respect SPARK_JOB_INTERRUPT_ON_CANCEL"
+  ) {
+    sc =
+      new SparkContext(new SparkConf().setAppName("test").setMaster("local[2]"))
     var index = 0
     var checkDone = false
     var startTime = 0L
@@ -340,11 +388,15 @@ class BarrierTaskContextSuite extends SparkFunSuite with LocalSparkContext with 
       override def onTaskEnd(taskEnd: SparkListenerTaskEnd): Unit = {
         if (index == 0) {
           assert(taskEnd.reason.isInstanceOf[ExceptionFailure])
-          assert(System.currentTimeMillis() - taskEnd.taskInfo.launchTime < 1000)
+          assert(
+            System.currentTimeMillis() - taskEnd.taskInfo.launchTime < 1000
+          )
           index = 1
         } else if (index == 1) {
           assert(taskEnd.reason.isInstanceOf[TaskKilled])
-          assert(System.currentTimeMillis() - taskEnd.taskInfo.launchTime < 1000)
+          assert(
+            System.currentTimeMillis() - taskEnd.taskInfo.launchTime < 1000
+          )
           index = 2
           checkDone = true
         }
@@ -352,26 +404,33 @@ class BarrierTaskContextSuite extends SparkFunSuite with LocalSparkContext with 
     }
     sc.addSparkListener(listener)
     sc.setJobGroup("test", "", true)
-    sc.parallelize(Seq(1, 2), 2).barrier().mapPartitions { it =>
-      if (TaskContext.get().stageAttemptNumber() == 0) {
-        if (it.hasNext && it.next() == 1) {
-          throw new RuntimeException("failed")
-        } else {
-          Thread.sleep(5000)
+    sc.parallelize(Seq(1, 2), 2)
+      .barrier()
+      .mapPartitions { it =>
+        if (TaskContext.get().stageAttemptNumber() == 0) {
+          if (it.hasNext && it.next() == 1) {
+            throw new RuntimeException("failed")
+          } else {
+            Thread.sleep(5000)
+          }
         }
+        it
       }
-      it
-    }.groupBy(x => x).collect()
+      .groupBy(x => x)
+      .collect()
     sc.listenerBus.waitUntilEmpty()
     assert(checkDone)
     // double check we kill task success
     assert(System.currentTimeMillis() - startTime < 5000)
   }
 
-  test("SPARK-40932, messages of allGather should not been overridden " +
-    "by the following barrier APIs") {
+  test(
+    "SPARK-40932, messages of allGather should not been overridden " +
+      "by the following barrier APIs"
+  ) {
 
-    sc = new SparkContext(new SparkConf().setAppName("test").setMaster("local[2]"))
+    sc =
+      new SparkContext(new SparkConf().setAppName("test").setMaster("local[2]"))
     sc.setLogLevel("INFO")
     val rdd = sc.makeRDD(1 to 10, 2)
     val rdd2 = rdd.barrier().mapPartitions { it =>

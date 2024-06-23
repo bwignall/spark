@@ -19,11 +19,10 @@ package org.apache.spark.partial
 
 import org.apache.commons.math3.distribution.PoissonDistribution
 
-/**
- * An ApproximateEvaluator for counts.
- */
+/** An ApproximateEvaluator for counts.
+  */
 private[spark] class CountEvaluator(totalOutputs: Int, confidence: Double)
-  extends ApproximateEvaluator[Long, BoundedDouble] {
+    extends ApproximateEvaluator[Long, BoundedDouble] {
 
   private var outputsMerged = 0
   private var sum: Long = 0
@@ -58,8 +57,11 @@ private[partial] object CountEvaluator {
     val high = dist.inverseCumulativeProbability((1 + confidence) / 2)
     // Add 'sum' to each because distribution is just of remaining count, not observed
     new BoundedDouble(
-      sum + dist.getNumericalMean, confidence, (sum + low).toDouble, (sum + high).toDouble)
+      sum + dist.getNumericalMean,
+      confidence,
+      (sum + low).toDouble,
+      (sum + high).toDouble
+    )
   }
-
 
 }

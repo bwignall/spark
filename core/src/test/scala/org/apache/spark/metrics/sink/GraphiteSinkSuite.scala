@@ -44,8 +44,10 @@ class GraphiteSinkSuite extends SparkFunSuite {
 
     val metricKeys = sink.registry.getGauges(sink.filter).keySet.asScala
 
-    assert(metricKeys.equals(Set("gauge", "anothergauge", "streaminggauge")),
-      "Should contain all metrics registered")
+    assert(
+      metricKeys.equals(Set("gauge", "anothergauge", "streaminggauge")),
+      "Should contain all metrics registered"
+    )
   }
 
   test("GraphiteSink with regex MetricsFilter") {
@@ -63,11 +65,26 @@ class GraphiteSinkSuite extends SparkFunSuite {
     sink.registry.register("gauge", gauge)
     sink.registry.register("anothergauge", gauge)
     sink.registry.register("streaminggauge", gauge)
-    sink.registry.register("local-1563838109260.driver.CodeGenerator.generatedMethodSize", gauge)
-    sink.registry.register("local-1563838109260.driver.BlockManager.disk.diskSpaceUsed_MB", gauge)
-    sink.registry.register("local-1563813796998.driver.spark.streaming.nicklocal.latency", gauge)
-    sink.registry.register("myapp.driver.CodeGenerator.generatedMethodSize", gauge)
-    sink.registry.register("myapp.driver.BlockManager.disk.diskSpaceUsed_MB", gauge)
+    sink.registry.register(
+      "local-1563838109260.driver.CodeGenerator.generatedMethodSize",
+      gauge
+    )
+    sink.registry.register(
+      "local-1563838109260.driver.BlockManager.disk.diskSpaceUsed_MB",
+      gauge
+    )
+    sink.registry.register(
+      "local-1563813796998.driver.spark.streaming.nicklocal.latency",
+      gauge
+    )
+    sink.registry.register(
+      "myapp.driver.CodeGenerator.generatedMethodSize",
+      gauge
+    )
+    sink.registry.register(
+      "myapp.driver.BlockManager.disk.diskSpaceUsed_MB",
+      gauge
+    )
 
     val metricKeys = sink.registry.getGauges(sink.filter).keySet.asScala
 
@@ -76,8 +93,10 @@ class GraphiteSinkSuite extends SparkFunSuite {
       "local-1563838109260.driver.BlockManager.disk.diskSpaceUsed_MB"
     )
 
-    assert(metricKeys.equals(filteredMetricKeys),
-      "Should contain only metrics matches regex filter")
+    assert(
+      metricKeys.equals(filteredMetricKeys),
+      "Should contain only metrics matches regex filter"
+    )
   }
 
   test("GraphiteSink without host") {
@@ -88,8 +107,11 @@ class GraphiteSinkSuite extends SparkFunSuite {
     val e = intercept[SparkException] {
       new GraphiteSink(props, registry)
     }
-    checkError(e, errorClass = "GRAPHITE_SINK_PROPERTY_MISSING",
-      parameters = Map("property" -> "host"))
+    checkError(
+      e,
+      errorClass = "GRAPHITE_SINK_PROPERTY_MISSING",
+      parameters = Map("property" -> "host")
+    )
   }
 
   test("GraphiteSink without port") {
@@ -100,8 +122,11 @@ class GraphiteSinkSuite extends SparkFunSuite {
     val e = intercept[SparkException] {
       new GraphiteSink(props, registry)
     }
-    checkError(e, errorClass = "GRAPHITE_SINK_PROPERTY_MISSING",
-      parameters = Map("property" -> "port"))
+    checkError(
+      e,
+      errorClass = "GRAPHITE_SINK_PROPERTY_MISSING",
+      parameters = Map("property" -> "port")
+    )
   }
 
   test("GraphiteSink with invalid protocol") {

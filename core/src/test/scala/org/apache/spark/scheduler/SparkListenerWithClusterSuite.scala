@@ -19,13 +19,19 @@ package org.apache.spark.scheduler
 
 import scala.collection.mutable
 
-import org.apache.spark.{LocalSparkContext, SparkContext, SparkFunSuite, TestUtils}
+import org.apache.spark.{
+  LocalSparkContext,
+  SparkContext,
+  SparkFunSuite,
+  TestUtils
+}
 import org.apache.spark.scheduler.cluster.ExecutorInfo
 
-/**
- * Unit tests for SparkListener that require a local cluster.
- */
-class SparkListenerWithClusterSuite extends SparkFunSuite with LocalSparkContext {
+/** Unit tests for SparkListener that require a local cluster.
+  */
+class SparkListenerWithClusterSuite
+    extends SparkFunSuite
+    with LocalSparkContext {
 
   /** Length of time to wait while draining listener events. */
   val WAIT_TIMEOUT_MILLIS = 10000
@@ -52,7 +58,7 @@ class SparkListenerWithClusterSuite extends SparkFunSuite with LocalSparkContext
     assert(listener.addedExecutorInfo.size == 2)
     assert(listener.addedExecutorInfo("0").totalCores == 1)
     assert(listener.addedExecutorInfo("1").totalCores == 1)
-    assert(listener.addedExecutorInfo("0").registrationTime.get > 0 )
+    assert(listener.addedExecutorInfo("0").registrationTime.get > 0)
   }
 
   private class SaveExecutorInfo extends SparkListener {

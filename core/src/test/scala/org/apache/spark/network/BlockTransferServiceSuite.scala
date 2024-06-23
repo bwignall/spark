@@ -28,14 +28,19 @@ import org.scalatest.concurrent._
 
 import org.apache.spark.{SparkException, SparkFunSuite}
 import org.apache.spark.network.buffer.ManagedBuffer
-import org.apache.spark.network.shuffle.{BlockFetchingListener, DownloadFileManager}
+import org.apache.spark.network.shuffle.{
+  BlockFetchingListener,
+  DownloadFileManager
+}
 import org.apache.spark.storage.{BlockId, StorageLevel}
 
 class BlockTransferServiceSuite extends SparkFunSuite with TimeLimits {
 
   implicit val defaultSignaler: Signaler = ThreadSignaler
 
-  test("fetchBlockSync should not hang when BlockFetchingListener.onBlockFetchSuccess fails") {
+  test(
+    "fetchBlockSync should not hang when BlockFetchingListener.onBlockFetchSuccess fails"
+  ) {
     // Create a mocked `BlockTransferService` to call `BlockFetchingListener.onBlockFetchSuccess`
     // with a bad `ManagedBuffer` which will trigger an exception in `onBlockFetchSuccess`.
     val blockTransferService = new BlockTransferService {
@@ -53,7 +58,8 @@ class BlockTransferServiceSuite extends SparkFunSuite with TimeLimits {
           execId: String,
           blockIds: Array[String],
           listener: BlockFetchingListener,
-          tempFileManager: DownloadFileManager): Unit = {
+          tempFileManager: DownloadFileManager
+      ): Unit = {
         // Notify BlockFetchingListener with a bad ManagedBuffer asynchronously
         new Thread() {
           override def run(): Unit = {
@@ -89,7 +95,8 @@ class BlockTransferServiceSuite extends SparkFunSuite with TimeLimits {
           blockId: BlockId,
           blockData: ManagedBuffer,
           level: StorageLevel,
-          classTag: ClassTag[_]): Future[Unit] = {
+          classTag: ClassTag[_]
+      ): Future[Unit] = {
         // This method is unused in this test
         throw new UnsupportedOperationException("uploadBlock")
       }
@@ -98,7 +105,12 @@ class BlockTransferServiceSuite extends SparkFunSuite with TimeLimits {
     val e = intercept[SparkException] {
       failAfter(10.seconds) {
         blockTransferService.fetchBlockSync(
-          "localhost-unused", 0, "exec-id-unused", "block-id-unused", null)
+          "localhost-unused",
+          0,
+          "exec-id-unused",
+          "block-id-unused",
+          null
+        )
       }
     }
     assert(e.getCause.isInstanceOf[IllegalArgumentException])

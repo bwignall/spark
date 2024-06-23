@@ -17,6 +17,7 @@
 
 package org.apache.spark.deploy.master.ui
 
+import scala.xml._
 import scala.xml.{Node, Unparsed}
 
 import jakarta.servlet.http.HttpServletRequest

@@ -22,24 +22,28 @@ import java.util.zip.Checksum
 
 import org.apache.spark.SparkException
 import org.apache.spark.io.MutableCheckedOutputStream
-import org.apache.spark.serializer.{SerializationStream, SerializerInstance, SerializerManager}
+import org.apache.spark.serializer.{
+  SerializationStream,
+  SerializerInstance,
+  SerializerManager
+}
 import org.apache.spark.shuffle.api.ShufflePartitionWriter
 import org.apache.spark.storage.{BlockId, TimeTrackingOutputStream}
 import org.apache.spark.util.Utils
 import org.apache.spark.util.collection.PairsWriter
 
-/**
- * A key-value writer inspired by {@link DiskBlockObjectWriter} that pushes the bytes to an
- * arbitrary partition writer instead of writing to local disk through the block manager.
- */
+/** A key-value writer inspired by {@link DiskBlockObjectWriter} that pushes the bytes to an
+  * arbitrary partition writer instead of writing to local disk through the block manager.
+  */
 private[spark] class ShufflePartitionPairsWriter(
     partitionWriter: ShufflePartitionWriter,
     serializerManager: SerializerManager,
     serializerInstance: SerializerInstance,
     blockId: BlockId,
     writeMetrics: ShuffleWriteMetricsReporter,
-    checksum: Checksum)
-  extends PairsWriter with Closeable {
+    checksum: Checksum
+) extends PairsWriter
+    with Closeable {
 
   private var isClosed = false
   private var partitionStream: OutputStream = _
@@ -54,7 +58,10 @@ private[spark] class ShufflePartitionPairsWriter(
 
   override def write(key: Any, value: Any): Unit = {
     if (isClosed) {
-      throw SparkException.internalError("Partition pairs writer is already closed.", "SHUFFLE")
+      throw SparkException.internalError(
+        "Partition pairs writer is already closed.",
+        "SHUFFLE"
+      )
     }
     if (objOut == null) {
       open()
@@ -67,13 +74,19 @@ private[spark] class ShufflePartitionPairsWriter(
   private def open(): Unit = {
     try {
       partitionStream = partitionWriter.openStream
-      timeTrackingStream = new TimeTrackingOutputStream(writeMetrics, partitionStream)
+      timeTrackingStream =
+        new TimeTrackingOutputStream(writeMetrics, partitionStream)
       if (checksum != null) {
-        checksumOutputStream = new MutableCheckedOutputStream(timeTrackingStream)
+        checksumOutputStream = new MutableCheckedOutputStream(
+          timeTrackingStream
+        )
         checksumOutputStream.setChecksum(checksum)
       }
-      wrappedStream = serializerManager.wrapStream(blockId,
-        if (checksumOutputStream != null) checksumOutputStream else timeTrackingStream)
+      wrappedStream = serializerManager.wrapStream(
+        blockId,
+        if (checksumOutputStream != null) checksumOutputStream
+        else timeTrackingStream
+      )
       objOut = serializerInstance.serializeStream(wrappedStream)
     } catch {
       case e: Exception =>
@@ -126,9 +139,8 @@ private[spark] class ShufflePartitionPairsWriter(
     null.asInstanceOf[T]
   }
 
-  /**
-   * Notify the writer that a record worth of bytes has been written with OutputStream#write.
-   */
+  /** Notify the writer that a record worth of bytes has been written with OutputStream#write.
+    */
   private def recordWritten(): Unit = {
     numRecordsWritten += 1
     writeMetrics.incRecordsWritten(1)

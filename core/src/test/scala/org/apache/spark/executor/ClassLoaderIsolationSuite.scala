@@ -19,29 +19,46 @@ package org.apache.spark.executor
 
 import scala.util.Properties
 
-import org.apache.spark.{JobArtifactSet, JobArtifactState, LocalSparkContext, SparkConf, SparkContext, SparkFunSuite}
+import org.apache.spark.{
+  JobArtifactSet,
+  JobArtifactState,
+  LocalSparkContext,
+  SparkConf,
+  SparkContext,
+  SparkFunSuite
+}
 import org.apache.spark.util.Utils
 
-class ClassLoaderIsolationSuite extends SparkFunSuite with LocalSparkContext  {
+class ClassLoaderIsolationSuite extends SparkFunSuite with LocalSparkContext {
 
   private val scalaVersion = Properties.versionNumberString
     .split("\\.")
     .take(2)
     .mkString(".")
 
-  val jar1 = Thread.currentThread().getContextClassLoader.getResource("TestUDTF.jar").toString
+  val jar1 = Thread
+    .currentThread()
+    .getContextClassLoader
+    .getResource("TestUDTF.jar")
+    .toString
 
   // package com.example
   // object Hello { def test(): Int = 2 }
   // case class Hello(x: Int, y: Int)
-  val jar2 = Thread.currentThread().getContextClassLoader
-    .getResource(s"TestHelloV2_$scalaVersion.jar").toString
+  val jar2 = Thread
+    .currentThread()
+    .getContextClassLoader
+    .getResource(s"TestHelloV2_$scalaVersion.jar")
+    .toString
 
   // package com.example
   // object Hello { def test(): Int = 3 }
   // case class Hello(x: String)
-  val jar3 = Thread.currentThread().getContextClassLoader
-    .getResource(s"TestHelloV3_$scalaVersion.jar").toString
+  val jar3 = Thread
+    .currentThread()
+    .getContextClassLoader
+    .getResource(s"TestHelloV3_$scalaVersion.jar")
+    .toString
 
   test("Executor classloader isolation with JobArtifactSet") {
     sc = new SparkContext(new SparkConf().setAppName("test").setMaster("local"))
@@ -57,7 +74,9 @@ class ClassLoaderIsolationSuite extends SparkFunSuite with LocalSparkContext  {
       archives = Map.empty
     )
 
-    JobArtifactSet.withActiveJobArtifactState(artifactSetWithHelloV2.state.get) {
+    JobArtifactSet.withActiveJobArtifactState(
+      artifactSetWithHelloV2.state.get
+    ) {
       sc.addJar(jar2)
       sc.parallelize(1 to 1).foreach { i =>
         val cls = Utils.classForName("com.example.Hello$")
@@ -77,7 +96,9 @@ class ClassLoaderIsolationSuite extends SparkFunSuite with LocalSparkContext  {
       archives = Map.empty
     )
 
-    JobArtifactSet.withActiveJobArtifactState(artifactSetWithHelloV3.state.get) {
+    JobArtifactSet.withActiveJobArtifactState(
+      artifactSetWithHelloV3.state.get
+    ) {
       sc.addJar(jar3)
       sc.parallelize(1 to 1).foreach { i =>
         val cls = Utils.classForName("com.example.Hello$")
@@ -97,7 +118,9 @@ class ClassLoaderIsolationSuite extends SparkFunSuite with LocalSparkContext  {
       archives = Map.empty
     )
 
-    JobArtifactSet.withActiveJobArtifactState(artifactSetWithoutHello.state.get) {
+    JobArtifactSet.withActiveJobArtifactState(
+      artifactSetWithoutHello.state.get
+    ) {
       sc.addJar(jar1)
       sc.parallelize(1 to 1).foreach { i =>
         try {

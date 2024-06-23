@@ -46,24 +46,35 @@ class DiskStoreSuite extends SparkFunSuite {
     val byteBuffer = new ChunkedByteBuffer(ByteBuffer.wrap(bytes))
 
     val blockId = BlockId("rdd_1_2")
-    val diskBlockManager = new DiskBlockManager(conf, deleteFilesOnStop = true, isDriver = false)
+    val diskBlockManager =
+      new DiskBlockManager(conf, deleteFilesOnStop = true, isDriver = false)
 
-    val diskStoreMapped = new DiskStore(conf.clone().set(confKey, "0"), diskBlockManager,
-      securityManager)
+    val diskStoreMapped = new DiskStore(
+      conf.clone().set(confKey, "0"),
+      diskBlockManager,
+      securityManager
+    )
     diskStoreMapped.putBytes(blockId, byteBuffer)
     val mapped = diskStoreMapped.getBytes(blockId).toByteBuffer()
     assert(diskStoreMapped.remove(blockId))
 
-    val diskStoreNotMapped = new DiskStore(conf.clone().set(confKey, "1m"), diskBlockManager,
-      securityManager)
+    val diskStoreNotMapped = new DiskStore(
+      conf.clone().set(confKey, "1m"),
+      diskBlockManager,
+      securityManager
+    )
     diskStoreNotMapped.putBytes(blockId, byteBuffer)
     val notMapped = diskStoreNotMapped.getBytes(blockId).toByteBuffer()
 
     // Not possible to do isInstanceOf due to visibility of HeapByteBuffer
-    assert(notMapped.getClass.getName.endsWith("HeapByteBuffer"),
-      "Expected HeapByteBuffer for un-mapped read")
-    assert(mapped.isInstanceOf[MappedByteBuffer],
-      "Expected MappedByteBuffer for mapped read")
+    assert(
+      notMapped.getClass.getName.endsWith("HeapByteBuffer"),
+      "Expected HeapByteBuffer for un-mapped read"
+    )
+    assert(
+      mapped.isInstanceOf[MappedByteBuffer],
+      "Expected MappedByteBuffer for mapped read"
+    )
 
     def arrayFromByteBuffer(in: ByteBuffer): Array[Byte] = {
       val array = new Array[Byte](in.remaining())
@@ -77,8 +88,10 @@ class DiskStoreSuite extends SparkFunSuite {
 
   test("block size tracking") {
     val conf = new SparkConf()
-    val diskBlockManager = new DiskBlockManager(conf, deleteFilesOnStop = true, isDriver = false)
-    val diskStore = new DiskStore(conf, diskBlockManager, new SecurityManager(conf))
+    val diskBlockManager =
+      new DiskBlockManager(conf, deleteFilesOnStop = true, isDriver = false)
+    val diskStore =
+      new DiskStore(conf, diskBlockManager, new SecurityManager(conf))
 
     val blockId = BlockId("rdd_1_2")
     diskStore.put(blockId) { chan =>
@@ -96,8 +109,10 @@ class DiskStoreSuite extends SparkFunSuite {
   test("blocks larger than 2gb") {
     val conf = new SparkConf()
       .set(config.MEMORY_MAP_LIMIT_FOR_TESTS.key, "10k")
-    val diskBlockManager = new DiskBlockManager(conf, deleteFilesOnStop = true, isDriver = false)
-    val diskStore = new DiskStore(conf, diskBlockManager, new SecurityManager(conf))
+    val diskBlockManager =
+      new DiskBlockManager(conf, deleteFilesOnStop = true, isDriver = false)
+    val diskStore =
+      new DiskStore(conf, diskBlockManager, new SecurityManager(conf))
 
     val blockId = BlockId("rdd_1_2")
     diskStore.put(blockId) { chan =>
@@ -122,13 +137,15 @@ class DiskStoreSuite extends SparkFunSuite {
       assert(chunk.limit() === 10 * 1024)
     }
 
-    val e = intercept[IllegalArgumentException]{
+    val e = intercept[IllegalArgumentException] {
       blockData.toByteBuffer()
     }
 
-    assert(e.getMessage ===
-      s"requirement failed: can't create a byte buffer of size ${blockData.size}" +
-      " since it exceeds 10.0 KiB.")
+    assert(
+      e.getMessage ===
+        s"requirement failed: can't create a byte buffer of size ${blockData.size}" +
+        " since it exceeds 10.0 KiB."
+    )
   }
 
   test("block data encryption") {
@@ -136,8 +153,10 @@ class DiskStoreSuite extends SparkFunSuite {
     new Random().nextBytes(testData)
 
     val conf = new SparkConf()
-    val securityManager = new SecurityManager(conf, Some(CryptoStreamUtils.createKey(conf)))
-    val diskBlockManager = new DiskBlockManager(conf, deleteFilesOnStop = true, isDriver = false)
+    val securityManager =
+      new SecurityManager(conf, Some(CryptoStreamUtils.createKey(conf)))
+    val diskBlockManager =
+      new DiskBlockManager(conf, deleteFilesOnStop = true, isDriver = false)
     val diskStore = new DiskStore(conf, diskBlockManager, securityManager)
 
     val blockId = BlockId("rdd_1_2")
@@ -163,8 +182,14 @@ class DiskStoreSuite extends SparkFunSuite {
       "managed buffer" -> readViaManagedBuffer _
     ).foreach { case (name, fn) =>
       val readData = fn(blockData)
-      assert(readData.length === blockData.size, s"Size of data read via $name did not match.")
-      assert(Arrays.equals(testData, readData), s"Data read via $name did not match.")
+      assert(
+        readData.length === blockData.size,
+        s"Size of data read via $name did not match."
+      )
+      assert(
+        Arrays.equals(testData, readData),
+        s"Data read via $name did not match."
+      )
     }
   }
 

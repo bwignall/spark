@@ -18,14 +18,14 @@ package org.apache.spark.scheduler
 
 import org.apache.spark.annotation.{DeveloperApi, Since}
 
-/**
- * :: DeveloperApi ::
- * Stores information about an Miscellaneous Process to pass from the scheduler to SparkListeners.
- */
+/** :: DeveloperApi ::
+  * Stores information about an Miscellaneous Process to pass from the scheduler to SparkListeners.
+  */
 
 @DeveloperApi
 @Since("3.2.0")
 class MiscellaneousProcessDetails(
     val hostPort: String,
     val cores: Int,
-    val logUrlInfo: Map[String, String]) extends Serializable
+    val logUrlInfo: Map[String, String]
+) extends Serializable

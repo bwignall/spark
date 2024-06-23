@@ -29,8 +29,8 @@ import org.apache.spark.SparkConf
 import org.apache.spark.api.python.PythonBroadcast
 import org.apache.spark.internal.Logging
 
-private[spark] class BroadcastManager(
-    val isDriver: Boolean, conf: SparkConf) extends Logging {
+private[spark] class BroadcastManager(val isDriver: Boolean, conf: SparkConf)
+    extends Logging {
 
   private var initialized = false
   private var broadcastFactory: BroadcastFactory = null
@@ -63,7 +63,8 @@ private[spark] class BroadcastManager(
   def newBroadcast[T: ClassTag](
       value_ : T,
       isLocal: Boolean,
-      serializedOnly: Boolean = false): Broadcast[T] = {
+      serializedOnly: Boolean = false
+  ): Broadcast[T] = {
     val bid = nextBroadcastId.getAndIncrement()
     value_ match {
       case pb: PythonBroadcast =>
@@ -78,7 +79,11 @@ private[spark] class BroadcastManager(
     broadcastFactory.newBroadcast[T](value_, isLocal, bid, serializedOnly)
   }
 
-  def unbroadcast(id: Long, removeFromDriver: Boolean, blocking: Boolean): Unit = {
+  def unbroadcast(
+      id: Long,
+      removeFromDriver: Boolean,
+      blocking: Boolean
+  ): Unit = {
     broadcastFactory.unbroadcast(id, removeFromDriver, blocking)
   }
 }

@@ -39,10 +39,13 @@ class WorkerSelectionSuite extends MasterSuiteBase {
     (MEMORY_FREE_DESC, true, List("10002", "10003")),
     (MEMORY_FREE_DESC, false, Seq("10002")),
     (WORKER_ID, true, Seq("10001", "10002")),
-    (WORKER_ID, false, Seq("10001")))
+    (WORKER_ID, false, Seq("10001"))
+  )
 
   workerSelectionPolicyTestCases.foreach { case (policy, spreadOut, expected) =>
-    test(s"SPARK-46881: scheduling with workerSelectionPolicy - $policy ($spreadOut)") {
+    test(
+      s"SPARK-46881: scheduling with workerSelectionPolicy - $policy ($spreadOut)"
+    ) {
       val conf = new SparkConf()
         .set(WORKER_SELECTION_POLICY.key, policy.toString)
         .set(SPREAD_OUT_APPS.key, spreadOut.toString)
@@ -64,10 +67,16 @@ class WorkerSelectionSuite extends MasterSuiteBase {
           4 + idx,
           1280 * (if (idx < 2) idx else (6 - idx)),
           "http://localhost:8080",
-          RpcAddress("localhost", 10000))
+          RpcAddress("localhost", 10000)
+        )
         master.self.send(workerReg)
         eventually(timeout(10.seconds)) {
-          assert(master.self.askSync[MasterStateResponse](RequestMasterState).workers.size === idx)
+          assert(
+            master.self
+              .askSync[MasterStateResponse](RequestMasterState)
+              .workers
+              .size === idx
+          )
         }
       }
 
@@ -75,7 +84,9 @@ class WorkerSelectionSuite extends MasterSuiteBase {
       val appInfo = makeAppInfo(128, Some(2), Some(4))
       master.registerApplication(appInfo)
       startExecutorsOnWorkers(master)
-      assert(appInfo.executors.map(_._2.worker.id).toSeq.distinct.sorted === expected)
+      assert(
+        appInfo.executors.map(_._2.worker.id).toSeq.distinct.sorted === expected
+      )
     }
   }
 }

@@ -19,11 +19,10 @@ package org.apache.spark.shuffle
 
 import org.apache.spark.annotation.Experimental
 
-/**
- * :: Experimental ::
- * An experimental case class used by MigratableResolver to return the shuffleId and mapId in a
- * type safe way.
- */
+/** :: Experimental ::
+  * An experimental case class used by MigratableResolver to return the shuffleId and mapId in a
+  * type safe way.
+  */
 @Experimental
 case class ShuffleBlockInfo(shuffleId: Int, mapId: Long) {
   override def toString: String = s"migrate_shuffle_${shuffleId}_$mapId"

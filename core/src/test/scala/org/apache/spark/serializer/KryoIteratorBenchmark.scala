@@ -28,17 +28,16 @@ import org.apache.spark.internal.config._
 import org.apache.spark.internal.config.Kryo._
 import org.apache.spark.serializer.KryoTest._
 
-/**
- * Benchmark for kryo asIterator on a deserialization stream". To run this benchmark:
- * {{{
- *   1. without sbt:
- *      bin/spark-submit --class <this class> <spark core test jar>
- *   2. build/sbt "core/Test/runMain <this class>"
- *   3. generate result:
- *      SPARK_GENERATE_BENCHMARK_FILES=1 build/sbt "core/Test/runMain <this class>"
- *      Results will be written to "benchmarks/KryoSerializerBenchmark-results.txt".
- * }}}
- */
+/** Benchmark for kryo asIterator on a deserialization stream". To run this benchmark:
+  * {{{
+  *   1. without sbt:
+  *      bin/spark-submit --class <this class> <spark core test jar>
+  *   2. build/sbt "core/Test/runMain <this class>"
+  *   3. generate result:
+  *      SPARK_GENERATE_BENCHMARK_FILES=1 build/sbt "core/Test/runMain <this class>"
+  *      Results will be written to "benchmarks/KryoSerializerBenchmark-results.txt".
+  * }}}
+  */
 object KryoIteratorBenchmark extends BenchmarkBase {
   val N = 10000
   override def runBenchmarkSuite(mainArgs: Array[String]): Unit = {
@@ -56,7 +55,8 @@ object KryoIteratorBenchmark extends BenchmarkBase {
     def roundTrip[T: ClassTag](
         elements: Array[T],
         useIterator: Boolean,
-        ser: SerializerInstance): Int = {
+        ser: SerializerInstance
+    ): Int = {
       val serialized: Array[Byte] = {
         val baos = new ByteArrayOutputStream()
         val serStream = ser.serializeStream(baos)
@@ -69,7 +69,8 @@ object KryoIteratorBenchmark extends BenchmarkBase {
         baos.toByteArray
       }
 
-      val deserStream = ser.deserializeStream(new ByteArrayInputStream(serialized))
+      val deserStream =
+        ser.deserializeStream(new ByteArrayInputStream(serialized))
       if (useIterator) {
         if (deserStream.asIterator.toArray.length == elements.length) 1 else 0
       } else {
@@ -84,11 +85,16 @@ object KryoIteratorBenchmark extends BenchmarkBase {
       }
     }
 
-    def createCase[T: ClassTag](name: String, elementCount: Int, createElement: => T): Unit = {
+    def createCase[T: ClassTag](
+        name: String,
+        elementCount: Int,
+        createElement: => T
+    ): Unit = {
       val elements = Array.fill[T](elementCount)(createElement)
 
       benchmark.addCase(
-        s"Colletion of $name with $elementCount elements, useIterator: $useIterator") { _ =>
+        s"Colletion of $name with $elementCount elements, useIterator: $useIterator"
+      ) { _ =>
         var sum = 0L
         var i = 0
         while (i < N) {

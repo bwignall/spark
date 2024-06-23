@@ -17,7 +17,7 @@
 
 package org.apache.spark
 
-/**
- * Exception thrown when a task cannot write to output file due to the file already exists.
- */
-private[spark] class TaskOutputFileAlreadyExistException(error: Throwable) extends Exception(error)
+/** Exception thrown when a task cannot write to output file due to the file already exists.
+  */
+private[spark] class TaskOutputFileAlreadyExistException(error: Throwable)
+    extends Exception(error)

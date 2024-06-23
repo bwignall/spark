@@ -26,28 +26,28 @@ import org.apache.spark.storage.BlockManagerId
 import org.apache.spark.util.ArrayImplicits._
 import org.apache.spark.util.Utils
 
-/**
- * The status for the result of merging shuffle partition blocks per individual shuffle partition
- * maintained by the scheduler. The scheduler would separate the
- * [[org.apache.spark.network.shuffle.protocol.MergeStatuses]] received from
- * ExternalShuffleService into individual [[MergeStatus]] which is maintained inside
- * MapOutputTracker to be served to the reducers when they start fetching shuffle partition
- * blocks. Note that, the reducers are ultimately fetching individual chunks inside a merged
- * shuffle file, as explained in [[org.apache.spark.network.shuffle.RemoteBlockPushResolver]].
- * Between the scheduler maintained MergeStatus and the shuffle service maintained per shuffle
- * partition meta file, we are effectively dividing the metadata for a push-based shuffle into
- * 2 layers. The scheduler would track the top-level metadata at the shuffle partition level
- * with MergeStatus, and the shuffle service would maintain the partition level metadata about
- * how to further divide a merged shuffle partition into multiple chunks with the per-partition
- * meta file. This helps to reduce the amount of data the scheduler needs to maintain for
- * push-based shuffle.
- */
+/** The status for the result of merging shuffle partition blocks per individual shuffle partition
+  * maintained by the scheduler. The scheduler would separate the
+  * [[org.apache.spark.network.shuffle.protocol.MergeStatuses]] received from
+  * ExternalShuffleService into individual [[MergeStatus]] which is maintained inside
+  * MapOutputTracker to be served to the reducers when they start fetching shuffle partition
+  * blocks. Note that, the reducers are ultimately fetching individual chunks inside a merged
+  * shuffle file, as explained in [[org.apache.spark.network.shuffle.RemoteBlockPushResolver]].
+  * Between the scheduler maintained MergeStatus and the shuffle service maintained per shuffle
+  * partition meta file, we are effectively dividing the metadata for a push-based shuffle into
+  * 2 layers. The scheduler would track the top-level metadata at the shuffle partition level
+  * with MergeStatus, and the shuffle service would maintain the partition level metadata about
+  * how to further divide a merged shuffle partition into multiple chunks with the per-partition
+  * meta file. This helps to reduce the amount of data the scheduler needs to maintain for
+  * push-based shuffle.
+  */
 private[spark] class MergeStatus(
     private[this] var loc: BlockManagerId,
     private[this] var _shuffleMergeId: Int,
     private[this] var mapTracker: RoaringBitmap,
-    private[this] var size: Long)
-  extends Externalizable with ShuffleOutputStatus {
+    private[this] var size: Long
+) extends Externalizable
+    with ShuffleOutputStatus {
 
   protected def this() = this(null, -1, null, -1) // For deserialization only
 
@@ -59,9 +59,8 @@ private[spark] class MergeStatus(
 
   def tracker: RoaringBitmap = mapTracker
 
-  /**
-   * Get the number of missing map outputs for missing mapper partition blocks that are not merged.
-   */
+  /** Get the number of missing map outputs for missing mapper partition blocks that are not merged.
+    */
   def getNumMissingMapOutputs(numMaps: Int): Int = {
     (0 until numMaps).count(i => !mapTracker.contains(i))
   }
@@ -86,23 +85,32 @@ private[spark] object MergeStatus {
   // Dummy number of reduces for the tests where push based shuffle is not enabled
   val SHUFFLE_PUSH_DUMMY_NUM_REDUCES = 1
 
-  /**
-   * Separate a MergeStatuses received from an ExternalShuffleService into individual
-   * MergeStatus. The scheduler is responsible for providing the location information
-   * for the given ExternalShuffleService.
-   */
+  /** Separate a MergeStatuses received from an ExternalShuffleService into individual
+    * MergeStatus. The scheduler is responsible for providing the location information
+    * for the given ExternalShuffleService.
+    */
   def convertMergeStatusesToMergeStatusArr(
       mergeStatuses: MergeStatuses,
-      loc: BlockManagerId): Seq[(Int, MergeStatus)] = {
-    assert(mergeStatuses.bitmaps.length == mergeStatuses.reduceIds.length &&
-      mergeStatuses.bitmaps.length == mergeStatuses.sizes.length)
-    val mergerLoc = BlockManagerId(BlockManagerId.SHUFFLE_MERGER_IDENTIFIER, loc.host, loc.port)
+      loc: BlockManagerId
+  ): Seq[(Int, MergeStatus)] = {
+    assert(
+      mergeStatuses.bitmaps.length == mergeStatuses.reduceIds.length &&
+        mergeStatuses.bitmaps.length == mergeStatuses.sizes.length
+    )
+    val mergerLoc = BlockManagerId(
+      BlockManagerId.SHUFFLE_MERGER_IDENTIFIER,
+      loc.host,
+      loc.port
+    )
     val shuffleMergeId = mergeStatuses.shuffleMergeId
-    mergeStatuses.bitmaps.zipWithIndex.map {
-      case (bitmap, index) =>
-        val mergeStatus = new MergeStatus(mergerLoc, shuffleMergeId, bitmap,
-          mergeStatuses.sizes(index))
-        (mergeStatuses.reduceIds(index), mergeStatus)
+    mergeStatuses.bitmaps.zipWithIndex.map { case (bitmap, index) =>
+      val mergeStatus = new MergeStatus(
+        mergerLoc,
+        shuffleMergeId,
+        bitmap,
+        mergeStatuses.sizes(index)
+      )
+      (mergeStatuses.reduceIds(index), mergeStatus)
     }.toImmutableArraySeq
   }
 
@@ -110,7 +118,8 @@ private[spark] object MergeStatus {
       loc: BlockManagerId,
       shuffleMergeId: Int,
       bitmap: RoaringBitmap,
-      size: Long): MergeStatus = {
+      size: Long
+  ): MergeStatus = {
     new MergeStatus(loc, shuffleMergeId, bitmap, size)
   }
 }

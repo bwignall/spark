@@ -42,7 +42,9 @@ class CausedBySuite extends SparkFunSuite {
     assert(causedBy === cause)
   }
 
-  test("For an error with a cause that itself has a cause, return the root cause") {
+  test(
+    "For an error with a cause that itself has a cause, return the root cause"
+  ) {
     val causeOfCause = new Exception
     val cause = new Exception(causeOfCause)
     val error = new Exception(cause)

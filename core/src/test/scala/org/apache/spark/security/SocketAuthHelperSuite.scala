@@ -43,7 +43,8 @@ class SocketAuthHelperSuite extends SparkFunSuite {
   test("failed auth") {
     Utils.tryWithResource(new ServerThread()) { server =>
       Utils.tryWithResource(server.createClient()) { client =>
-        val badHelper = new SocketAuthHelper(new SparkConf().set(AUTH_SECRET_BIT_LENGTH, 128))
+        val badHelper =
+          new SocketAuthHelper(new SparkConf().set(AUTH_SECRET_BIT_LENGTH, 128))
         intercept[IllegalArgumentException] {
           badHelper.authToServer(client)
         }

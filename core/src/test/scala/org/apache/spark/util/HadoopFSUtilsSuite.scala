@@ -35,8 +35,12 @@ class HadoopFSUtilsSuite extends SparkFunSuite {
     // Case 1: Regular and metadata paths
     assert(!HadoopFSUtils.shouldFilterOutPath("/abcd"))
     assert(!HadoopFSUtils.shouldFilterOutPath("/abcd/efg"))
-    assert(!HadoopFSUtils.shouldFilterOutPath("/year=2023/month=10/day=8/hour=13"))
-    assert(!HadoopFSUtils.shouldFilterOutPath("/part=__HIVE_DEFAULT_PARTITION__"))
+    assert(
+      !HadoopFSUtils.shouldFilterOutPath("/year=2023/month=10/day=8/hour=13")
+    )
+    assert(
+      !HadoopFSUtils.shouldFilterOutPath("/part=__HIVE_DEFAULT_PARTITION__")
+    )
     assert(!HadoopFSUtils.shouldFilterOutPath("/_cd=123"))
     assert(!HadoopFSUtils.shouldFilterOutPath("/_cd=123/1"))
     assert(!HadoopFSUtils.shouldFilterOutPath("/_metadata"))
@@ -51,8 +55,16 @@ class HadoopFSUtilsSuite extends SparkFunSuite {
     assert(HadoopFSUtils.shouldFilterOutPath("/ab/.cde/fg"))
     assert(HadoopFSUtils.shouldFilterOutPath("/ab/.cde/_metadata"))
     assert(HadoopFSUtils.shouldFilterOutPath("/ab/.cde/_common_metadata"))
-    assert(HadoopFSUtils.shouldFilterOutPath("/ab/.cde/year=2023/month=10/day=8/hour=13"))
-    assert(HadoopFSUtils.shouldFilterOutPath("/x/.hidden/part=__HIVE_DEFAULT_PARTITION__"))
+    assert(
+      HadoopFSUtils.shouldFilterOutPath(
+        "/ab/.cde/year=2023/month=10/day=8/hour=13"
+      )
+    )
+    assert(
+      HadoopFSUtils.shouldFilterOutPath(
+        "/x/.hidden/part=__HIVE_DEFAULT_PARTITION__"
+      )
+    )
     assert(HadoopFSUtils.shouldFilterOutPath("/a._COPYING_"))
     // Case 3: Underscored paths (except metadata paths of Case 1)
     assert(HadoopFSUtils.shouldFilterOutPath("/_cd"))

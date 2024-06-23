@@ -33,7 +33,10 @@ import org.apache.spark._
 import org.apache.spark.util.ArrayImplicits._
 import org.apache.spark.util.Utils
 
-class PipedRDDSuite extends SparkFunSuite with SharedSparkContext with Eventually {
+class PipedRDDSuite
+    extends SparkFunSuite
+    with SharedSparkContext
+    with Eventually {
   val envCommand = if (Utils.isWindows) {
     "cmd.exe /C set"
   } else {
@@ -59,7 +62,12 @@ class PipedRDDSuite extends SparkFunSuite with SharedSparkContext with Eventuall
     val nums = sc.makeRDD(Array(1, 2, 3, 4).toImmutableArraySeq, 2)
 
     // verify that both RDD.pipe(command: String) and RDD.pipe(command: String, env) work good
-    for (piped <- Seq(nums.pipe("wc -l"), nums.pipe("wc -l", Map[String, String]()))) {
+    for (
+      piped <- Seq(
+        nums.pipe("wc -l"),
+        nums.pipe("wc -l", Map[String, String]())
+      )
+    ) {
       val c = piped.collect()
       assert(c.length === 2)
       assert(c(0).trim === "2")
@@ -72,13 +80,13 @@ class PipedRDDSuite extends SparkFunSuite with SharedSparkContext with Eventuall
     val nums =
       sc.makeRDD(Array(1, 2, 3, 4).toImmutableArraySeq, 2)
         .mapPartitionsWithIndex((index, iterator) => {
-        new Iterator[Int] {
-          def hasNext = true
-          def next() = {
-            throw new SparkException("Exception to simulate bad scenario")
+          new Iterator[Int] {
+            def hasNext = true
+            def next() = {
+              throw new SparkException("Exception to simulate bad scenario")
+            }
           }
-        }
-      })
+        })
 
     val piped = nums.pipe(Seq("cat"))
 
@@ -109,7 +117,9 @@ class PipedRDDSuite extends SparkFunSuite with SharedSparkContext with Eventuall
     // with that exception. To prevent test flakiness, we need to use `eventually`.
     eventually(timeout(10.seconds), interval(1.second)) {
       // collect stdin writer threads
-      val stdinWriterThread = Thread.getAllStackTraces.keySet().asScala
+      val stdinWriterThread = Thread.getAllStackTraces
+        .keySet()
+        .asScala
         .find { _.getName.startsWith(PipedRDD.STDIN_WRITER_THREAD_PREFIX) }
       assert(stdinWriterThread.isEmpty)
     }
@@ -120,12 +130,14 @@ class PipedRDDSuite extends SparkFunSuite with SharedSparkContext with Eventuall
     val nums = sc.makeRDD(Array(1, 2, 3, 4).toImmutableArraySeq, 2)
     val bl = sc.broadcast(List("0"))
 
-    val piped = nums.pipe(Seq("cat"),
+    val piped = nums.pipe(
+      Seq("cat"),
       Map[String, String](),
       (f: String => Unit) => {
         bl.value.foreach(f); f("\u0001")
       },
-      (i: Int, f: String => Unit) => f(s"${i}_"))
+      (i: Int, f: String => Unit) => f(s"${i}_")
+    )
 
     val c = piped.collect()
 
@@ -140,8 +152,10 @@ class PipedRDDSuite extends SparkFunSuite with SharedSparkContext with Eventuall
     assert(c(7) === "4_")
 
     val nums1 = sc.makeRDD(Seq("a\t1", "b\t2", "a\t3", "b\t4"), 2)
-    val d = nums1.groupBy(str => str.split("\t")(0)).
-      pipe(Seq("cat"),
+    val d = nums1
+      .groupBy(str => str.split("\t")(0))
+      .pipe(
+        Seq("cat"),
         Map[String, String](),
         (f: String => Unit) => {
           bl.value.foreach(f); f("\u0001")
@@ -150,7 +164,9 @@ class PipedRDDSuite extends SparkFunSuite with SharedSparkContext with Eventuall
           for (e <- i._2) {
             f(e + "_")
           }
-        }).collect()
+        }
+      )
+      .collect()
     assert(d.length === 8)
     assert(d(0) === "0")
     assert(d(1) === "\u0001")
@@ -180,7 +196,8 @@ class PipedRDDSuite extends SparkFunSuite with SharedSparkContext with Eventuall
     val executable = envCommand.split("\\s+", 2)(0)
     assume(TestUtils.testCommandAvailable(executable))
     val nums = sc.makeRDD(Array(1, 2, 3, 4).toImmutableArraySeq, 2)
-    val piped = nums.pipe(s"$envCommand MY_TEST_ENV", Map("MY_TEST_ENV" -> "LALALA"))
+    val piped =
+      nums.pipe(s"$envCommand MY_TEST_ENV", Map("MY_TEST_ENV" -> "LALALA"))
     val c = piped.collect()
     assert(c.length === 2)
     // On Windows, `cmd.exe /C set` is used which prints out it as `varname=value` format
@@ -200,7 +217,9 @@ class PipedRDDSuite extends SparkFunSuite with SharedSparkContext with Eventuall
     assert(exception.getMessage.contains(command.mkString(" ")))
   }
 
-  test("pipe with process which is launched but fails with non-zero exit status") {
+  test(
+    "pipe with process which is launched but fails with non-zero exit status"
+  ) {
     assume(TestUtils.testCommandAvailable("cat"))
     val nums = sc.makeRDD(Array(1, 2, 3, 4).toImmutableArraySeq, 2)
     val command = Seq("cat", "nonexistent_file")
@@ -224,7 +243,9 @@ class PipedRDDSuite extends SparkFunSuite with SharedSparkContext with Eventuall
     val pipedPwd = nums.pipe(Seq("pwd"), separateWorkingDir = true)
     val collectPwd = pipedPwd.collect()
     assert(collectPwd(0).contains("tasks/"))
-    val pipedLs = nums.pipe(Seq("ls"), separateWorkingDir = true, bufferSize = 16384).collect()
+    val pipedLs = nums
+      .pipe(Seq("ls"), separateWorkingDir = true, bufferSize = 16384)
+      .collect()
     // make sure symlinks were created
     assert(pipedLs.length > 0)
     // clean up top level tasks directory
@@ -242,15 +263,25 @@ class PipedRDDSuite extends SparkFunSuite with SharedSparkContext with Eventuall
   def testExportInputFile(varName: String): Unit = {
     val executable = envCommand.split("\\s+", 2)(0)
     assume(TestUtils.testCommandAvailable(executable))
-    val nums = new HadoopRDD(sc, new JobConf(), classOf[TextInputFormat], classOf[LongWritable],
-      classOf[Text], 2) {
-      override def getPartitions: Array[Partition] = Array(generateFakeHadoopPartition())
+    val nums = new HadoopRDD(
+      sc,
+      new JobConf(),
+      classOf[TextInputFormat],
+      classOf[LongWritable],
+      classOf[Text],
+      2
+    ) {
+      override def getPartitions: Array[Partition] = Array(
+        generateFakeHadoopPartition()
+      )
 
       override val getDependencies = List[Dependency[_]]()
 
       override def compute(theSplit: Partition, context: TaskContext) = {
-        new InterruptibleIterator[(LongWritable, Text)](context, Iterator((new LongWritable(1),
-          new Text("b"))))
+        new InterruptibleIterator[(LongWritable, Text)](
+          context,
+          Iterator((new LongWritable(1), new Text("b")))
+        )
       }
     }
     val hadoopPart1 = generateFakeHadoopPartition()
@@ -263,7 +294,8 @@ class PipedRDDSuite extends SparkFunSuite with SharedSparkContext with Eventuall
         null,
         false,
         4092,
-        Codec.defaultCharsetCodec.name)
+        Codec.defaultCharsetCodec.name
+      )
     val tContext = TaskContext.empty()
     val rddIter = pipedRdd.compute(hadoopPart1, tContext)
     val arr = rddIter.toArray
@@ -273,8 +305,12 @@ class PipedRDDSuite extends SparkFunSuite with SharedSparkContext with Eventuall
   }
 
   def generateFakeHadoopPartition(): HadoopPartition = {
-    val split = new FileSplit(new Path("/some/path"), 0, 1,
-      Array[String]("loc1", "loc2", "loc3", "loc4", "loc5"))
+    val split = new FileSplit(
+      new Path("/some/path"),
+      0,
+      1,
+      Array[String]("loc1", "loc2", "loc3", "loc4", "loc5")
+    )
     new HadoopPartition(sc.newRddId(), 1, split)
   }
 

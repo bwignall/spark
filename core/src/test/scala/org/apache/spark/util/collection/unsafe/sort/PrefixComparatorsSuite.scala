@@ -25,24 +25,31 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import org.apache.spark.SparkFunSuite
 import org.apache.spark.unsafe.types.UTF8String
 
-class PrefixComparatorsSuite extends SparkFunSuite with ScalaCheckPropertyChecks {
+class PrefixComparatorsSuite
+    extends SparkFunSuite
+    with ScalaCheckPropertyChecks {
 
   test("String prefix comparator") {
 
     def testPrefixComparison(s1: String, s2: String): Unit = {
       val utf8string1 = UTF8String.fromString(s1)
       val utf8string2 = UTF8String.fromString(s2)
-      val s1Prefix = PrefixComparators.StringPrefixComparator.computePrefix(utf8string1)
-      val s2Prefix = PrefixComparators.StringPrefixComparator.computePrefix(utf8string2)
-      val prefixComparisonResult = PrefixComparators.STRING.compare(s1Prefix, s2Prefix)
+      val s1Prefix =
+        PrefixComparators.StringPrefixComparator.computePrefix(utf8string1)
+      val s2Prefix =
+        PrefixComparators.StringPrefixComparator.computePrefix(utf8string2)
+      val prefixComparisonResult =
+        PrefixComparators.STRING.compare(s1Prefix, s2Prefix)
 
-      val cmp = UnsignedBytes.lexicographicalComparator().compare(
-        utf8string1.getBytes.take(8), utf8string2.getBytes.take(8))
+      val cmp = UnsignedBytes
+        .lexicographicalComparator()
+        .compare(utf8string1.getBytes.take(8), utf8string2.getBytes.take(8))
 
       assert(
         (prefixComparisonResult == 0 && cmp == 0) ||
-        (prefixComparisonResult < 0 && s1.compareTo(s2) < 0) ||
-        (prefixComparisonResult > 0 && s1.compareTo(s2) > 0))
+          (prefixComparisonResult < 0 && s1.compareTo(s2) < 0) ||
+          (prefixComparisonResult > 0 && s1.compareTo(s2) > 0)
+      )
     }
 
     // scalastyle:off
@@ -55,13 +62,15 @@ class PrefixComparatorsSuite extends SparkFunSuite with ScalaCheckPropertyChecks
     )
     // scalastyle:on
 
-    forAll (regressionTests) { (s1: String, s2: String) => testPrefixComparison(s1, s2) }
+    forAll(regressionTests) { (s1: String, s2: String) =>
+      testPrefixComparison(s1, s2)
+    }
     forAll { (s1: String, s2: String) => testPrefixComparison(s1, s2) }
   }
 
   test("Binary prefix comparator") {
 
-     def compareBinary(x: Array[Byte], y: Array[Byte]): Int = {
+    def compareBinary(x: Array[Byte], y: Array[Byte]): Int = {
       for (i <- x.indices; if i < y.length) {
         val v1 = x(i) & 0xff
         val v2 = y(i) & 0xff
@@ -78,18 +87,25 @@ class PrefixComparatorsSuite extends SparkFunSuite with ScalaCheckPropertyChecks
         PrefixComparators.BINARY.compare(s1Prefix, s2Prefix)
       assert(
         (prefixComparisonResult == 0) ||
-        (prefixComparisonResult < 0 && compareBinary(x, y) < 0) ||
-        (prefixComparisonResult > 0 && compareBinary(x, y) > 0))
+          (prefixComparisonResult < 0 && compareBinary(x, y) < 0) ||
+          (prefixComparisonResult > 0 && compareBinary(x, y) > 0)
+      )
     }
 
     val binaryRegressionTests = Seq(
       (Array[Byte](1), Array[Byte](-1)),
       (Array[Byte](1, 1, 1, 1, 1), Array[Byte](1, 1, 1, 1, -1)),
-      (Array[Byte](1, 1, 1, 1, 1, 1, 1, 1, 1), Array[Byte](1, 1, 1, 1, 1, 1, 1, 1, -1)),
+      (
+        Array[Byte](1, 1, 1, 1, 1, 1, 1, 1, 1),
+        Array[Byte](1, 1, 1, 1, 1, 1, 1, 1, -1)
+      ),
       (Array[Byte](1), Array[Byte](1, 1, 1, 1)),
       (Array[Byte](1, 1, 1, 1, 1), Array[Byte](1, 1, 1, 1, 1, 1, 1, 1, 1)),
       (Array[Byte](-1), Array[Byte](-1, -1, -1, -1)),
-      (Array[Byte](-1, -1, -1, -1, -1), Array[Byte](-1, -1, -1, -1, -1, -1, -1, -1, -1))
+      (
+        Array[Byte](-1, -1, -1, -1, -1),
+        Array[Byte](-1, -1, -1, -1, -1, -1, -1, -1, -1)
+      )
     )
     binaryRegressionTests.foreach { case (b1, b2) =>
       testPrefixComparison(b1, b2)
@@ -104,13 +120,17 @@ class PrefixComparatorsSuite extends SparkFunSuite with ScalaCheckPropertyChecks
     )
     // scalastyle:on
 
-    forAll (regressionTests) { (s1: String, s2: String) =>
+    forAll(regressionTests) { (s1: String, s2: String) =>
       testPrefixComparison(
-        s1.getBytes(StandardCharsets.UTF_8), s2.getBytes(StandardCharsets.UTF_8))
+        s1.getBytes(StandardCharsets.UTF_8),
+        s2.getBytes(StandardCharsets.UTF_8)
+      )
     }
     forAll { (s1: String, s2: String) =>
       testPrefixComparison(
-        s1.getBytes(StandardCharsets.UTF_8), s2.getBytes(StandardCharsets.UTF_8))
+        s1.getBytes(StandardCharsets.UTF_8),
+        s2.getBytes(StandardCharsets.UTF_8)
+      )
     }
   }
 
@@ -118,23 +138,31 @@ class PrefixComparatorsSuite extends SparkFunSuite with ScalaCheckPropertyChecks
     val nan1: Double = java.lang.Double.longBitsToDouble(0x7ff0000000000001L)
     val nan2: Double = java.lang.Double.longBitsToDouble(0x7fffffffffffffffL)
     assert(
-      java.lang.Double.doubleToRawLongBits(nan1) != java.lang.Double.doubleToRawLongBits(nan2))
+      java.lang.Double.doubleToRawLongBits(nan1) != java.lang.Double
+        .doubleToRawLongBits(nan2)
+    )
     assert(nan1.isNaN)
     assert(nan2.isNaN)
-    val nan1Prefix = PrefixComparators.DoublePrefixComparator.computePrefix(nan1)
-    val nan2Prefix = PrefixComparators.DoublePrefixComparator.computePrefix(nan2)
+    val nan1Prefix =
+      PrefixComparators.DoublePrefixComparator.computePrefix(nan1)
+    val nan2Prefix =
+      PrefixComparators.DoublePrefixComparator.computePrefix(nan2)
     assert(nan1Prefix === nan2Prefix)
-    val doubleMaxPrefix = PrefixComparators.DoublePrefixComparator.computePrefix(Double.MaxValue)
+    val doubleMaxPrefix =
+      PrefixComparators.DoublePrefixComparator.computePrefix(Double.MaxValue)
     // NaN is greater than the max double value.
     assert(PrefixComparators.DOUBLE.compare(nan1Prefix, doubleMaxPrefix) === 1)
   }
 
   test("double prefix comparator handles negative NaNs properly") {
-    val negativeNan: Double = java.lang.Double.longBitsToDouble(0xfff0000000000001L)
+    val negativeNan: Double =
+      java.lang.Double.longBitsToDouble(0xfff0000000000001L)
     assert(negativeNan.isNaN)
     assert(java.lang.Double.doubleToRawLongBits(negativeNan) < 0)
-    val prefix = PrefixComparators.DoublePrefixComparator.computePrefix(negativeNan)
-    val doubleMaxPrefix = PrefixComparators.DoublePrefixComparator.computePrefix(Double.MaxValue)
+    val prefix =
+      PrefixComparators.DoublePrefixComparator.computePrefix(negativeNan)
+    val doubleMaxPrefix =
+      PrefixComparators.DoublePrefixComparator.computePrefix(Double.MaxValue)
     // -NaN is greater than the max double value.
     assert(PrefixComparators.DOUBLE.compare(prefix, doubleMaxPrefix) === 1)
   }
@@ -144,10 +172,16 @@ class PrefixComparatorsSuite extends SparkFunSuite with ScalaCheckPropertyChecks
     val smallestNullPrefix = 0L
     val largestNullPrefix = -1L
     val nan = PrefixComparators.DoublePrefixComparator.computePrefix(Double.NaN)
-    val posInf = PrefixComparators.DoublePrefixComparator.computePrefix(Double.PositiveInfinity)
-    val negInf = PrefixComparators.DoublePrefixComparator.computePrefix(Double.NegativeInfinity)
-    val minValue = PrefixComparators.DoublePrefixComparator.computePrefix(Double.MinValue)
-    val maxValue = PrefixComparators.DoublePrefixComparator.computePrefix(Double.MaxValue)
+    val posInf = PrefixComparators.DoublePrefixComparator.computePrefix(
+      Double.PositiveInfinity
+    )
+    val negInf = PrefixComparators.DoublePrefixComparator.computePrefix(
+      Double.NegativeInfinity
+    )
+    val minValue =
+      PrefixComparators.DoublePrefixComparator.computePrefix(Double.MinValue)
+    val maxValue =
+      PrefixComparators.DoublePrefixComparator.computePrefix(Double.MaxValue)
     val zero = PrefixComparators.DoublePrefixComparator.computePrefix(0.0)
     val minusZero = PrefixComparators.DoublePrefixComparator.computePrefix(-0.0)
 

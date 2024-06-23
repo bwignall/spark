@@ -70,7 +70,8 @@ private[deploy] object RPackageUtils extends Logging {
       msg: LogEntry,
       printStream: PrintStream,
       level: Level = Level.FINE,
-      e: Throwable = null): Unit = {
+      e: Throwable = null
+  ): Unit = {
     if (printStream != null) {
       // scalastyle:off println
       printStream.println(msg.message)
@@ -80,40 +81,44 @@ private[deploy] object RPackageUtils extends Logging {
       }
     } else {
       level match {
-        case Level.INFO => logInfo(msg)
+        case Level.INFO    => logInfo(msg)
         case Level.WARNING => logWarning(msg)
-        case Level.SEVERE => logError(msg, e)
-        case _ => logDebug(msg)
+        case Level.SEVERE  => logError(msg, e)
+        case _             => logDebug(msg)
       }
     }
   }
 
-  /**
-   * Checks the manifest of the Jar whether there is any R source code bundled with it.
-   * Exposed for testing.
-   */
+  /** Checks the manifest of the Jar whether there is any R source code bundled with it.
+    * Exposed for testing.
+    */
   private[deploy] def checkManifestForR(jar: JarFile): Boolean = {
     if (jar.getManifest == null) {
       return false
     }
     val manifest = jar.getManifest.getMainAttributes
-    manifest.getValue(hasRPackage) != null && manifest.getValue(hasRPackage).trim == "true"
+    manifest.getValue(hasRPackage) != null && manifest
+      .getValue(hasRPackage)
+      .trim == "true"
   }
 
-  /**
-   * Runs the standard R package installation code to build the R package from source.
-   * Multiple runs don't cause problems.
-   */
+  /** Runs the standard R package installation code to build the R package from source.
+    * Multiple runs don't cause problems.
+    */
   private def rPackageBuilder(
       dir: File,
       printStream: PrintStream,
       verbose: Boolean,
-      libDir: String): Boolean = {
+      libDir: String
+  ): Boolean = {
     // this code should be always running on the driver.
     val pathToPkg = Seq(dir, "R", "pkg").mkString(File.separator)
     val installCmd = baseInstallCmd ++ Seq(libDir, pathToPkg)
     if (verbose) {
-      print(log"Building R package with the command: ${MDC(COMMAND, installCmd)}", printStream)
+      print(
+        log"Building R package with the command: ${MDC(COMMAND, installCmd)}",
+        printStream
+      )
     }
     try {
       val builder = new ProcessBuilder(installCmd.asJava)
@@ -124,11 +129,19 @@ private[deploy] object RPackageUtils extends Logging {
       val env = builder.environment()
       val rPackageDir = RUtils.sparkRPackagePath(isDriver = true)
       env.put("SPARKR_PACKAGE_DIR", rPackageDir.mkString(","))
-      env.put("R_PROFILE_USER",
-        Seq(rPackageDir(0), "SparkR", "profile", "general.R").mkString(File.separator))
+      env.put(
+        "R_PROFILE_USER",
+        Seq(rPackageDir(0), "SparkR", "profile", "general.R").mkString(
+          File.separator
+        )
+      )
 
       val process = builder.start()
-      new RedirectThread(process.getInputStream, printStream, "redirect R packaging").start()
+      new RedirectThread(
+        process.getInputStream,
+        printStream,
+        "redirect R packaging"
+      ).start()
       process.waitFor() == 0
     } catch {
       case e: Throwable =>
@@ -137,10 +150,13 @@ private[deploy] object RPackageUtils extends Logging {
     }
   }
 
-  /**
-   * Extracts the files under /R in the jar to a temporary directory for building.
-   */
-  private def extractRFolder(jar: JarFile, printStream: PrintStream, verbose: Boolean): File = {
+  /** Extracts the files under /R in the jar to a temporary directory for building.
+    */
+  private def extractRFolder(
+      jar: JarFile,
+      printStream: PrintStream,
+      verbose: Boolean
+  ): File = {
     val tempDir = Utils.createTempDir(null)
     val jarEntries = jar.entries()
     while (jarEntries.hasMoreElements) {
@@ -160,7 +176,10 @@ private[deploy] object RPackageUtils extends Logging {
           Files.createParentDirs(outPath)
           val outStream = new FileOutputStream(outPath)
           if (verbose) {
-            print(log"Extracting ${MDC(JAR_ENTRY, entry)} to ${MDC(PATH, outPath)}", printStream)
+            print(
+              log"Extracting ${MDC(JAR_ENTRY, entry)} to ${MDC(PATH, outPath)}",
+              printStream
+            )
           }
           Utils.copyStream(inStream, outStream, closeStreams = true)
         }
@@ -169,28 +188,41 @@ private[deploy] object RPackageUtils extends Logging {
     tempDir
   }
 
-  /**
-   * Extracts the files under /R in the jar to a temporary directory for building.
-   */
+  /** Extracts the files under /R in the jar to a temporary directory for building.
+    */
   private[deploy] def checkAndBuildRPackage(
       jars: String,
       printStream: PrintStream = null,
-      verbose: Boolean = false): Unit = {
+      verbose: Boolean = false
+  ): Unit = {
     jars.split(",").foreach { jarPath =>
       val file = new File(Utils.resolveURI(jarPath))
       if (file.exists()) {
         val jar = new JarFile(file)
         Utils.tryWithSafeFinally {
           if (checkManifestForR(jar)) {
-            print(log"${MDC(PATH, file)} contains R source code. Now installing package.",
-              printStream, Level.INFO)
+            print(
+              log"${MDC(PATH, file)} contains R source code. Now installing package.",
+              printStream,
+              Level.INFO
+            )
             val rSource = extractRFolder(jar, printStream, verbose)
             if (RUtils.rPackages.isEmpty) {
               RUtils.rPackages = Some(Utils.createTempDir().getAbsolutePath)
             }
             try {
-              if (!rPackageBuilder(rSource, printStream, verbose, RUtils.rPackages.get)) {
-                print(log"ERROR: Failed to build R package in ${MDC(PATH, file)}.", printStream)
+              if (
+                !rPackageBuilder(
+                  rSource,
+                  printStream,
+                  verbose,
+                  RUtils.rPackages.get
+                )
+              ) {
+                print(
+                  log"ERROR: Failed to build R package in ${MDC(PATH, file)}.",
+                  printStream
+                )
                 print(RJarDoc, printStream)
               }
             } finally {
@@ -201,27 +233,38 @@ private[deploy] object RPackageUtils extends Logging {
             }
           } else {
             if (verbose) {
-              print(log"${MDC(PATH, file)} doesn't contain R source code, skipping...", printStream)
+              print(
+                log"${MDC(PATH, file)} doesn't contain R source code, skipping...",
+                printStream
+              )
             }
           }
         } {
           jar.close()
         }
       } else {
-        print(log"WARN: ${MDC(PATH, file)} resolved as dependency, but not found.",
-          printStream, Level.WARNING)
+        print(
+          log"WARN: ${MDC(PATH, file)} resolved as dependency, but not found.",
+          printStream,
+          Level.WARNING
+        )
       }
     }
   }
 
-  private def listFilesRecursively(dir: File, excludePatterns: Seq[String]): Set[File] = {
+  private def listFilesRecursively(
+      dir: File,
+      excludePatterns: Seq[String]
+  ): Set[File] = {
     if (!dir.exists()) {
       Set.empty[File]
     } else {
       if (dir.isDirectory) {
         val subDir = dir.listFiles(new FilenameFilter {
           override def accept(dir: File, name: String): Boolean = {
-            !excludePatterns.map(name.contains).reduce(_ || _) // exclude files with given pattern
+            !excludePatterns
+              .map(name.contains)
+              .reduce(_ || _) // exclude files with given pattern
           }
         })
         subDir.flatMap(listFilesRecursively(_, excludePatterns)).toSet
@@ -239,7 +282,9 @@ private[deploy] object RPackageUtils extends Logging {
     if (!zipFile.delete()) {
       logWarning(log"Error deleting ${MDC(PATH, zipFile.getPath())}")
     }
-    val zipOutputStream = new ZipOutputStream(new FileOutputStream(zipFile, false))
+    val zipOutputStream = new ZipOutputStream(
+      new FileOutputStream(zipFile, false)
+    )
     try {
       filesToBundle.foreach { file =>
         // Get the relative paths for proper naming in the ZIP file. Note that
@@ -247,7 +292,8 @@ private[deploy] object RPackageUtils extends Logging {
         // directories because the separator should always be / for according to ZIP
         // specification and therefore `relPath` here should be, for example,
         // "/packageTest/def.R" or "/test.R".
-        val relPath = file.toURI.toString.replaceFirst(dir.toURI.toString.stripSuffix("/"), "")
+        val relPath = file.toURI.toString
+          .replaceFirst(dir.toURI.toString.stripSuffix("/"), "")
         val fis = new FileInputStream(file)
         val zipEntry = new ZipEntry(relPath)
         zipOutputStream.putNextEntry(zipEntry)

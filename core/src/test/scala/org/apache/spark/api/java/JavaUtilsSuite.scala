@@ -24,7 +24,6 @@ import org.mockito.Mockito._
 import org.apache.spark.SparkFunSuite
 import org.apache.spark.api.java.JavaUtils.SerializableMapWrapper
 
-
 class JavaUtilsSuite extends SparkFunSuite {
 
   test("containsKey implementation without iteratively entrySet call") {
@@ -34,8 +33,10 @@ class JavaUtilsSuite extends SparkFunSuite {
 
     src.put(key, "42")
 
-    val map: java.util.Map[Double, String] = spy[SerializableMapWrapper[Double, String]](
-      JavaUtils.mapAsSerializableJavaMap(src))
+    val map: java.util.Map[Double, String] =
+      spy[SerializableMapWrapper[Double, String]](
+        JavaUtils.mapAsSerializableJavaMap(src)
+      )
 
     assert(map.containsKey(key))
 

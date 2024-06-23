@@ -24,23 +24,21 @@ import org.apache.commons.lang3.SerializationUtils
 
 import org.apache.spark.benchmark.{Benchmark, BenchmarkBase}
 
-
-/**
- * Benchmark for SerializationUtils.clone vs Utils.cloneProperties.
- * To run this benchmark:
- * {{{
- *   1. without sbt:
- *      bin/spark-submit --class <this class> <spark core test jar>
- *   2. build/sbt "core/Test/runMain <this class>"
- *   3. generate result:
- *      SPARK_GENERATE_BENCHMARK_FILES=1 build/sbt "core/Test/runMain <this class>"
- *      Results will be written to "benchmarks/PropertiesCloneBenchmark-results.txt".
- * }}}
- */
+/** Benchmark for SerializationUtils.clone vs Utils.cloneProperties.
+  * To run this benchmark:
+  * {{{
+  *   1. without sbt:
+  *      bin/spark-submit --class <this class> <spark core test jar>
+  *   2. build/sbt "core/Test/runMain <this class>"
+  *   3. generate result:
+  *      SPARK_GENERATE_BENCHMARK_FILES=1 build/sbt "core/Test/runMain <this class>"
+  *      Results will be written to "benchmarks/PropertiesCloneBenchmark-results.txt".
+  * }}}
+  */
 object PropertiesCloneBenchmark extends BenchmarkBase {
-  /**
-   * Benchmark various cases of cloning properties objects
-   */
+
+  /** Benchmark various cases of cloning properties objects
+    */
   override def runBenchmarkSuite(mainArgs: Array[String]): Unit = {
     runBenchmark("Properties Cloning") {
       def compareSerialization(name: String, props: Properties): Unit = {
@@ -61,7 +59,11 @@ object PropertiesCloneBenchmark extends BenchmarkBase {
     }
   }
 
-  def makeRandomProps(numProperties: Int, keySize: Int, valueSize: Int): Properties = {
+  def makeRandomProps(
+      numProperties: Int,
+      keySize: Int,
+      valueSize: Int
+  ): Properties = {
     val props = new Properties
     for (_ <- 1 to numProperties) {
       props.put(

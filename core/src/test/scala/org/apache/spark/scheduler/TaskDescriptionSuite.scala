@@ -28,7 +28,9 @@ import org.apache.spark.resource.ResourceAmountUtils
 import org.apache.spark.resource.ResourceUtils.GPU
 
 class TaskDescriptionSuite extends SparkFunSuite {
-  test("encoding and then decoding a TaskDescription results in the same TaskDescription") {
+  test(
+    "encoding and then decoding a TaskDescription results in the same TaskDescription"
+  ) {
     val originalFiles = new HashMap[String, Long]()
     originalFiles.put("fileUrl1", 1824)
     originalFiles.put("fileUrl2", 2)
@@ -59,10 +61,14 @@ class TaskDescriptionSuite extends SparkFunSuite {
       }
     }
 
-    val originalResources = Map(GPU ->
-      Map("1" -> ResourceAmountUtils.toInternalResource(0.2),
-        "2" -> ResourceAmountUtils.toInternalResource(0.5),
-        "3" -> ResourceAmountUtils.toInternalResource(0.1)))
+    val originalResources = Map(
+      GPU ->
+        Map(
+          "1" -> ResourceAmountUtils.toInternalResource(0.2),
+          "2" -> ResourceAmountUtils.toInternalResource(0.5),
+          "3" -> ResourceAmountUtils.toInternalResource(0.1)
+        )
+    )
 
     // Create a dummy byte buffer for the task.
     val taskBuffer = ByteBuffer.wrap(Array[Byte](1, 2, 3, 4))
@@ -88,20 +94,34 @@ class TaskDescriptionSuite extends SparkFunSuite {
       taskBuffer
     )
 
-    val serializedTaskDescription = TaskDescription.encode(originalTaskDescription)
-    val decodedTaskDescription = TaskDescription.decode(serializedTaskDescription)
+    val serializedTaskDescription =
+      TaskDescription.encode(originalTaskDescription)
+    val decodedTaskDescription =
+      TaskDescription.decode(serializedTaskDescription)
 
     // Make sure that all of the fields in the decoded task description match the original.
     assert(decodedTaskDescription.taskId === originalTaskDescription.taskId)
-    assert(decodedTaskDescription.attemptNumber === originalTaskDescription.attemptNumber)
-    assert(decodedTaskDescription.executorId === originalTaskDescription.executorId)
+    assert(
+      decodedTaskDescription.attemptNumber === originalTaskDescription.attemptNumber
+    )
+    assert(
+      decodedTaskDescription.executorId === originalTaskDescription.executorId
+    )
     assert(decodedTaskDescription.name === originalTaskDescription.name)
     assert(decodedTaskDescription.index === originalTaskDescription.index)
-    assert(decodedTaskDescription.partitionId === originalTaskDescription.partitionId)
+    assert(
+      decodedTaskDescription.partitionId === originalTaskDescription.partitionId
+    )
     assert(decodedTaskDescription.artifacts.equals(artifacts))
-    assert(decodedTaskDescription.properties.equals(originalTaskDescription.properties))
+    assert(
+      decodedTaskDescription.properties.equals(
+        originalTaskDescription.properties
+      )
+    )
     assert(decodedTaskDescription.cpus.equals(originalTaskDescription.cpus))
-    assert(decodedTaskDescription.resources === originalTaskDescription.resources)
+    assert(
+      decodedTaskDescription.resources === originalTaskDescription.resources
+    )
     assert(decodedTaskDescription.serializedTask.equals(taskBuffer))
   }
 

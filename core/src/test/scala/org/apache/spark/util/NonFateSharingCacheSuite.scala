@@ -32,21 +32,26 @@ object NonFateSharingCacheSuite {
   private val THREAD2_HOLDER = new AtomicReference[Thread](null)
 
   trait InternalTestStatus {
-    var intentionalFail: ThreadLocal[Boolean] = ThreadLocal.withInitial(() => false)
+    var intentionalFail: ThreadLocal[Boolean] =
+      ThreadLocal.withInitial(() => false)
     var startLoading = new Semaphore(0)
 
     def waitUntilThread2Waiting(): Unit = {
       while (true) {
         Thread.sleep(100)
-        if (Option(THREAD2_HOLDER.get()).exists(_.getState.equals(Thread.State.WAITING))) {
+        if (
+          Option(THREAD2_HOLDER.get())
+            .exists(_.getState.equals(Thread.State.WAITING))
+        ) {
           return
         }
       }
     }
   }
 
-
-  class TestCacheLoader extends CacheLoader[String, String] with InternalTestStatus {
+  class TestCacheLoader
+      extends CacheLoader[String, String]
+      with InternalTestStatus {
     override def load(key: String): String = {
       startLoading.release()
       if (Thread.currentThread().getName.contains("test-executor1")) {
@@ -70,16 +75,17 @@ object NonFateSharingCacheSuite {
 
 }
 
-/**
- * Test non-fate-sharing behavior
- */
+/** Test non-fate-sharing behavior
+  */
 class NonFateSharingCacheSuite extends SparkFunSuite {
 
   type WorkerFunc = () => Unit
 
   import NonFateSharingCacheSuite._
 
-  test("loading cache loading failure should not affect concurrent query on same key") {
+  test(
+    "loading cache loading failure should not affect concurrent query on same key"
+  ) {
     val loader = new TestCacheLoader
     val loadingCache0: NonFateSharingLoadingCache[String, String] =
       NonFateSharingCache(CacheBuilder.newBuilder.build(loader))
@@ -106,8 +112,7 @@ class NonFateSharingCacheSuite extends SparkFunSuite {
       NonFateSharingCache(CacheBuilder.newBuilder.build(loader))
     val thread1Task: WorkerFunc = () => {
       loader.intentionalFail.set(true)
-      loadingCache.get(TEST_KEY, () => loader.load(TEST_KEY)
-      )
+      loadingCache.get(TEST_KEY, () => loader.load(TEST_KEY))
     }
     val thread2Task: WorkerFunc = () => {
       loadingCache.get(TEST_KEY)
@@ -117,7 +122,8 @@ class NonFateSharingCacheSuite extends SparkFunSuite {
 
   test("cache loading failure should not affect concurrent query on same key") {
     val loader = new TestCacheLoader
-    val cache = NonFateSharingCache(CacheBuilder.newBuilder.build[String, String])
+    val cache =
+      NonFateSharingCache(CacheBuilder.newBuilder.build[String, String])
     val thread1Task: WorkerFunc = () => {
       loader.intentionalFail.set(true)
       cache.get(
@@ -138,12 +144,14 @@ class NonFateSharingCacheSuite extends SparkFunSuite {
       cache: NonFateSharingCache[String, String],
       internalTestStatus: InternalTestStatus,
       thread1Task: WorkerFunc,
-      thread2Task: WorkerFunc): Unit = {
+      thread2Task: WorkerFunc
+  ): Unit = {
     val executor1 = ThreadUtils.newDaemonSingleThreadExecutor("test-executor1")
     val executor2 = ThreadUtils.newDaemonSingleThreadExecutor("test-executor2")
     val r1: Runnable = () => thread1Task()
     val r2: Runnable = () => {
-      internalTestStatus.startLoading.acquire() // wait until thread1 start loading
+      internalTestStatus.startLoading
+        .acquire() // wait until thread1 start loading
       THREAD2_HOLDER.set(Thread.currentThread())
       thread2Task()
     }

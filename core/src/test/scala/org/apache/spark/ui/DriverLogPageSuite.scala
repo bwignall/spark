@@ -27,7 +27,6 @@ import org.mockito.Mockito.{mock, when}
 import org.apache.spark.{SparkConf, SparkFunSuite}
 import org.apache.spark.internal.config.DRIVER_LOG_LOCAL_DIR
 
-
 class DriverLogPageSuite extends SparkFunSuite {
 
   test("DriverLogTab requires driver log location") {
@@ -52,9 +51,16 @@ class DriverLogPageSuite extends SparkFunSuite {
   test("renderLog reads driver.log file") {
     val conf = new SparkConf(false)
     withTempDir { dir =>
-      val page = new DriverLogPage(null, conf.set(DRIVER_LOG_LOCAL_DIR, dir.getCanonicalPath))
+      val page = new DriverLogPage(
+        null,
+        conf.set(DRIVER_LOG_LOCAL_DIR, dir.getCanonicalPath)
+      )
       val file = new File(dir, "driver.log")
-      FileUtils.writeStringToFile(file, "driver log content", StandardCharsets.UTF_8)
+      FileUtils.writeStringToFile(
+        file,
+        "driver log content",
+        StandardCharsets.UTF_8
+      )
       val request = mock(classOf[HttpServletRequest])
       val log = page.renderLog(request)
       assert(log.startsWith("==== Bytes 0-18 of 18 of"))

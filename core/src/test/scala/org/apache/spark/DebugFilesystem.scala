@@ -31,17 +31,19 @@ object DebugFilesystem extends Logging {
   // Stores the set of active streams and their creation sites.
   private val openStreams = mutable.Map.empty[FSDataInputStream, Throwable]
 
-  def addOpenStream(stream: FSDataInputStream): Unit = openStreams.synchronized {
-    openStreams.put(stream, new Throwable())
-  }
+  def addOpenStream(stream: FSDataInputStream): Unit =
+    openStreams.synchronized {
+      openStreams.put(stream, new Throwable())
+    }
 
   def clearOpenStreams(): Unit = openStreams.synchronized {
     openStreams.clear()
   }
 
-  def removeOpenStream(stream: FSDataInputStream): Unit = openStreams.synchronized {
-    openStreams.remove(stream)
-  }
+  def removeOpenStream(stream: FSDataInputStream): Unit =
+    openStreams.synchronized {
+      openStreams.remove(stream)
+    }
 
   def assertNoOpenStreams(): Unit = openStreams.synchronized {
     val numOpen = openStreams.values.size
@@ -50,22 +52,23 @@ object DebugFilesystem extends Logging {
         logWarning("Leaked filesystem connection created at:")
         exc.printStackTrace()
       }
-      throw new IllegalStateException(s"There are $numOpen possibly leaked file streams.",
-        openStreams.values.head)
+      throw new IllegalStateException(
+        s"There are $numOpen possibly leaked file streams.",
+        openStreams.values.head
+      )
     }
   }
 }
 
-/**
- * DebugFilesystem wraps
- *     1) file open calls to track all open connections. This can be used in tests to check that
- *        connections are not leaked;
- *     2) rename calls to return false when destination's parent path does not exist. When
- *        destination parent does not exist, LocalFileSystem uses FileUtil#copy to copy the
- *        file and returns true if succeed, while many other hadoop file systems (e.g. HDFS, S3A)
- *        return false without renaming any file. This helps to test that Spark can work with the
- *        latter file systems.
- */
+/** DebugFilesystem wraps
+  *     1) file open calls to track all open connections. This can be used in tests to check that
+  *        connections are not leaked;
+  *     2) rename calls to return false when destination's parent path does not exist. When
+  *        destination parent does not exist, LocalFileSystem uses FileUtil#copy to copy the
+  *        file and returns true if succeed, while many other hadoop file systems (e.g. HDFS, S3A)
+  *        return false without renaming any file. This helps to test that Spark can work with the
+  *        latter file systems.
+  */
 // TODO(ekl) we should consider always interposing this to expose num open conns as a metric
 class DebugFilesystem extends LocalFileSystem {
   import DebugFilesystem._
@@ -74,7 +77,8 @@ class DebugFilesystem extends LocalFileSystem {
     val wrapped: FSDataInputStream = super.open(f, bufferSize)
     addOpenStream(wrapped)
     new FSDataInputStream(wrapped.getWrappedStream) {
-      override def setDropBehind(dropBehind: lang.Boolean): Unit = wrapped.setDropBehind(dropBehind)
+      override def setDropBehind(dropBehind: lang.Boolean): Unit =
+        wrapped.setDropBehind(dropBehind)
 
       override def getWrappedStream: InputStream = wrapped.getWrappedStream
 
@@ -82,18 +86,30 @@ class DebugFilesystem extends LocalFileSystem {
 
       override def getPos: Long = wrapped.getPos
 
-      override def seekToNewSource(targetPos: Long): Boolean = wrapped.seekToNewSource(targetPos)
+      override def seekToNewSource(targetPos: Long): Boolean =
+        wrapped.seekToNewSource(targetPos)
 
       override def seek(desired: Long): Unit = wrapped.seek(desired)
 
-      override def setReadahead(readahead: lang.Long): Unit = wrapped.setReadahead(readahead)
+      override def setReadahead(readahead: lang.Long): Unit =
+        wrapped.setReadahead(readahead)
 
-      override def read(position: Long, buffer: Array[Byte], offset: Int, length: Int): Int =
+      override def read(
+          position: Long,
+          buffer: Array[Byte],
+          offset: Int,
+          length: Int
+      ): Int =
         wrapped.read(position, buffer, offset, length)
 
       override def read(buf: ByteBuffer): Int = wrapped.read(buf)
 
-      override def readFully(position: Long, buffer: Array[Byte], offset: Int, length: Int): Unit =
+      override def readFully(
+          position: Long,
+          buffer: Array[Byte],
+          offset: Int,
+          length: Int
+      ): Unit =
         wrapped.readFully(position, buffer, offset, length)
 
       override def readFully(position: Long, buffer: Array[Byte]): Unit =

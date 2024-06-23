@@ -19,7 +19,10 @@ package org.apache.spark.util.random
 
 import scala.util.Random
 
-import org.apache.commons.math3.distribution.{BinomialDistribution, PoissonDistribution}
+import org.apache.commons.math3.distribution.{
+  BinomialDistribution,
+  PoissonDistribution
+}
 
 import org.apache.spark.SparkFunSuite
 
@@ -29,17 +32,20 @@ class SamplingUtilsSuite extends SparkFunSuite {
     val input = Seq.fill(100)(Random.nextInt())
 
     // input size < k
-    val (sample1, count1) = SamplingUtils.reservoirSampleAndCount(input.iterator, 150)
+    val (sample1, count1) =
+      SamplingUtils.reservoirSampleAndCount(input.iterator, 150)
     assert(count1 === 100)
     assert(input === sample1.toSeq)
 
     // input size == k
-    val (sample2, count2) = SamplingUtils.reservoirSampleAndCount(input.iterator, 100)
+    val (sample2, count2) =
+      SamplingUtils.reservoirSampleAndCount(input.iterator, 100)
     assert(count2 === 100)
     assert(input === sample2.toSeq)
 
     // input size > k
-    val (sample3, count3) = SamplingUtils.reservoirSampleAndCount(input.iterator, 10)
+    val (sample3, count3) =
+      SamplingUtils.reservoirSampleAndCount(input.iterator, 10)
     assert(count3 === 100)
     assert(sample3.length === 10)
   }
@@ -48,7 +54,8 @@ class SamplingUtilsSuite extends SparkFunSuite {
     val input = Seq(0, 1)
     val counts = new Array[Int](input.size)
     for (i <- 0 until 500) {
-      val (samples, inputSize) = SamplingUtils.reservoirSampleAndCount(input.iterator, 1)
+      val (samples, inputSize) =
+        SamplingUtils.reservoirSampleAndCount(input.iterator, 1)
       assert(inputSize === 2)
       assert(samples.length === 1)
       counts(samples.head) += 1
@@ -65,17 +72,26 @@ class SamplingUtilsSuite extends SparkFunSuite {
     for (s <- 1 to 15) {
       val frac = SamplingUtils.computeFractionForSampleSize(s, n, true)
       val poisson = new PoissonDistribution(frac * n)
-      assert(poisson.inverseCumulativeProbability(0.0001) >= s, "Computed fraction is too low")
+      assert(
+        poisson.inverseCumulativeProbability(0.0001) >= s,
+        "Computed fraction is too low"
+      )
     }
     for (s <- List(20, 100, 1000)) {
       val frac = SamplingUtils.computeFractionForSampleSize(s, n, true)
       val poisson = new PoissonDistribution(frac * n)
-      assert(poisson.inverseCumulativeProbability(0.0001) >= s, "Computed fraction is too low")
+      assert(
+        poisson.inverseCumulativeProbability(0.0001) >= s,
+        "Computed fraction is too low"
+      )
     }
     for (s <- List(1, 10, 100, 1000)) {
       val frac = SamplingUtils.computeFractionForSampleSize(s, n, false)
       val binomial = new BinomialDistribution(n, frac)
-      assert(binomial.inverseCumulativeProbability(0.0001)*n >= s, "Computed fraction is too low")
+      assert(
+        binomial.inverseCumulativeProbability(0.0001) * n >= s,
+        "Computed fraction is too low"
+      )
     }
   }
 }

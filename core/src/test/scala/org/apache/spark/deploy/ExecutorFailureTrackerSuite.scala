@@ -39,34 +39,33 @@ class ExecutorFailureTrackerSuite extends SparkFunSuite with Matchers {
 
     clock.setTime(0)
     failureTracker.registerFailureOnHost("host1")
-    failureTracker.numFailuresOnHost("host1") should be (1)
-    failureTracker.numFailedExecutors should be (1)
+    failureTracker.numFailuresOnHost("host1") should be(1)
+    failureTracker.numFailedExecutors should be(1)
 
     clock.setTime(10)
     failureTracker.registerFailureOnHost("host2")
-    failureTracker.numFailuresOnHost("host2") should be (1)
-    failureTracker.numFailedExecutors should be (2)
+    failureTracker.numFailuresOnHost("host2") should be(1)
+    failureTracker.numFailedExecutors should be(2)
 
     clock.setTime(20)
     failureTracker.registerFailureOnHost("host1")
-    failureTracker.numFailuresOnHost("host1") should be (2)
-    failureTracker.numFailedExecutors should be (3)
+    failureTracker.numFailuresOnHost("host1") should be(2)
+    failureTracker.numFailedExecutors should be(3)
 
     clock.setTime(30)
     failureTracker.registerFailureOnHost("host2")
-    failureTracker.numFailuresOnHost("host2") should be (2)
-    failureTracker.numFailedExecutors should be (4)
+    failureTracker.numFailuresOnHost("host2") should be(2)
+    failureTracker.numFailedExecutors should be(4)
 
     clock.setTime(101)
-    failureTracker.numFailuresOnHost("host1") should be (1)
-    failureTracker.numFailedExecutors should be (3)
+    failureTracker.numFailuresOnHost("host1") should be(1)
+    failureTracker.numFailedExecutors should be(3)
 
     clock.setTime(231)
-    failureTracker.numFailuresOnHost("host1") should be (0)
-    failureTracker.numFailuresOnHost("host2") should be (0)
-    failureTracker.numFailedExecutors should be (0)
+    failureTracker.numFailuresOnHost("host1") should be(0)
+    failureTracker.numFailuresOnHost("host2") should be(0)
+    failureTracker.numFailedExecutors should be(0)
   }
-
 
   test("failures never expire if validity interval is not set (-1)") {
     val sparkConf = new SparkConf()
@@ -76,28 +75,28 @@ class ExecutorFailureTrackerSuite extends SparkFunSuite with Matchers {
 
     clock.setTime(0)
     failureTracker.registerFailureOnHost("host1")
-    failureTracker.numFailuresOnHost("host1") should be (1)
-    failureTracker.numFailedExecutors should be (1)
+    failureTracker.numFailuresOnHost("host1") should be(1)
+    failureTracker.numFailedExecutors should be(1)
 
     clock.setTime(10)
     failureTracker.registerFailureOnHost("host2")
-    failureTracker.numFailuresOnHost("host2") should be (1)
-    failureTracker.numFailedExecutors should be (2)
+    failureTracker.numFailuresOnHost("host2") should be(1)
+    failureTracker.numFailedExecutors should be(2)
 
     clock.setTime(20)
     failureTracker.registerFailureOnHost("host1")
-    failureTracker.numFailuresOnHost("host1") should be (2)
-    failureTracker.numFailedExecutors should be (3)
+    failureTracker.numFailuresOnHost("host1") should be(2)
+    failureTracker.numFailedExecutors should be(3)
 
     clock.setTime(30)
     failureTracker.registerFailureOnHost("host2")
-    failureTracker.numFailuresOnHost("host2") should be (2)
-    failureTracker.numFailedExecutors should be (4)
+    failureTracker.numFailuresOnHost("host2") should be(2)
+    failureTracker.numFailedExecutors should be(4)
 
     clock.setTime(1000)
-    failureTracker.numFailuresOnHost("host1") should be (2)
-    failureTracker.numFailuresOnHost("host2") should be (2)
-    failureTracker.numFailedExecutors should be (4)
+    failureTracker.numFailuresOnHost("host1") should be(2)
+    failureTracker.numFailuresOnHost("host2") should be(2)
+    failureTracker.numFailedExecutors should be(4)
   }
 
 }

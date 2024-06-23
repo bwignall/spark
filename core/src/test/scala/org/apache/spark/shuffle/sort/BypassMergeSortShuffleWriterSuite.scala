@@ -34,23 +34,33 @@ import org.apache.spark.executor.{ShuffleWriteMetrics, TaskMetrics}
 import org.apache.spark.internal.config
 import org.apache.spark.memory.{TaskMemoryManager, TestMemoryManager}
 import org.apache.spark.network.shuffle.checksum.ShuffleChecksumHelper
-import org.apache.spark.serializer.{JavaSerializer, SerializerInstance, SerializerManager}
-import org.apache.spark.shuffle.{IndexShuffleBlockResolver, ShuffleChecksumTestHelper}
+import org.apache.spark.serializer.{
+  JavaSerializer,
+  SerializerInstance,
+  SerializerManager
+}
+import org.apache.spark.shuffle.{
+  IndexShuffleBlockResolver,
+  ShuffleChecksumTestHelper
+}
 import org.apache.spark.shuffle.api.ShuffleExecutorComponents
 import org.apache.spark.shuffle.sort.io.LocalDiskShuffleExecutorComponents
 import org.apache.spark.storage._
 import org.apache.spark.util.Utils
 
 class BypassMergeSortShuffleWriterSuite
-  extends SparkFunSuite
+    extends SparkFunSuite
     with BeforeAndAfterEach
     with ShuffleChecksumTestHelper {
 
   @Mock(answer = RETURNS_SMART_NULLS) private var blockManager: BlockManager = _
-  @Mock(answer = RETURNS_SMART_NULLS) private var diskBlockManager: DiskBlockManager = _
+  @Mock(answer = RETURNS_SMART_NULLS) private var diskBlockManager
+      : DiskBlockManager = _
   @Mock(answer = RETURNS_SMART_NULLS) private var taskContext: TaskContext = _
-  @Mock(answer = RETURNS_SMART_NULLS) private var blockResolver: IndexShuffleBlockResolver = _
-  @Mock(answer = RETURNS_SMART_NULLS) private var dependency: ShuffleDependency[Int, Int, Int] = _
+  @Mock(answer = RETURNS_SMART_NULLS) private var blockResolver
+      : IndexShuffleBlockResolver = _
+  @Mock(answer = RETURNS_SMART_NULLS) private var dependency
+      : ShuffleDependency[Int, Int, Int] = _
 
   private var taskMetrics: TaskMetrics = _
   private var tempDir: File = _
@@ -58,8 +68,10 @@ class BypassMergeSortShuffleWriterSuite
   private var shuffleExecutorComponents: ShuffleExecutorComponents = _
   private val conf: SparkConf = new SparkConf(loadDefaults = false)
     .set("spark.app.id", "sampleApp")
-  private val temporaryFilesCreated: mutable.Buffer[File] = new ArrayBuffer[File]()
-  private val blockIdToFileMap: mutable.Map[BlockId, File] = new mutable.HashMap[BlockId, File]
+  private val temporaryFilesCreated: mutable.Buffer[File] =
+    new ArrayBuffer[File]()
+  private val blockIdToFileMap: mutable.Map[BlockId, File] =
+    new mutable.HashMap[BlockId, File]
   private var shuffleHandle: BypassMergeSortShuffleHandle[Int, Int] = _
 
   override def beforeEach(): Unit = {
@@ -81,8 +93,15 @@ class BypassMergeSortShuffleWriterSuite
     when(blockManager.diskBlockManager).thenReturn(diskBlockManager)
     when(taskContext.taskMemoryManager()).thenReturn(taskMemoryManager)
 
-    when(blockResolver.writeMetadataFileAndCommit(
-      anyInt, anyLong, any(classOf[Array[Long]]), any(classOf[Array[Long]]), any(classOf[File])))
+    when(
+      blockResolver.writeMetadataFileAndCommit(
+        anyInt,
+        anyLong,
+        any(classOf[Array[Long]]),
+        any(classOf[Array[Long]]),
+        any(classOf[File])
+      )
+    )
       .thenAnswer { invocationOnMock =>
         val tmp = invocationOnMock.getArguments()(4).asInstanceOf[File]
         if (tmp != null) {
@@ -92,12 +111,15 @@ class BypassMergeSortShuffleWriterSuite
         null
       }
 
-    when(blockManager.getDiskWriter(
-      any[BlockId],
-      any[File],
-      any[SerializerInstance],
-      anyInt(),
-      any[ShuffleWriteMetrics]))
+    when(
+      blockManager.getDiskWriter(
+        any[BlockId],
+        any[File],
+        any[SerializerInstance],
+        anyInt(),
+        any[ShuffleWriteMetrics]
+      )
+    )
       .thenAnswer { invocation =>
         val args = invocation.getArguments
         val manager = new SerializerManager(new JavaSerializer(conf), conf)
@@ -108,7 +130,8 @@ class BypassMergeSortShuffleWriterSuite
           args(3).asInstanceOf[Int],
           syncWrites = false,
           args(4).asInstanceOf[ShuffleWriteMetrics],
-          blockId = args(0).asInstanceOf[BlockId])
+          blockId = args(0).asInstanceOf[BlockId]
+        )
       }
 
     when(blockResolver.createTempFile(any(classOf[File])))
@@ -130,8 +153,8 @@ class BypassMergeSortShuffleWriterSuite
       blockIdToFileMap(invocation.getArguments.head.asInstanceOf[BlockId])
     }
 
-    shuffleExecutorComponents = new LocalDiskShuffleExecutorComponents(
-      conf, blockManager, blockResolver)
+    shuffleExecutorComponents =
+      new LocalDiskShuffleExecutorComponents(conf, blockManager, blockResolver)
   }
 
   override def afterEach(): Unit = {
@@ -152,7 +175,8 @@ class BypassMergeSortShuffleWriterSuite
       0L, // MapId
       conf,
       taskContext.taskMetrics().shuffleWriteMetrics,
-      shuffleExecutorComponents)
+      shuffleExecutorComponents
+    )
 
     writer.write(Iterator.empty)
     writer.stop( /* success = */ true)
@@ -179,13 +203,18 @@ class BypassMergeSortShuffleWriterSuite
         0L, // MapId
         transferConf,
         taskContext.taskMetrics().shuffleWriteMetrics,
-        shuffleExecutorComponents)
+        shuffleExecutorComponents
+      )
       writer.write(records)
       writer.stop( /* success = */ true)
       assert(temporaryFilesCreated.nonEmpty)
       assert(writer.getPartitionLengths.sum === outputFile.length())
-      assert(writer.getPartitionLengths.count(_ == 0L) === 4) // should be 4 zero length files
-      assert(temporaryFilesCreated.count(_.exists()) === 0) // check that temp files were deleted
+      assert(
+        writer.getPartitionLengths.count(_ == 0L) === 4
+      ) // should be 4 zero length files
+      assert(
+        temporaryFilesCreated.count(_.exists()) === 0
+      ) // check that temp files were deleted
       val shuffleWriteMetrics = taskContext.taskMetrics().shuffleWriteMetrics
       assert(shuffleWriteMetrics.bytesWritten === outputFile.length())
       assert(shuffleWriteMetrics.recordsWritten === records.length)
@@ -214,7 +243,8 @@ class BypassMergeSortShuffleWriterSuite
       0L, // MapId
       conf,
       taskContext.taskMetrics().shuffleWriteMetrics,
-      shuffleExecutorComponents)
+      shuffleExecutorComponents
+    )
 
     intercept[SparkException] {
       writer.write(records)
@@ -225,7 +255,9 @@ class BypassMergeSortShuffleWriterSuite
     assert(temporaryFilesCreated.count(_.exists()) === 3)
 
     writer.stop( /* success = */ false)
-    assert(temporaryFilesCreated.count(_.exists()) === 0) // check that temporary files were deleted
+    assert(
+      temporaryFilesCreated.count(_.exists()) === 0
+    ) // check that temporary files were deleted
   }
 
   test("cleanup of intermediate files after errors") {
@@ -235,7 +267,8 @@ class BypassMergeSortShuffleWriterSuite
       0L, // MapId
       conf,
       taskContext.taskMetrics().shuffleWriteMetrics,
-      shuffleExecutorComponents)
+      shuffleExecutorComponents
+    )
     intercept[SparkException] {
       writer.write((0 until 100000).iterator.map(i => {
         if (i == 99990) {
@@ -258,12 +291,16 @@ class BypassMergeSortShuffleWriterSuite
     val indexBlockId = ShuffleIndexBlockId(shuffleId, mapId, 0)
     val checksumAlgorithm = conf.get(config.SHUFFLE_CHECKSUM_ALGORITHM)
     val checksumFileName = ShuffleChecksumHelper.getChecksumFileName(
-      checksumBlockId.name, checksumAlgorithm)
+      checksumBlockId.name,
+      checksumAlgorithm
+    )
     val checksumFile = new File(tempDir, checksumFileName)
     val dataFile = new File(tempDir, dataBlockId.name)
     val indexFile = new File(tempDir, indexBlockId.name)
     reset(diskBlockManager)
-    when(diskBlockManager.getFile(checksumFileName)).thenAnswer(_ => checksumFile)
+    when(diskBlockManager.getFile(checksumFileName)).thenAnswer(_ =>
+      checksumFile
+    )
     when(diskBlockManager.getFile(dataBlockId)).thenAnswer(_ => dataFile)
     when(diskBlockManager.getFile(indexBlockId)).thenAnswer(_ => indexFile)
     when(diskBlockManager.createTempShuffleBlock())
@@ -286,12 +323,21 @@ class BypassMergeSortShuffleWriterSuite
       mapId,
       conf,
       taskContext.taskMetrics().shuffleWriteMetrics,
-      new LocalDiskShuffleExecutorComponents(conf, blockManager, blockResolver))
+      new LocalDiskShuffleExecutorComponents(conf, blockManager, blockResolver)
+    )
 
-    writer.write(Iterator((0, 0), (1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6)))
+    writer.write(
+      Iterator((0, 0), (1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6))
+    )
     writer.stop( /* success = */ true)
     assert(checksumFile.exists())
     assert(checksumFile.length() === 8 * numPartition)
-    compareChecksums(numPartition, checksumAlgorithm, checksumFile, dataFile, indexFile)
+    compareChecksums(
+      numPartition,
+      checksumAlgorithm,
+      checksumFile,
+      dataFile,
+      indexFile
+    )
   }
 }

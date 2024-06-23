@@ -31,7 +31,12 @@ import org.apache.hadoop.io.{LongWritable, Text}
 import org.apache.hadoop.mapred.TextInputFormat
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 
-import org.apache.spark.{LocalSparkContext, SparkConf, SparkContext, SparkFunSuite}
+import org.apache.spark.{
+  LocalSparkContext,
+  SparkConf,
+  SparkContext,
+  SparkFunSuite
+}
 import org.apache.spark.api.java.JavaSparkContext
 import org.apache.spark.rdd.{HadoopRDD, RDD}
 import org.apache.spark.security.{SocketAuthHelper, SocketAuthServer}
@@ -55,7 +60,7 @@ class PythonRDDSuite extends SparkFunSuite with LocalSparkContext {
   }
 
   test("Writing large strings to the worker") {
-    val input: List[String] = List("a"*100000)
+    val input: List[String] = List("a" * 100000)
     val buffer = new DataOutputStream(new ByteArrayOutputStream)
     PythonRDD.writeIteratorToStream(input.iterator, buffer)
   }
@@ -66,13 +71,26 @@ class PythonRDDSuite extends SparkFunSuite with LocalSparkContext {
     // The correctness will be tested in Python
     PythonRDD.writeIteratorToStream(Iterator("a", null), buffer)
     PythonRDD.writeIteratorToStream(Iterator(null, "a"), buffer)
-    PythonRDD.writeIteratorToStream(Iterator("a".getBytes(StandardCharsets.UTF_8), null), buffer)
-    PythonRDD.writeIteratorToStream(Iterator(null, "a".getBytes(StandardCharsets.UTF_8)), buffer)
-    PythonRDD.writeIteratorToStream(Iterator((null, null), ("a", null), (null, "b")), buffer)
-    PythonRDD.writeIteratorToStream(Iterator(
-      (null, null),
-      ("a".getBytes(StandardCharsets.UTF_8), null),
-      (null, "b".getBytes(StandardCharsets.UTF_8))), buffer)
+    PythonRDD.writeIteratorToStream(
+      Iterator("a".getBytes(StandardCharsets.UTF_8), null),
+      buffer
+    )
+    PythonRDD.writeIteratorToStream(
+      Iterator(null, "a".getBytes(StandardCharsets.UTF_8)),
+      buffer
+    )
+    PythonRDD.writeIteratorToStream(
+      Iterator((null, null), ("a", null), (null, "b")),
+      buffer
+    )
+    PythonRDD.writeIteratorToStream(
+      Iterator(
+        (null, null),
+        ("a".getBytes(StandardCharsets.UTF_8), null),
+        (null, "b".getBytes(StandardCharsets.UTF_8))
+      ),
+      buffer
+    )
   }
 
   test("python server error handling") {
@@ -80,8 +98,12 @@ class PythonRDDSuite extends SparkFunSuite with LocalSparkContext {
     val errorServer = new ExceptionPythonServer(authHelper)
     val client = new Socket(InetAddress.getLoopbackAddress(), errorServer.port)
     authHelper.authToServer(client)
-    val ex = intercept[Exception] { errorServer.getResult(Duration(1, "second")) }
-    assert(ex.getCause().getMessage().contains("exception within handleConnection"))
+    val ex = intercept[Exception] {
+      errorServer.getResult(Duration(1, "second"))
+    }
+    assert(
+      ex.getCause().getMessage().contains("exception within handleConnection")
+    )
   }
 
   class ExceptionPythonServer(authHelper: SocketAuthHelper)
@@ -134,8 +156,8 @@ class PythonRDDSuite extends SparkFunSuite with LocalSparkContext {
     @tailrec
     def getRootRDD(rdd: RDD[_]): RDD[_] = {
       rdd.dependencies match {
-       case Nil => rdd
-       case dependency :: _ => getRootRDD(dependency.rdd)
+        case Nil             => rdd
+        case dependency :: _ => getRootRDD(dependency.rdd)
       }
     }
 

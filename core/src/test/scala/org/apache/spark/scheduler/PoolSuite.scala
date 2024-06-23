@@ -23,32 +23,55 @@ import java.util.Properties
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.util.VersionInfo
 
-import org.apache.spark.{LocalSparkContext, SparkConf, SparkContext, SparkFunSuite, TestUtils}
+import org.apache.spark.{
+  LocalSparkContext,
+  SparkConf,
+  SparkContext,
+  SparkFunSuite,
+  TestUtils
+}
 import org.apache.spark.internal.config.SCHEDULER_ALLOCATION_FILE
 import org.apache.spark.resource.ResourceProfile
 import org.apache.spark.scheduler.SchedulingMode._
 import org.apache.spark.util.Utils
 
-/**
- * Tests that pools and the associated scheduling algorithms for FIFO and fair scheduling work
- * correctly.
- */
+/** Tests that pools and the associated scheduling algorithms for FIFO and fair scheduling work
+  * correctly.
+  */
 class PoolSuite extends SparkFunSuite with LocalSparkContext {
 
   val LOCAL = "local"
   val APP_NAME = "PoolSuite"
   val TEST_POOL = "testPool"
 
-  def createTaskSetManager(stageId: Int, numTasks: Int, taskScheduler: TaskSchedulerImpl)
-    : TaskSetManager = {
+  def createTaskSetManager(
+      stageId: Int,
+      numTasks: Int,
+      taskScheduler: TaskSchedulerImpl
+  ): TaskSetManager = {
     val tasks = Array.tabulate[Task[_]](numTasks) { i =>
       new FakeTask(stageId, i, Nil)
     }
-    new TaskSetManager(taskScheduler, new TaskSet(tasks, stageId, 0, 0, null,
-      ResourceProfile.DEFAULT_RESOURCE_PROFILE_ID, None), 0)
+    new TaskSetManager(
+      taskScheduler,
+      new TaskSet(
+        tasks,
+        stageId,
+        0,
+        0,
+        null,
+        ResourceProfile.DEFAULT_RESOURCE_PROFILE_ID,
+        None
+      ),
+      0
+    )
   }
 
-  def scheduleTaskAndVerifyId(taskId: Int, rootPool: Pool, expectedStageId: Int): Unit = {
+  def scheduleTaskAndVerifyId(
+      taskId: Int,
+      rootPool: Pool,
+      expectedStageId: Int
+  ): Unit = {
     val taskSetQueue = rootPool.getSortedTaskSetQueue
     val nextTaskSetToSchedule =
       taskSetQueue.find(t => (t.runningTasks + t.tasksSuccessful) < t.numTasks)
@@ -79,13 +102,13 @@ class PoolSuite extends SparkFunSuite with LocalSparkContext {
     scheduleTaskAndVerifyId(5, rootPool, 2)
   }
 
-  /**
-   * This test creates three scheduling pools, and creates task set managers in the first
-   * two scheduling pools. The test verifies that as tasks are scheduled, the fair scheduling
-   * algorithm properly orders the two scheduling pools.
-   */
+  /** This test creates three scheduling pools, and creates task set managers in the first
+    * two scheduling pools. The test verifies that as tasks are scheduled, the fair scheduling
+    * algorithm properly orders the two scheduling pools.
+    */
   test("Fair Scheduler Test") {
-    val xmlPath = getClass.getClassLoader.getResource("fairscheduler.xml").getFile()
+    val xmlPath =
+      getClass.getClassLoader.getResource("fairscheduler.xml").getFile()
     val conf = new SparkConf().set(SCHEDULER_ALLOCATION_FILE, xmlPath)
     sc = new SparkContext(LOCAL, APP_NAME, conf)
     val taskScheduler = new TaskSchedulerImpl(sc)
@@ -185,8 +208,11 @@ class PoolSuite extends SparkFunSuite with LocalSparkContext {
     scheduleTaskAndVerifyId(3, rootPool, 2)
   }
 
-  test("SPARK-17663: FairSchedulableBuilder sets default values for blank or invalid datas") {
-    val xmlPath = getClass.getClassLoader.getResource("fairscheduler-with-invalid-data.xml")
+  test(
+    "SPARK-17663: FairSchedulableBuilder sets default values for blank or invalid datas"
+  ) {
+    val xmlPath = getClass.getClassLoader
+      .getResource("fairscheduler-with-invalid-data.xml")
       .getFile()
     val conf = new SparkConf().set(SCHEDULER_ALLOCATION_FILE, xmlPath)
     sc = new SparkContext(LOCAL, APP_NAME, conf)
@@ -210,19 +236,21 @@ class PoolSuite extends SparkFunSuite with LocalSparkContext {
     verifyPool(rootPool, "pool_with_surrounded_whitespace", 3, 2, FAIR)
   }
 
-  /**
-   * spark.scheduler.pool property should be ignored for the FIFO scheduler,
-   * because pools are only needed for fair scheduling.
-   */
+  /** spark.scheduler.pool property should be ignored for the FIFO scheduler,
+    * because pools are only needed for fair scheduling.
+    */
   test("FIFO scheduler uses root pool and not spark.scheduler.pool property") {
     sc = new SparkContext("local", "PoolSuite")
     val taskScheduler = new TaskSchedulerImpl(sc)
 
-    val rootPool = new Pool("", SchedulingMode.FIFO, initMinShare = 0, initWeight = 0)
+    val rootPool =
+      new Pool("", SchedulingMode.FIFO, initMinShare = 0, initWeight = 0)
     val schedulableBuilder = new FIFOSchedulableBuilder(rootPool)
 
-    val taskSetManager0 = createTaskSetManager(stageId = 0, numTasks = 1, taskScheduler)
-    val taskSetManager1 = createTaskSetManager(stageId = 1, numTasks = 1, taskScheduler)
+    val taskSetManager0 =
+      createTaskSetManager(stageId = 0, numTasks = 1, taskScheduler)
+    val taskSetManager1 =
+      createTaskSetManager(stageId = 1, numTasks = 1, taskScheduler)
 
     val properties = new Properties()
     properties.setProperty(SparkContext.SPARK_SCHEDULER_POOL, TEST_POOL)
@@ -235,52 +263,73 @@ class PoolSuite extends SparkFunSuite with LocalSparkContext {
 
     assert(rootPool.getSchedulableByName(TEST_POOL) === null)
     assert(rootPool.schedulableQueue.size === 2)
-    assert(rootPool.getSchedulableByName(taskSetManager0.name) === taskSetManager0)
-    assert(rootPool.getSchedulableByName(taskSetManager1.name) === taskSetManager1)
+    assert(
+      rootPool.getSchedulableByName(taskSetManager0.name) === taskSetManager0
+    )
+    assert(
+      rootPool.getSchedulableByName(taskSetManager1.name) === taskSetManager1
+    )
   }
 
-  test("FAIR Scheduler uses default pool when spark.scheduler.pool property is not set") {
+  test(
+    "FAIR Scheduler uses default pool when spark.scheduler.pool property is not set"
+  ) {
     sc = new SparkContext("local", "PoolSuite")
     val taskScheduler = new TaskSchedulerImpl(sc)
 
-    val rootPool = new Pool("", SchedulingMode.FAIR, initMinShare = 0, initWeight = 0)
+    val rootPool =
+      new Pool("", SchedulingMode.FAIR, initMinShare = 0, initWeight = 0)
     val schedulableBuilder = new FairSchedulableBuilder(rootPool, sc)
     schedulableBuilder.buildPools()
 
     // Submit a new task set manager with pool properties set to null. This should result
     // in the task set manager getting added to the default pool.
-    val taskSetManager0 = createTaskSetManager(stageId = 0, numTasks = 1, taskScheduler)
+    val taskSetManager0 =
+      createTaskSetManager(stageId = 0, numTasks = 1, taskScheduler)
     schedulableBuilder.addTaskSetManager(taskSetManager0, null)
 
-    val defaultPool = rootPool.getSchedulableByName(schedulableBuilder.DEFAULT_POOL_NAME)
+    val defaultPool =
+      rootPool.getSchedulableByName(schedulableBuilder.DEFAULT_POOL_NAME)
     assert(defaultPool !== null)
     assert(defaultPool.schedulableQueue.size === 1)
-    assert(defaultPool.getSchedulableByName(taskSetManager0.name) === taskSetManager0)
+    assert(
+      defaultPool.getSchedulableByName(taskSetManager0.name) === taskSetManager0
+    )
 
     // When a task set manager is submitted with spark.scheduler.pool unset, it should be added to
     // the default pool (as above).
-    val taskSetManager1 = createTaskSetManager(stageId = 1, numTasks = 1, taskScheduler)
+    val taskSetManager1 =
+      createTaskSetManager(stageId = 1, numTasks = 1, taskScheduler)
     schedulableBuilder.addTaskSetManager(taskSetManager1, new Properties())
 
     assert(defaultPool.schedulableQueue.size === 2)
-    assert(defaultPool.getSchedulableByName(taskSetManager1.name) === taskSetManager1)
+    assert(
+      defaultPool.getSchedulableByName(taskSetManager1.name) === taskSetManager1
+    )
   }
 
-  test("FAIR Scheduler creates a new pool when spark.scheduler.pool property points to " +
-      "a non-existent pool") {
+  test(
+    "FAIR Scheduler creates a new pool when spark.scheduler.pool property points to " +
+      "a non-existent pool"
+  ) {
     sc = new SparkContext("local", "PoolSuite")
     val taskScheduler = new TaskSchedulerImpl(sc)
 
-    val rootPool = new Pool("", SchedulingMode.FAIR, initMinShare = 0, initWeight = 0)
+    val rootPool =
+      new Pool("", SchedulingMode.FAIR, initMinShare = 0, initWeight = 0)
     val schedulableBuilder = new FairSchedulableBuilder(rootPool, sc)
     schedulableBuilder.buildPools()
 
     assert(rootPool.getSchedulableByName(TEST_POOL) === null)
 
-    val taskSetManager = createTaskSetManager(stageId = 0, numTasks = 1, taskScheduler)
+    val taskSetManager =
+      createTaskSetManager(stageId = 0, numTasks = 1, taskScheduler)
 
     val properties = new Properties()
-    properties.setProperty(schedulableBuilder.FAIR_SCHEDULER_PROPERTIES, TEST_POOL)
+    properties.setProperty(
+      schedulableBuilder.FAIR_SCHEDULER_PROPERTIES,
+      TEST_POOL
+    )
 
     // The fair scheduler should create a new pool with default values when spark.scheduler.pool
     // points to a pool that doesn't exist yet (this can happen when the file that pools are read
@@ -288,21 +337,34 @@ class PoolSuite extends SparkFunSuite with LocalSparkContext {
     // by spark.scheduler.pool).
     schedulableBuilder.addTaskSetManager(taskSetManager, properties)
 
-    verifyPool(rootPool, TEST_POOL, schedulableBuilder.DEFAULT_MINIMUM_SHARE,
-      schedulableBuilder.DEFAULT_WEIGHT, schedulableBuilder.DEFAULT_SCHEDULING_MODE)
+    verifyPool(
+      rootPool,
+      TEST_POOL,
+      schedulableBuilder.DEFAULT_MINIMUM_SHARE,
+      schedulableBuilder.DEFAULT_WEIGHT,
+      schedulableBuilder.DEFAULT_SCHEDULING_MODE
+    )
     val testPool = rootPool.getSchedulableByName(TEST_POOL)
-    assert(testPool.getSchedulableByName(taskSetManager.name) === taskSetManager)
+    assert(
+      testPool.getSchedulableByName(taskSetManager.name) === taskSetManager
+    )
   }
 
-  test("Pool should throw IllegalArgumentException when schedulingMode is not supported") {
+  test(
+    "Pool should throw IllegalArgumentException when schedulingMode is not supported"
+  ) {
     intercept[IllegalArgumentException] {
       new Pool("TestPool", SchedulingMode.NONE, 0, 1)
     }
   }
 
-  test("Fair Scheduler should build fair scheduler when " +
-    "valid spark.scheduler.allocation.file property is set") {
-    val xmlPath = getClass.getClassLoader.getResource("fairscheduler-with-valid-data.xml").getFile()
+  test(
+    "Fair Scheduler should build fair scheduler when " +
+      "valid spark.scheduler.allocation.file property is set"
+  ) {
+    val xmlPath = getClass.getClassLoader
+      .getResource("fairscheduler-with-valid-data.xml")
+      .getFile()
     val conf = new SparkConf().set(SCHEDULER_ALLOCATION_FILE, xmlPath)
     sc = new SparkContext(LOCAL, APP_NAME, conf)
 
@@ -316,8 +378,10 @@ class PoolSuite extends SparkFunSuite with LocalSparkContext {
     verifyPool(rootPool, "pool3", 2, 3, FAIR)
   }
 
-  test("Fair Scheduler should use default file(fairscheduler.xml) if it exists in classpath " +
-    "and spark.scheduler.allocation.file property is not set") {
+  test(
+    "Fair Scheduler should use default file(fairscheduler.xml) if it exists in classpath " +
+      "and spark.scheduler.allocation.file property is not set"
+  ) {
     val conf = new SparkConf()
     sc = new SparkContext(LOCAL, APP_NAME, conf)
 
@@ -331,9 +395,12 @@ class PoolSuite extends SparkFunSuite with LocalSparkContext {
     verifyPool(rootPool, "3", 0, 1, FIFO)
   }
 
-  test("Fair Scheduler should throw FileNotFoundException " +
-    "when invalid spark.scheduler.allocation.file property is set") {
-    val conf = new SparkConf().set(SCHEDULER_ALLOCATION_FILE, "INVALID_FILE_PATH")
+  test(
+    "Fair Scheduler should throw FileNotFoundException " +
+      "when invalid spark.scheduler.allocation.file property is set"
+  ) {
+    val conf =
+      new SparkConf().set(SCHEDULER_ALLOCATION_FILE, "INVALID_FILE_PATH")
     sc = new SparkContext(LOCAL, APP_NAME, conf)
 
     val rootPool = new Pool("", SchedulingMode.FAIR, 0, 0)
@@ -346,14 +413,21 @@ class PoolSuite extends SparkFunSuite with LocalSparkContext {
   test("SPARK-35083: Support remote scheduler pool file") {
     val hadoopVersion = VersionInfo.getVersion.split("\\.")
     // HttpFileSystem supported since hadoop 2.9
-    assume(hadoopVersion.head.toInt >= 3 ||
-      (hadoopVersion.head.toInt == 2 && hadoopVersion(1).toInt >= 9))
+    assume(
+      hadoopVersion.head.toInt >= 3 ||
+        (hadoopVersion.head.toInt == 2 && hadoopVersion(1).toInt >= 9)
+    )
 
     val xmlPath = new Path(
-      Utils.getSparkClassLoader.getResource("fairscheduler-with-valid-data.xml").getFile)
+      Utils.getSparkClassLoader
+        .getResource("fairscheduler-with-valid-data.xml")
+        .getFile
+    )
     TestUtils.withHttpServer(xmlPath.getParent.toUri.getPath) { baseURL =>
-      val conf = new SparkConf().set(SCHEDULER_ALLOCATION_FILE,
-        baseURL.toString + "fairscheduler-with-valid-data.xml")
+      val conf = new SparkConf().set(
+        SCHEDULER_ALLOCATION_FILE,
+        baseURL.toString + "fairscheduler-with-valid-data.xml"
+      )
       sc = new SparkContext(LOCAL, APP_NAME, conf)
 
       val rootPool = new Pool("", SchedulingMode.FAIR, 0, 0)
@@ -367,8 +441,13 @@ class PoolSuite extends SparkFunSuite with LocalSparkContext {
     }
   }
 
-  private def verifyPool(rootPool: Pool, poolName: String, expectedInitMinShare: Int,
-                         expectedInitWeight: Int, expectedSchedulingMode: SchedulingMode): Unit = {
+  private def verifyPool(
+      rootPool: Pool,
+      poolName: String,
+      expectedInitMinShare: Int,
+      expectedInitWeight: Int,
+      expectedSchedulingMode: SchedulingMode
+  ): Unit = {
     val selectedPool = rootPool.getSchedulableByName(poolName)
     assert(selectedPool !== null)
     assert(selectedPool.minShare === expectedInitMinShare)

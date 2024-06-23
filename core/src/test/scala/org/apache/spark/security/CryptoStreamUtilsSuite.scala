@@ -38,7 +38,8 @@ class CryptoStreamUtilsSuite extends SparkFunSuite {
     val sparkVal1 = "val1"
     val cryptoKey1 = s"${CryptoUtils.COMMONS_CRYPTO_CONFIG_PREFIX}a.b.c"
 
-    val sparkKey2 = SPARK_IO_ENCRYPTION_COMMONS_CONFIG_PREFIX.stripSuffix(".") + "A.b.c"
+    val sparkKey2 =
+      SPARK_IO_ENCRYPTION_COMMONS_CONFIG_PREFIX.stripSuffix(".") + "A.b.c"
     val sparkVal2 = "val2"
     val cryptoKey2 = s"${CryptoUtils.COMMONS_CRYPTO_CONFIG_PREFIX}A.b.c"
     val conf = new SparkConf()
@@ -78,11 +79,12 @@ class CryptoStreamUtilsSuite extends SparkFunSuite {
     val plainStr = "hello world"
     val blockId = new TempShuffleBlockId(UUID.randomUUID())
     val key = Some(CryptoStreamUtils.createKey(conf))
-    val serializerManager = new SerializerManager(new JavaSerializer(conf), conf,
-      encryptionKey = key)
+    val serializerManager =
+      new SerializerManager(new JavaSerializer(conf), conf, encryptionKey = key)
 
     val outputStream = new ByteArrayOutputStream()
-    val wrappedOutputStream = serializerManager.wrapStream(blockId, outputStream)
+    val wrappedOutputStream =
+      serializerManager.wrapStream(blockId, outputStream)
     wrappedOutputStream.write(plainStr.getBytes(UTF_8))
     wrappedOutputStream.close()
 
@@ -98,24 +100,34 @@ class CryptoStreamUtilsSuite extends SparkFunSuite {
   }
 
   test("encryption key propagation to executors") {
-    val conf = createConf().setAppName("Crypto Test").setMaster("local-cluster[1,1,1024]")
+    val conf = createConf()
+      .setAppName("Crypto Test")
+      .setMaster("local-cluster[1,1,1024]")
     val sc = new SparkContext(conf)
     try {
       val content = "This is the content to be encrypted."
-      val encrypted = sc.parallelize(Seq(1))
+      val encrypted = sc
+        .parallelize(Seq(1))
         .map { str =>
           val bytes = new ByteArrayOutputStream()
-          val out = CryptoStreamUtils.createCryptoOutputStream(bytes, SparkEnv.get.conf,
-            SparkEnv.get.securityManager.getIOEncryptionKey().get)
+          val out = CryptoStreamUtils.createCryptoOutputStream(
+            bytes,
+            SparkEnv.get.conf,
+            SparkEnv.get.securityManager.getIOEncryptionKey().get
+          )
           out.write(content.getBytes(UTF_8))
           out.close()
           bytes.toByteArray()
-        }.collect()(0)
+        }
+        .collect()(0)
 
       assert(content != encrypted)
 
-      val in = CryptoStreamUtils.createCryptoInputStream(new ByteArrayInputStream(encrypted),
-        sc.conf, SparkEnv.get.securityManager.getIOEncryptionKey().get)
+      val in = CryptoStreamUtils.createCryptoInputStream(
+        new ByteArrayInputStream(encrypted),
+        sc.conf,
+        SparkEnv.get.securityManager.getIOEncryptionKey().get
+      )
       val decrypted = new String(ByteStreams.toByteArray(in), UTF_8)
       assert(content === decrypted)
     } finally {
@@ -132,7 +144,8 @@ class CryptoStreamUtilsSuite extends SparkFunSuite {
     val file = Files.createTempFile("crypto", ".test").toFile()
     file.deleteOnExit()
 
-    val outStream = createCryptoOutputStream(new FileOutputStream(file), conf, key)
+    val outStream =
+      createCryptoOutputStream(new FileOutputStream(file), conf, key)
     try {
       ByteStreams.copy(new ByteArrayInputStream(testData), outStream)
     } finally {
@@ -147,17 +160,21 @@ class CryptoStreamUtilsSuite extends SparkFunSuite {
       inStream.close()
     }
 
-    val outChannel = createWritableChannel(new FileOutputStream(file).getChannel(), conf, key)
+    val outChannel =
+      createWritableChannel(new FileOutputStream(file).getChannel(), conf, key)
     try {
-      val inByteChannel = Channels.newChannel(new ByteArrayInputStream(testData))
+      val inByteChannel =
+        Channels.newChannel(new ByteArrayInputStream(testData))
       ByteStreams.copy(inByteChannel, outChannel)
     } finally {
       outChannel.close()
     }
 
-    val inChannel = createReadableChannel(new FileInputStream(file).getChannel(), conf, key)
+    val inChannel =
+      createReadableChannel(new FileInputStream(file).getChannel(), conf, key)
     try {
-      val inChannelData = ByteStreams.toByteArray(Channels.newInputStream(inChannel))
+      val inChannelData =
+        ByteStreams.toByteArray(Channels.newInputStream(inChannel))
       assert(Arrays.equals(inChannelData, testData))
     } finally {
       inChannel.close()

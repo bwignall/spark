@@ -23,21 +23,43 @@ class CountEvaluatorSuite extends SparkFunSuite {
 
   test("test count 0") {
     val evaluator = new CountEvaluator(10, 0.95)
-    assert(evaluator.currentResult() === new BoundedDouble(0.0, 0.0, 0.0, Double.PositiveInfinity))
+    assert(
+      evaluator.currentResult() === new BoundedDouble(
+        0.0,
+        0.0,
+        0.0,
+        Double.PositiveInfinity
+      )
+    )
     evaluator.merge(1, 0)
-    assert(evaluator.currentResult() === new BoundedDouble(0.0, 0.0, 0.0, Double.PositiveInfinity))
+    assert(
+      evaluator.currentResult() === new BoundedDouble(
+        0.0,
+        0.0,
+        0.0,
+        Double.PositiveInfinity
+      )
+    )
   }
 
   test("test count >= 1") {
     val evaluator = new CountEvaluator(10, 0.95)
     evaluator.merge(1, 1)
-    assert(evaluator.currentResult() === new BoundedDouble(10.0, 0.95, 5.0, 16.0))
+    assert(
+      evaluator.currentResult() === new BoundedDouble(10.0, 0.95, 5.0, 16.0)
+    )
     evaluator.merge(1, 3)
-    assert(evaluator.currentResult() === new BoundedDouble(20.0, 0.95, 13.0, 28.0))
+    assert(
+      evaluator.currentResult() === new BoundedDouble(20.0, 0.95, 13.0, 28.0)
+    )
     evaluator.merge(1, 8)
-    assert(evaluator.currentResult() === new BoundedDouble(40.0, 0.95, 30.0, 51.0))
+    assert(
+      evaluator.currentResult() === new BoundedDouble(40.0, 0.95, 30.0, 51.0)
+    )
     (4 to 10).foreach(_ => evaluator.merge(1, 10))
-    assert(evaluator.currentResult() === new BoundedDouble(82.0, 1.0, 82.0, 82.0))
+    assert(
+      evaluator.currentResult() === new BoundedDouble(82.0, 1.0, 82.0, 82.0)
+    )
   }
 
 }

@@ -23,7 +23,9 @@ import org.apache.spark.SparkFunSuite
 
 class HadoopRDDSuite extends SparkFunSuite {
 
-  test("SPARK-38922: HadoopRDD convertSplitLocationInfo contains Some(null) cause NPE") {
+  test(
+    "SPARK-38922: HadoopRDD convertSplitLocationInfo contains Some(null) cause NPE"
+  ) {
     val locs = Array(new SplitLocationInfo(null, false))
     assert(HadoopRDD.convertSplitLocationInfo(locs).get.isEmpty)
   }

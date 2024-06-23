@@ -19,9 +19,8 @@ package org.apache.spark.memory
 
 import org.apache.spark.{SparkConf, SparkFunSuite}
 
-/**
- * Tests of [[TestMemoryManager]] itself.
- */
+/** Tests of [[TestMemoryManager]] itself.
+  */
 class TestMemoryManagerSuite extends SparkFunSuite {
   test("tracks allocated execution memory by task") {
     val testMemoryManager = new TestMemoryManager(new SparkConf())
@@ -46,10 +45,18 @@ class TestMemoryManagerSuite extends SparkFunSuite {
 
   test("markconsequentOOM") {
     val testMemoryManager = new TestMemoryManager(new SparkConf())
-    assert(testMemoryManager.acquireExecutionMemory(1, 0, MemoryMode.ON_HEAP) == 1)
+    assert(
+      testMemoryManager.acquireExecutionMemory(1, 0, MemoryMode.ON_HEAP) == 1
+    )
     testMemoryManager.markconsequentOOM(2)
-    assert(testMemoryManager.acquireExecutionMemory(1, 0, MemoryMode.ON_HEAP) == 0)
-    assert(testMemoryManager.acquireExecutionMemory(1, 0, MemoryMode.ON_HEAP) == 0)
-    assert(testMemoryManager.acquireExecutionMemory(1, 0, MemoryMode.ON_HEAP) == 1)
+    assert(
+      testMemoryManager.acquireExecutionMemory(1, 0, MemoryMode.ON_HEAP) == 0
+    )
+    assert(
+      testMemoryManager.acquireExecutionMemory(1, 0, MemoryMode.ON_HEAP) == 0
+    )
+    assert(
+      testMemoryManager.acquireExecutionMemory(1, 0, MemoryMode.ON_HEAP) == 1
+    )
   }
 }

@@ -21,11 +21,10 @@ import java.io.{DataOutputStream, File, FileOutputStream}
 
 import org.apache.spark.{SparkConf, SparkContext, SparkFunSuite}
 
-/**
- * Tests the correctness of
- * [[org.apache.spark.input.WholeTextFileInputFormat WholeTextFileInputFormat]]. A temporary
- * directory containing files is created as fake input which is deleted in the end.
- */
+/** Tests the correctness of
+  * [[org.apache.spark.input.WholeTextFileInputFormat WholeTextFileInputFormat]]. A temporary
+  * directory containing files is created as fake input which is deleted in the end.
+  */
 class WholeTextFileInputFormatSuite extends SparkFunSuite {
   private var sc: SparkContext = _
 
@@ -43,24 +42,34 @@ class WholeTextFileInputFormatSuite extends SparkFunSuite {
     }
   }
 
-  private def createNativeFile(inputDir: File, fileName: String, contents: Array[Byte],
-                               compress: Boolean) = {
+  private def createNativeFile(
+      inputDir: File,
+      fileName: String,
+      contents: Array[Byte],
+      compress: Boolean
+  ) = {
     val path = s"${inputDir.toString}/$fileName"
     val out = new DataOutputStream(new FileOutputStream(path))
     out.write(contents, 0, contents.length)
     out.close()
   }
 
-  test("for small files minimum split size per node and per rack should be less than or equal to " +
-    "maximum split size.") {
+  test(
+    "for small files minimum split size per node and per rack should be less than or equal to " +
+      "maximum split size."
+  ) {
     withTempDir { dir =>
       logInfo(s"Local disk address is ${dir.toString}.")
 
       // Set the minsize per node and rack to be larger than the size of the input file.
       sc.hadoopConfiguration.setLong(
-        "mapreduce.input.fileinputformat.split.minsize.per.node", 123456)
+        "mapreduce.input.fileinputformat.split.minsize.per.node",
+        123456
+      )
       sc.hadoopConfiguration.setLong(
-        "mapreduce.input.fileinputformat.split.minsize.per.rack", 123456)
+        "mapreduce.input.fileinputformat.split.minsize.per.rack",
+        123456
+      )
 
       WholeTextFileInputFormatSuite.files.foreach { case (filename, contents) =>
         createNativeFile(dir, filename, contents, false)
@@ -71,16 +80,23 @@ class WholeTextFileInputFormatSuite extends SparkFunSuite {
   }
 }
 
-/**
- * Files to be tested are defined here.
- */
+/** Files to be tested are defined here.
+  */
 object WholeTextFileInputFormatSuite {
-  private val testWords: IndexedSeq[Byte] = "Spark is easy to use.\n".map(_.toByte)
+  private val testWords: IndexedSeq[Byte] =
+    "Spark is easy to use.\n".map(_.toByte)
 
   private val fileNames = Array("part-00000", "part-00001", "part-00002")
   private val fileLengths = Array(10, 100, 1000)
 
-  private val files = fileLengths.zip(fileNames).map { case (upperBound, filename) =>
-    filename -> LazyList.continually(testWords.toList.to(LazyList)).flatten.take(upperBound).toArray
-  }.toMap
+  private val files = fileLengths
+    .zip(fileNames)
+    .map { case (upperBound, filename) =>
+      filename -> LazyList
+        .continually(testWords.toList.to(LazyList))
+        .flatten
+        .take(upperBound)
+        .toArray
+    }
+    .toMap
 }

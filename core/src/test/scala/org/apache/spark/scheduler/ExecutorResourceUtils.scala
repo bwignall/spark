@@ -19,8 +19,11 @@ package org.apache.spark.scheduler
 
 trait ExecutorResourceUtils {
 
-  def compareMaps(lhs: Map[String, Double], rhs: Map[String, Double],
-                  eps: Double = 0.00000001): Boolean = {
+  def compareMaps(
+      lhs: Map[String, Double],
+      rhs: Map[String, Double],
+      eps: Double = 0.00000001
+  ): Boolean = {
     lhs.size == rhs.size && lhs.forall { case (lName, lAmount) =>
       rhs.get(lName).exists(rAmount => (lAmount - rAmount).abs < eps)
     }

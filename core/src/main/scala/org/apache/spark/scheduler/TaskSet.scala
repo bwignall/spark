@@ -22,10 +22,9 @@ import java.util.Properties
 import org.apache.spark.internal.LogKeys.{STAGE_ATTEMPT, STAGE_ID}
 import org.apache.spark.internal.MessageWithContext
 
-/**
- * A set of tasks submitted together to the low-level TaskScheduler, usually representing
- * missing partitions of a particular stage.
- */
+/** A set of tasks submitted together to the low-level TaskScheduler, usually representing
+  * missing partitions of a particular stage.
+  */
 private[spark] class TaskSet(
     val tasks: Array[Task[_]],
     val stageId: Int,
@@ -33,7 +32,8 @@ private[spark] class TaskSet(
     val priority: Int,
     val properties: Properties,
     val resourceProfileId: Int,
-    val shuffleId: Option[Int]) {
+    val shuffleId: Option[Int]
+) {
   val id: String = s"$stageId.$stageAttemptId"
 
   override def toString: String = "TaskSet " + id

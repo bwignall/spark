@@ -22,15 +22,18 @@ import java.util.{Collections => JCollections}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{doNothing, mock, when}
 
-import org.apache.spark.shuffle.api.{ShuffleDataIO, ShuffleDriverComponents, ShuffleExecutorComponents}
+import org.apache.spark.shuffle.api.{
+  ShuffleDataIO,
+  ShuffleDriverComponents,
+  ShuffleExecutorComponents
+}
 
-/**
- * A test shuffle data IO implementation, which allows both executor and driver component to
- * be mocked.
- * Note: cannot intercept initialization of executor/driver currently.
- *
- */
-class TestShuffleDataIOWithMockedComponents(val conf: SparkConf) extends ShuffleDataIO {
+/** A test shuffle data IO implementation, which allows both executor and driver component to
+  * be mocked.
+  * Note: cannot intercept initialization of executor/driver currently.
+  */
+class TestShuffleDataIOWithMockedComponents(val conf: SparkConf)
+    extends ShuffleDataIO {
 
   // ShuffleDataIO must be initialized only after spark.app.id has been configured
   assert(conf.getOption("spark.app.id").isDefined)
@@ -43,7 +46,8 @@ class TestShuffleDataIOWithMockedComponents(val conf: SparkConf) extends Shuffle
 
   private val driverMock = {
     val m = mock(classOf[ShuffleDriverComponents])
-    when(m.initializeApplication()).thenReturn(JCollections.emptyMap[String, String]())
+    when(m.initializeApplication())
+      .thenReturn(JCollections.emptyMap[String, String]())
     m
   }
 

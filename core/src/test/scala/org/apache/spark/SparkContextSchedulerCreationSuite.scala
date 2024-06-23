@@ -19,27 +19,37 @@ package org.apache.spark
 
 import org.scalatest.PrivateMethodTester
 
-import org.apache.spark.scheduler.{SchedulerBackend, TaskScheduler, TaskSchedulerImpl}
+import org.apache.spark.scheduler.{
+  SchedulerBackend,
+  TaskScheduler,
+  TaskSchedulerImpl
+}
 import org.apache.spark.scheduler.cluster.StandaloneSchedulerBackend
 import org.apache.spark.scheduler.local.LocalSchedulerBackend
 import org.apache.spark.util.Utils
 
 class SparkContextSchedulerCreationSuite
-  extends SparkFunSuite with LocalSparkContext with PrivateMethodTester {
+    extends SparkFunSuite
+    with LocalSparkContext
+    with PrivateMethodTester {
 
   def noOp(taskSchedulerImpl: TaskSchedulerImpl): Unit = {}
 
-  def createTaskScheduler(master: String)(body: TaskSchedulerImpl => Unit = noOp): Unit =
+  def createTaskScheduler(master: String)(
+      body: TaskSchedulerImpl => Unit = noOp
+  ): Unit =
     createTaskScheduler(master, new SparkConf())(body)
 
-  def createTaskScheduler(
-      master: String,
-      conf: SparkConf)(body: TaskSchedulerImpl => Unit): Unit = {
+  def createTaskScheduler(master: String, conf: SparkConf)(
+      body: TaskSchedulerImpl => Unit
+  ): Unit = {
     // Create local SparkContext to setup a SparkEnv. We don't actually want to start() the
     // real schedulers, so we don't want to create a full SparkContext with the desired scheduler.
     sc = new SparkContext("local", "test", conf)
     val createTaskSchedulerMethod =
-      PrivateMethod[Tuple2[SchedulerBackend, TaskScheduler]](Symbol("createTaskScheduler"))
+      PrivateMethod[Tuple2[SchedulerBackend, TaskScheduler]](
+        Symbol("createTaskScheduler")
+      )
     val (_, sched) =
       SparkContext invokePrivate createTaskSchedulerMethod(sc, master)
     try {
@@ -62,7 +72,7 @@ class SparkContextSchedulerCreationSuite
     val sched = createTaskScheduler("local") { sched =>
       sched.backend match {
         case s: LocalSchedulerBackend => assert(s.totalCores === 1)
-        case _ => fail()
+        case _                        => fail()
       }
     }
   }
@@ -82,7 +92,7 @@ class SparkContextSchedulerCreationSuite
       assert(sched.maxTaskFailures === 1)
       sched.backend match {
         case s: LocalSchedulerBackend => assert(s.totalCores === 5)
-        case _ => fail()
+        case _                        => fail()
       }
     }
   }
@@ -103,7 +113,7 @@ class SparkContextSchedulerCreationSuite
       assert(sched.maxTaskFailures === 2)
       sched.backend match {
         case s: LocalSchedulerBackend => assert(s.totalCores === 4)
-        case _ => fail()
+        case _                        => fail()
       }
     }
   }
@@ -128,7 +138,7 @@ class SparkContextSchedulerCreationSuite
     val sched = createTaskScheduler("local", conf) { sched =>
       sched.backend match {
         case s: LocalSchedulerBackend => assert(s.defaultParallelism() === 16)
-        case _ => fail()
+        case _                        => fail()
       }
     }
   }
@@ -137,7 +147,7 @@ class SparkContextSchedulerCreationSuite
     createTaskScheduler("local-cluster[3, 14, 1024]") { sched =>
       sched.backend match {
         case s: StandaloneSchedulerBackend => // OK
-        case _ => fail()
+        case _                             => fail()
       }
     }
   }

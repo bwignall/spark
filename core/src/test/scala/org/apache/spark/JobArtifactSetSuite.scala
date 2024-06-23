@@ -22,7 +22,6 @@ import java.util.zip.{ZipEntry, ZipOutputStream}
 
 import org.apache.commons.io.IOUtils
 
-
 class JobArtifactSetSuite extends SparkFunSuite with LocalSparkContext {
 
   private def createZipFile(inFile: String, outFile: String): Unit = {
@@ -40,7 +39,8 @@ class JobArtifactSetSuite extends SparkFunSuite with LocalSparkContext {
   test("JobArtifactSet uses resources from SparkContext") {
     withTempDir { dir =>
       val jarPath = File.createTempFile("testJar", ".jar", dir).getAbsolutePath
-      val filePath = File.createTempFile("testFile", ".txt", dir).getAbsolutePath
+      val filePath =
+        File.createTempFile("testFile", ".txt", dir).getAbsolutePath
       val fileToZip = File.createTempFile("testFile", "", dir).getAbsolutePath
       val archivePath = s"$fileToZip.zip"
       createZipFile(fileToZip, archivePath)
@@ -76,19 +76,39 @@ class JobArtifactSetSuite extends SparkFunSuite with LocalSparkContext {
 
       JobArtifactSet.withActiveJobArtifactState(artifactState1) {
         JobArtifactSet.withActiveJobArtifactState(artifactState2) {
-          assert(JobArtifactSet.getActiveOrDefault(sc).state.get == artifactState2)
-          assert(JobArtifactSet.getActiveOrDefault(sc).state.get.replClassDirUri.get == "hjk")
+          assert(
+            JobArtifactSet.getActiveOrDefault(sc).state.get == artifactState2
+          )
+          assert(
+            JobArtifactSet
+              .getActiveOrDefault(sc)
+              .state
+              .get
+              .replClassDirUri
+              .get == "hjk"
+          )
         }
-        assert(JobArtifactSet.getActiveOrDefault(sc).state.get == artifactState1)
-        assert(JobArtifactSet.getActiveOrDefault(sc).state.get.replClassDirUri.get == "abc")
+        assert(
+          JobArtifactSet.getActiveOrDefault(sc).state.get == artifactState1
+        )
+        assert(
+          JobArtifactSet
+            .getActiveOrDefault(sc)
+            .state
+            .get
+            .replClassDirUri
+            .get == "abc"
+        )
       }
 
       assert(JobArtifactSet.getActiveOrDefault(sc).state.isEmpty)
     }
   }
 
-  test("SPARK-44476: JobArtifactState is not populated with all artifacts if none are " +
-    "explicitly added to it.") {
+  test(
+    "SPARK-44476: JobArtifactState is not populated with all artifacts if none are " +
+      "explicitly added to it."
+  ) {
     withTempDir { dir =>
       val conf = new SparkConf()
         .setAppName("test")
@@ -97,7 +117,8 @@ class JobArtifactSetSuite extends SparkFunSuite with LocalSparkContext {
       sc = new SparkContext(conf)
 
       val jarPath = File.createTempFile("testJar", ".jar", dir).getAbsolutePath
-      val filePath = File.createTempFile("testFile", ".txt", dir).getAbsolutePath
+      val filePath =
+        File.createTempFile("testFile", ".txt", dir).getAbsolutePath
       val fileToZip = File.createTempFile("testFile", "", dir).getAbsolutePath
       val archivePath = s"$fileToZip.zip"
       createZipFile(fileToZip, archivePath)

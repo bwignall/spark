@@ -22,25 +22,25 @@ import java.util.{Random => JavaRandom}
 import org.apache.spark.benchmark.{Benchmark, BenchmarkBase}
 import org.apache.spark.util.Utils.times
 
-/**
- * Benchmarks for pseudo random generators
- * To run this benchmark:
- * {{{
- *   1. without sbt:
- *      bin/spark-submit --class <this class> <spark core test jar>
- *   2. build/sbt "core/Test/runMain <this class>"
- *   3. generate result:
- *      SPARK_GENERATE_BENCHMARK_FILES=1 build/sbt "core/Test/runMain <this class>"
- *      Results will be written to "benchmarks/XORShiftRandomBenchmark-results.txt".
- * }}}
- */
+/** Benchmarks for pseudo random generators
+  * To run this benchmark:
+  * {{{
+  *   1. without sbt:
+  *      bin/spark-submit --class <this class> <spark core test jar>
+  *   2. build/sbt "core/Test/runMain <this class>"
+  *   3. generate result:
+  *      SPARK_GENERATE_BENCHMARK_FILES=1 build/sbt "core/Test/runMain <this class>"
+  *      Results will be written to "benchmarks/XORShiftRandomBenchmark-results.txt".
+  * }}}
+  */
 object XORShiftRandomBenchmark extends BenchmarkBase {
   val seed = 123456789101112L
   val javaRand = new JavaRandom(seed)
   val xorRand = new XORShiftRandom(seed)
 
   private def nextInt(numIters: Int, valuesPerIteration: Int): Unit = {
-    val benchmark = new Benchmark("nextInt", valuesPerIteration, output = output)
+    val benchmark =
+      new Benchmark("nextInt", valuesPerIteration, output = output)
 
     benchmark.addCase("java.util.Random", numIters) { _ =>
       times(valuesPerIteration) { javaRand.nextInt() }
@@ -54,7 +54,8 @@ object XORShiftRandomBenchmark extends BenchmarkBase {
   }
 
   private def nextLong(numIters: Int, valuesPerIteration: Int): Unit = {
-    val benchmark = new Benchmark("nextLong", valuesPerIteration, output = output)
+    val benchmark =
+      new Benchmark("nextLong", valuesPerIteration, output = output)
 
     benchmark.addCase("java.util.Random", numIters) { _ =>
       times(valuesPerIteration) { javaRand.nextLong() }
@@ -68,7 +69,8 @@ object XORShiftRandomBenchmark extends BenchmarkBase {
   }
 
   private def nextDouble(numIters: Int, valuesPerIteration: Int): Unit = {
-    val benchmark = new Benchmark("nextDouble", valuesPerIteration, output = output)
+    val benchmark =
+      new Benchmark("nextDouble", valuesPerIteration, output = output)
 
     benchmark.addCase("java.util.Random", numIters) { _ =>
       times(valuesPerIteration) { javaRand.nextDouble() }
@@ -82,7 +84,8 @@ object XORShiftRandomBenchmark extends BenchmarkBase {
   }
 
   private def nextGaussian(numIters: Int, valuesPerIteration: Int): Unit = {
-    val benchmark = new Benchmark("nextGaussian", valuesPerIteration, output = output)
+    val benchmark =
+      new Benchmark("nextGaussian", valuesPerIteration, output = output)
 
     benchmark.addCase("java.util.Random", numIters) { _ =>
       times(valuesPerIteration) { javaRand.nextGaussian() }
@@ -96,7 +99,8 @@ object XORShiftRandomBenchmark extends BenchmarkBase {
   }
 
   private def hashSeed(numIters: Int, valuesPerIteration: Int): Unit = {
-    val benchmark = new Benchmark("Hash seed", valuesPerIteration, output = output)
+    val benchmark =
+      new Benchmark("Hash seed", valuesPerIteration, output = output)
 
     benchmark.addCase("XORShiftRandom.hashSeed", numIters) { _ =>
       var i = 0
@@ -126,4 +130,3 @@ object XORShiftRandomBenchmark extends BenchmarkBase {
     }
   }
 }
-

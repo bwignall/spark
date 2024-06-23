@@ -21,10 +21,10 @@ import scala.reflect.ClassTag
 
 import org.apache.spark.{Partition, PartitionEvaluatorFactory, TaskContext}
 
-private[spark] class MapPartitionsWithEvaluatorRDD[T : ClassTag, U : ClassTag](
+private[spark] class MapPartitionsWithEvaluatorRDD[T: ClassTag, U: ClassTag](
     var prev: RDD[T],
-    evaluatorFactory: PartitionEvaluatorFactory[T, U])
-  extends RDD[U](prev) {
+    evaluatorFactory: PartitionEvaluatorFactory[T, U]
+) extends RDD[U](prev) {
 
   override def getPartitions: Array[Partition] = firstParent[T].partitions
 

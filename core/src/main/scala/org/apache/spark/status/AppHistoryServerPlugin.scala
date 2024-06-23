@@ -21,23 +21,23 @@ import org.apache.spark.SparkConf
 import org.apache.spark.scheduler.SparkListener
 import org.apache.spark.ui.SparkUI
 
-/**
- * An interface for creating history listeners(to replay event logs) defined in other modules like
- * SQL, and setup the UI of the plugin to rebuild the history UI.
- */
+/** An interface for creating history listeners(to replay event logs) defined in other modules like
+  * SQL, and setup the UI of the plugin to rebuild the history UI.
+  */
 private[spark] trait AppHistoryServerPlugin {
-  /**
-   * Creates listeners to replay the event logs.
-   */
-  def createListeners(conf: SparkConf, store: ElementTrackingStore): Seq[SparkListener]
 
-  /**
-   * Sets up UI of this plugin to rebuild the history UI.
-   */
+  /** Creates listeners to replay the event logs.
+    */
+  def createListeners(
+      conf: SparkConf,
+      store: ElementTrackingStore
+  ): Seq[SparkListener]
+
+  /** Sets up UI of this plugin to rebuild the history UI.
+    */
   def setupUI(ui: SparkUI): Unit
 
-  /**
-   * The position of a plugin tab relative to the other plugin tabs in the history UI.
-   */
+  /** The position of a plugin tab relative to the other plugin tabs in the history UI.
+    */
   def displayOrder: Int = Integer.MAX_VALUE
 }

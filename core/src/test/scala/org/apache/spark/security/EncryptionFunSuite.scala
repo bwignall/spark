@@ -23,20 +23,23 @@ trait EncryptionFunSuite {
 
   this: SparkFunSuite =>
 
-  /**
-   * Runs a test twice, initializing a SparkConf object with encryption off, then on. It's ok
-   * for the test to modify the provided SparkConf.
-   */
-  final protected def encryptionTest(name: String)(fn: SparkConf => Unit): Unit = {
+  /** Runs a test twice, initializing a SparkConf object with encryption off, then on. It's ok
+    * for the test to modify the provided SparkConf.
+    */
+  final protected def encryptionTest(
+      name: String
+  )(fn: SparkConf => Unit): Unit = {
     encryptionTestHelper(name) { case (name, conf) =>
       test(name)(fn(conf))
     }
   }
 
-  final protected def encryptionTestHelper(name: String)(fn: (String, SparkConf) => Unit): Unit = {
+  final protected def encryptionTestHelper(
+      name: String
+  )(fn: (String, SparkConf) => Unit): Unit = {
     Seq(false, true).foreach { encrypt =>
       val conf = new SparkConf().set(IO_ENCRYPTION_ENABLED, encrypt)
-      fn(s"$name (encryption = ${ if (encrypt) "on" else "off" })", conf)
+      fn(s"$name (encryption = ${if (encrypt) "on" else "off"})", conf)
     }
   }
 

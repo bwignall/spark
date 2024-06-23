@@ -23,14 +23,15 @@ import scala.reflect.ClassTag
 
 import org.apache.spark.util.collection.OpenHashMap
 
-/**
- * An ApproximateEvaluator for counts by key. Returns a map of key to confidence interval.
- */
-private[spark] class GroupedCountEvaluator[T : ClassTag](totalOutputs: Int, confidence: Double)
-  extends ApproximateEvaluator[OpenHashMap[T, Long], Map[T, BoundedDouble]] {
+/** An ApproximateEvaluator for counts by key. Returns a map of key to confidence interval.
+  */
+private[spark] class GroupedCountEvaluator[T: ClassTag](
+    totalOutputs: Int,
+    confidence: Double
+) extends ApproximateEvaluator[OpenHashMap[T, Long], Map[T, BoundedDouble]] {
 
   private var outputsMerged = 0
-  private val sums = new OpenHashMap[T, Long]()   // Sum of counts for each key
+  private val sums = new OpenHashMap[T, Long]() // Sum of counts for each key
 
   override def merge(outputId: Int, taskResult: OpenHashMap[T, Long]): Unit = {
     outputsMerged += 1
@@ -48,7 +49,9 @@ private[spark] class GroupedCountEvaluator[T : ClassTag](totalOutputs: Int, conf
       new HashMap[T, BoundedDouble]
     } else {
       val p = outputsMerged.toDouble / totalOutputs
-      sums.map { case (key, sum) => (key, CountEvaluator.bound(confidence, sum, p)) }.toMap
+      sums.map { case (key, sum) =>
+        (key, CountEvaluator.bound(confidence, sum, p))
+      }.toMap
     }
   }
 }

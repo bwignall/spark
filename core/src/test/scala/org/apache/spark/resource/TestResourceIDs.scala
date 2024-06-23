@@ -17,7 +17,11 @@
 
 package org.apache.spark.resource
 
-import org.apache.spark.internal.config.{SPARK_DRIVER_PREFIX, SPARK_EXECUTOR_PREFIX, SPARK_TASK_PREFIX}
+import org.apache.spark.internal.config.{
+  SPARK_DRIVER_PREFIX,
+  SPARK_EXECUTOR_PREFIX,
+  SPARK_TASK_PREFIX
+}
 import org.apache.spark.internal.config.Worker.SPARK_WORKER_PREFIX
 import org.apache.spark.resource.ResourceUtils.{FPGA, GPU}
 

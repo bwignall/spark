@@ -19,9 +19,8 @@ package org.apache.spark.internal.io
 
 import org.apache.spark.SparkFunSuite
 
-/**
- * Unit tests for instantiation of FileCommitProtocol implementations.
- */
+/** Unit tests for instantiation of FileCommitProtocol implementations.
+  */
 class FileCommitProtocolInstantiationSuite extends SparkFunSuite {
 
   test("Dynamic partitions require appropriate constructor") {
@@ -44,13 +43,17 @@ class FileCommitProtocolInstantiationSuite extends SparkFunSuite {
   }
 
   test("Three arg constructors have priority") {
-    assert(3 == instantiateNew(false).argCount,
-      "Wrong constructor argument count")
+    assert(
+      3 == instantiateNew(false).argCount,
+      "Wrong constructor argument count"
+    )
   }
 
   test("Three arg constructors have priority when dynamic") {
-    assert(3 == instantiateNew(true).argCount,
-      "Wrong constructor argument count")
+    assert(
+      3 == instantiateNew(true).argCount,
+      "Wrong constructor argument count"
+    )
   }
 
   test("The protocol must be of the correct class") {
@@ -59,7 +62,8 @@ class FileCommitProtocolInstantiationSuite extends SparkFunSuite {
         classOf[Other].getCanonicalName,
         "job",
         "path",
-        false)
+        false
+      )
     }
   }
 
@@ -69,59 +73,64 @@ class FileCommitProtocolInstantiationSuite extends SparkFunSuite {
         classOf[NoMatchingArgs].getCanonicalName,
         "job",
         "path",
-        false)
+        false
+      )
     }
   }
 
-  /**
-   * Create a classic two-arg protocol instance.
-   * @param dynamic dynamic partitioning mode
-   * @return the instance
-   */
-  private def instantiateClassic(dynamic: Boolean): ClassicConstructorCommitProtocol = {
-    FileCommitProtocol.instantiate(
-      classOf[ClassicConstructorCommitProtocol].getCanonicalName,
-      "job",
-      "path",
-      dynamic).asInstanceOf[ClassicConstructorCommitProtocol]
+  /** Create a classic two-arg protocol instance.
+    * @param dynamic dynamic partitioning mode
+    * @return the instance
+    */
+  private def instantiateClassic(
+      dynamic: Boolean
+  ): ClassicConstructorCommitProtocol = {
+    FileCommitProtocol
+      .instantiate(
+        classOf[ClassicConstructorCommitProtocol].getCanonicalName,
+        "job",
+        "path",
+        dynamic
+      )
+      .asInstanceOf[ClassicConstructorCommitProtocol]
   }
 
-  /**
-   * Create a three-arg protocol instance.
-   * @param dynamic dynamic partitioning mode
-   * @return the instance
-   */
+  /** Create a three-arg protocol instance.
+    * @param dynamic dynamic partitioning mode
+    * @return the instance
+    */
   private def instantiateNew(
-    dynamic: Boolean): FullConstructorCommitProtocol = {
-    FileCommitProtocol.instantiate(
-      classOf[FullConstructorCommitProtocol].getCanonicalName,
-      "job",
-      "path",
-      dynamic).asInstanceOf[FullConstructorCommitProtocol]
+      dynamic: Boolean
+  ): FullConstructorCommitProtocol = {
+    FileCommitProtocol
+      .instantiate(
+        classOf[FullConstructorCommitProtocol].getCanonicalName,
+        "job",
+        "path",
+        dynamic
+      )
+      .asInstanceOf[FullConstructorCommitProtocol]
   }
 
 }
 
-/**
- * This protocol implementation does not have the new three-arg
- * constructor.
- */
+/** This protocol implementation does not have the new three-arg
+  * constructor.
+  */
 private class ClassicConstructorCommitProtocol(arg1: String, arg2: String)
-  extends HadoopMapReduceCommitProtocol(arg1, arg2) {
-}
+    extends HadoopMapReduceCommitProtocol(arg1, arg2) {}
 
-/**
- * This protocol implementation does have the new three-arg constructor
- * alongside the original, and a 4 arg one for completeness.
- * The final value of the real constructor is the number of arguments
- * used in the 2- and 3- constructor, for test assertions.
- */
+/** This protocol implementation does have the new three-arg constructor
+  * alongside the original, and a 4 arg one for completeness.
+  * The final value of the real constructor is the number of arguments
+  * used in the 2- and 3- constructor, for test assertions.
+  */
 private class FullConstructorCommitProtocol(
-  arg1: String,
-  arg2: String,
-  b: Boolean,
-  val argCount: Int)
-  extends HadoopMapReduceCommitProtocol(arg1, arg2, b) {
+    arg1: String,
+    arg2: String,
+    b: Boolean,
+    val argCount: Int
+) extends HadoopMapReduceCommitProtocol(arg1, arg2, b) {
 
   def this(arg1: String, arg2: String) = {
     this(arg1, arg2, false, 2)
@@ -132,17 +141,10 @@ private class FullConstructorCommitProtocol(
   }
 }
 
-/**
- * This has the 2-arity constructor, but isn't the right class.
- */
-private class Other(arg1: String, arg2: String) {
+/** This has the 2-arity constructor, but isn't the right class.
+  */
+private class Other(arg1: String, arg2: String) {}
 
-}
-
-/**
- * This has no matching arguments as well as being the wrong class.
- */
-private class NoMatchingArgs() {
-
-}
-
+/** This has no matching arguments as well as being the wrong class.
+  */
+private class NoMatchingArgs() {}

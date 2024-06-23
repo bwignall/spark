@@ -37,9 +37,18 @@ class NettyRpcEnvSuite extends RpcEnvSuite with MockitoSugar with TimeLimits {
       conf: SparkConf,
       name: String,
       port: Int,
-      clientMode: Boolean = false): RpcEnv = {
-    val config = RpcEnvConfig(conf, "test", "localhost", "localhost", port,
-      new SecurityManager(conf), 0, clientMode)
+      clientMode: Boolean = false
+  ): RpcEnv = {
+    val config = RpcEnvConfig(
+      conf,
+      "test",
+      "localhost",
+      "localhost",
+      port,
+      new SecurityManager(conf),
+      0,
+      clientMode
+    )
     new NettyRpcEnvFactory().create(config)
   }
 
@@ -54,8 +63,16 @@ class NettyRpcEnvSuite extends RpcEnvSuite with MockitoSugar with TimeLimits {
 
   test("advertise address different from bind address") {
     val sparkConf = createSparkConf()
-    val config = RpcEnvConfig(sparkConf, "test", "localhost", "example.com", 0,
-      new SecurityManager(sparkConf), 0, false)
+    val config = RpcEnvConfig(
+      sparkConf,
+      "test",
+      "localhost",
+      "example.com",
+      0,
+      new SecurityManager(sparkConf),
+      0,
+      false
+    )
     val env = new NettyRpcEnvFactory().create(config)
     try {
       assert(env.address.hostPort.startsWith("example.com:"))
@@ -65,7 +82,10 @@ class NettyRpcEnvSuite extends RpcEnvSuite with MockitoSugar with TimeLimits {
   }
 
   test("RequestMessage serialization") {
-    def assertRequestMessageEquals(expected: RequestMessage, actual: RequestMessage): Unit = {
+    def assertRequestMessageEquals(
+        expected: RequestMessage,
+        actual: RequestMessage
+    ): Unit = {
       assert(expected.senderAddress === actual.senderAddress)
       assert(expected.receiver === actual.receiver)
       assert(expected.content === actual.content)
@@ -75,22 +95,26 @@ class NettyRpcEnvSuite extends RpcEnvSuite with MockitoSugar with TimeLimits {
     val client = mock[TransportClient]
     val senderAddress = RpcAddress("localhost", 12345)
     val receiverAddress = RpcEndpointAddress("localhost", 54321, "test")
-    val receiver = new NettyRpcEndpointRef(nettyEnv.conf, receiverAddress, nettyEnv)
+    val receiver =
+      new NettyRpcEndpointRef(nettyEnv.conf, receiverAddress, nettyEnv)
 
     val msg = new RequestMessage(senderAddress, receiver, "foo")
     assertRequestMessageEquals(
       msg,
-      RequestMessage(nettyEnv, client, msg.serialize(nettyEnv)))
+      RequestMessage(nettyEnv, client, msg.serialize(nettyEnv))
+    )
 
     val msg2 = new RequestMessage(null, receiver, "foo")
     assertRequestMessageEquals(
       msg2,
-      RequestMessage(nettyEnv, client, msg2.serialize(nettyEnv)))
+      RequestMessage(nettyEnv, client, msg2.serialize(nettyEnv))
+    )
 
     val msg3 = new RequestMessage(senderAddress, receiver, null)
     assertRequestMessageEquals(
       msg3,
-      RequestMessage(nettyEnv, client, msg3.serialize(nettyEnv)))
+      RequestMessage(nettyEnv, client, msg3.serialize(nettyEnv))
+    )
   }
 
   test("StackOverflowError should be sent back and Dispatcher should survive") {
@@ -104,20 +128,27 @@ class NettyRpcEnvSuite extends RpcEnvSuite with MockitoSugar with TimeLimits {
       0,
       new SecurityManager(conf),
       numUsableCores,
-      clientMode = false)
+      clientMode = false
+    )
     val anotherEnv = new NettyRpcEnvFactory().create(config)
-    anotherEnv.setupEndpoint("StackOverflowError", new RpcEndpoint {
-      override val rpcEnv = anotherEnv
+    anotherEnv.setupEndpoint(
+      "StackOverflowError",
+      new RpcEndpoint {
+        override val rpcEnv = anotherEnv
 
-      override def receiveAndReply(context: RpcCallContext): PartialFunction[Any, Unit] = {
-        // scalastyle:off throwerror
-        case msg: String => throw new StackOverflowError
-        // scalastyle:on throwerror
-        case num: Int => context.reply(num)
+        override def receiveAndReply(
+            context: RpcCallContext
+        ): PartialFunction[Any, Unit] = {
+          // scalastyle:off throwerror
+          case msg: String => throw new StackOverflowError
+          // scalastyle:on throwerror
+          case num: Int => context.reply(num)
+        }
       }
-    })
+    )
 
-    val rpcEndpointRef = env.setupEndpointRef(anotherEnv.address, "StackOverflowError")
+    val rpcEndpointRef =
+      env.setupEndpointRef(anotherEnv.address, "StackOverflowError")
     try {
       // Send `numUsableCores` messages to trigger `numUsableCores` `StackOverflowError`s
       for (_ <- 0 until numUsableCores) {
@@ -137,42 +168,61 @@ class NettyRpcEnvSuite extends RpcEnvSuite with MockitoSugar with TimeLimits {
     }
   }
 
-
   test("SPARK-31233: ask rpcEndpointRef in client mode timeout") {
     var remoteRef: RpcEndpointRef = null
-    env.setupEndpoint("ask-remotely-server", new RpcEndpoint {
-      override val rpcEnv = env
-      override def receiveAndReply(context: RpcCallContext): PartialFunction[Any, Unit] = {
-        case Register(ref) =>
-          remoteRef = ref
-          context.reply("okay")
-        case msg: String =>
-          context.reply(msg)
+    env.setupEndpoint(
+      "ask-remotely-server",
+      new RpcEndpoint {
+        override val rpcEnv = env
+        override def receiveAndReply(
+            context: RpcCallContext
+        ): PartialFunction[Any, Unit] = {
+          case Register(ref) =>
+            remoteRef = ref
+            context.reply("okay")
+          case msg: String =>
+            context.reply(msg)
+        }
       }
-    })
+    )
     val conf = createSparkConf()
     val anotherEnv = createRpcEnv(conf, "remote", 0, clientMode = true)
     // Use anotherEnv to find out the RpcEndpointRef
-    val rpcEndpointRef = anotherEnv.setupEndpointRef(env.address, "ask-remotely-server")
+    val rpcEndpointRef =
+      anotherEnv.setupEndpointRef(env.address, "ask-remotely-server")
     // Register a rpcEndpointRef in anotherEnv
-    val anotherRef = anotherEnv.setupEndpoint("receiver", new RpcEndpoint {
-      override val rpcEnv = anotherEnv
-      override def receiveAndReply(context: RpcCallContext): PartialFunction[Any, Unit] = {
-        case _ =>
+    val anotherRef = anotherEnv.setupEndpoint(
+      "receiver",
+      new RpcEndpoint {
+        override val rpcEnv = anotherEnv
+        override def receiveAndReply(
+            context: RpcCallContext
+        ): PartialFunction[Any, Unit] = { case _ =>
           Thread.sleep(1200)
           context.reply("okay")
+        }
       }
-    })
+    )
     try {
       val reply = rpcEndpointRef.askSync[String](Register(anotherRef))
       assert("okay" === reply)
       val timeout = "1s"
-      val answer = remoteRef.ask[String]("msg",
-        RpcTimeout(conf, Seq("spark.rpc.askTimeout", "spark.network.timeout"), timeout))
+      val answer = remoteRef.ask[String](
+        "msg",
+        RpcTimeout(
+          conf,
+          Seq("spark.rpc.askTimeout", "spark.network.timeout"),
+          timeout
+        )
+      )
       val thrown = intercept[RpcTimeoutException] {
         ThreadUtils.awaitResult(answer, Duration(1300, MILLISECONDS))
       }
-      val remoteAddr = remoteRef.asInstanceOf[NettyRpcEndpointRef].client.getChannel.remoteAddress
+      val remoteAddr = remoteRef
+        .asInstanceOf[NettyRpcEndpointRef]
+        .client
+        .getChannel
+        .remoteAddress
       assert(thrown.getMessage.contains(remoteAddr.toString))
     } finally {
       anotherEnv.shutdown()
@@ -181,7 +231,10 @@ class NettyRpcEnvSuite extends RpcEnvSuite with MockitoSugar with TimeLimits {
   }
 }
 
-class SslNettyRpcEnvSuite extends NettyRpcEnvSuite with MockitoSugar with TimeLimits {
+class SslNettyRpcEnvSuite
+    extends NettyRpcEnvSuite
+    with MockitoSugar
+    with TimeLimits {
   override def createSparkConf(): SparkConf = {
     SslTestUtils.updateWithSSLConfig(super.createSparkConf())
   }

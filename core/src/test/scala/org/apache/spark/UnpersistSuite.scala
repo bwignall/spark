@@ -22,7 +22,10 @@ import org.scalatest.time.{Millis, Span}
 
 import org.apache.spark.util.ArrayImplicits._
 
-class UnpersistSuite extends SparkFunSuite with LocalSparkContext with TimeLimits {
+class UnpersistSuite
+    extends SparkFunSuite
+    with LocalSparkContext
+    with TimeLimits {
 
   // Necessary to make ScalaTest 3.x interrupt a thread on the JVM like ScalaTest 2.2.x
   implicit val defaultSignaler: Signaler = ThreadSignaler
@@ -37,13 +40,13 @@ class UnpersistSuite extends SparkFunSuite with LocalSparkContext with TimeLimit
 
     failAfter(Span(3000, Millis)) {
       try {
-        while (! sc.getRDDStorageInfo.isEmpty) {
+        while (!sc.getRDDStorageInfo.isEmpty) {
           Thread.sleep(200)
         }
       } catch {
         case _: Throwable => Thread.sleep(10)
-          // Do nothing. We might see exceptions because block manager
-          // is racing this thread to remove entries from the driver.
+        // Do nothing. We might see exceptions because block manager
+        // is racing this thread to remove entries from the driver.
       }
     }
     assert(sc.getRDDStorageInfo.isEmpty)

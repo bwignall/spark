@@ -65,10 +65,13 @@ class UninterruptibleThreadSuite extends SparkFunSuite {
     @volatile var interruptStatusBeforeExit = false
     val t = new UninterruptibleThread("test") {
       override def run(): Unit = {
-        Uninterruptibles.awaitUninterruptibly(interruptLatch, 10, TimeUnit.SECONDS)
+        Uninterruptibles.awaitUninterruptibly(
+          interruptLatch,
+          10,
+          TimeUnit.SECONDS
+        )
         try {
-          runUninterruptibly {
-          }
+          runUninterruptibly {}
         } catch {
           case _: InterruptedException => hasInterruptedException = true
         }
@@ -92,7 +95,11 @@ class UninterruptibleThreadSuite extends SparkFunSuite {
       override def run(): Unit = {
         runUninterruptibly {
           enterRunUninterruptibly.countDown()
-          Uninterruptibles.awaitUninterruptibly(interruptLatch, 10, TimeUnit.SECONDS)
+          Uninterruptibles.awaitUninterruptibly(
+            interruptLatch,
+            10,
+            TimeUnit.SECONDS
+          )
           hasInterruptedException = sleep(1)
           runUninterruptibly {
             if (sleep(1)) {
@@ -134,15 +141,18 @@ class UninterruptibleThreadSuite extends SparkFunSuite {
                 hasInterruptedException = true
               }
             }
-            Uninterruptibles.sleepUninterruptibly(Random.nextInt(10), TimeUnit.MILLISECONDS)
+            Uninterruptibles.sleepUninterruptibly(
+              Random.nextInt(10),
+              TimeUnit.MILLISECONDS
+            )
             // 50% chance to clear the interrupted status
             if (Random.nextBoolean()) {
               Thread.interrupted()
             }
           } catch {
             case _: InterruptedException =>
-              // The first runUninterruptibly may throw InterruptedException if the interrupt status
-              // is set before running `f`.
+            // The first runUninterruptibly may throw InterruptedException if the interrupt status
+            // is set before running `f`.
           }
         }
       }

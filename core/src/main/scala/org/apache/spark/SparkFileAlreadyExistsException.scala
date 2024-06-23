@@ -21,17 +21,18 @@ import scala.jdk.CollectionConverters._
 
 import org.apache.hadoop.fs.FileAlreadyExistsException
 
-/**
- * Hadoop file already exists exception thrown from Spark with an error class.
- */
+/** Hadoop file already exists exception thrown from Spark with an error class.
+  */
 private[spark] class SparkFileAlreadyExistsException(
     errorClass: String,
-    messageParameters: Map[String, String])
-  extends FileAlreadyExistsException(
-    SparkThrowableHelper.getMessage(errorClass, messageParameters))
+    messageParameters: Map[String, String]
+) extends FileAlreadyExistsException(
+      SparkThrowableHelper.getMessage(errorClass, messageParameters)
+    )
     with SparkThrowable {
 
-  override def getMessageParameters: java.util.Map[String, String] = messageParameters.asJava
+  override def getMessageParameters: java.util.Map[String, String] =
+    messageParameters.asJava
 
   override def getErrorClass: String = errorClass
 }

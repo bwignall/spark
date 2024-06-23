@@ -22,35 +22,32 @@ import org.apache.spark.TaskState.TaskState
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.errors.SparkCoreErrors
 
-/**
- * :: DeveloperApi ::
- * Information about a running task attempt inside a TaskSet.
- */
+/** :: DeveloperApi ::
+  * Information about a running task attempt inside a TaskSet.
+  */
 @DeveloperApi
 class TaskInfo(
     val taskId: Long,
-    /**
-     * The index of this task within its task set. Not necessarily the same as the ID of the RDD
-     * partition that the task is computing.
-     */
+    /** The index of this task within its task set. Not necessarily the same as the ID of the RDD
+      * partition that the task is computing.
+      */
     val index: Int,
     val attemptNumber: Int,
-    /**
-     * The actual RDD partition ID in this task.
-     * The ID of the RDD partition is always same across task attempts.
-     * This will be -1 for historical data, and available for all applications since Spark 3.3.
-     */
+    /** The actual RDD partition ID in this task.
+      * The ID of the RDD partition is always same across task attempts.
+      * This will be -1 for historical data, and available for all applications since Spark 3.3.
+      */
     val partitionId: Int,
     val launchTime: Long,
     val executorId: String,
     val host: String,
     val taskLocality: TaskLocality.TaskLocality,
-    val speculative: Boolean) extends Cloneable {
+    val speculative: Boolean
+) extends Cloneable {
 
-  /**
-   * This api doesn't contains partitionId, please use the new api.
-   * Remain it for backward compatibility before Spark 3.3.
-   */
+  /** This api doesn't contains partitionId, please use the new api.
+    * Remain it for backward compatibility before Spark 3.3.
+    */
   def this(
       taskId: Long,
       index: Int,
@@ -59,27 +56,38 @@ class TaskInfo(
       executorId: String,
       host: String,
       taskLocality: TaskLocality.TaskLocality,
-      speculative: Boolean) = {
-    this(taskId, index, attemptNumber, -1, launchTime, executorId, host, taskLocality, speculative)
+      speculative: Boolean
+  ) = {
+    this(
+      taskId,
+      index,
+      attemptNumber,
+      -1,
+      launchTime,
+      executorId,
+      host,
+      taskLocality,
+      speculative
+    )
   }
 
-  /**
-   * The time when the task started remotely getting the result. Will not be set if the
-   * task result was sent immediately when the task finished (as opposed to sending an
-   * IndirectTaskResult and later fetching the result from the block manager).
-   */
+  /** The time when the task started remotely getting the result. Will not be set if the
+    * task result was sent immediately when the task finished (as opposed to sending an
+    * IndirectTaskResult and later fetching the result from the block manager).
+    */
   var gettingResultTime: Long = 0
 
-  /**
-   * Intermediate updates to accumulables during this task. Note that it is valid for the same
-   * accumulable to be updated multiple times in a single task or for two accumulables with the
-   * same name but different IDs to exist in a task.
-   */
+  /** Intermediate updates to accumulables during this task. Note that it is valid for the same
+    * accumulable to be updated multiple times in a single task or for two accumulables with the
+    * same name but different IDs to exist in a task.
+    */
   def accumulables: Seq[AccumulableInfo] = _accumulables
 
   private[this] var _accumulables: Seq[AccumulableInfo] = Nil
 
-  private[spark] def setAccumulables(newAccumulables: Seq[AccumulableInfo]): Unit = {
+  private[spark] def setAccumulables(
+      newAccumulables: Seq[AccumulableInfo]
+  ): Unit = {
     _accumulables = newAccumulables
   }
 
@@ -91,10 +99,9 @@ class TaskInfo(
     cloned
   }
 
-  /**
-   * The time when the task has completed successfully (including the time to remotely fetch
-   * results, if necessary).
-   */
+  /** The time when the task has completed successfully (including the time to remotely fetch
+    * results, if necessary).
+    */
   var finishTime: Long = 0
 
   var failed = false
@@ -155,5 +162,6 @@ class TaskInfo(
     }
   }
 
-  private[spark] def timeRunning(currentTime: Long): Long = currentTime - launchTime
+  private[spark] def timeRunning(currentTime: Long): Long =
+    currentTime - launchTime
 }

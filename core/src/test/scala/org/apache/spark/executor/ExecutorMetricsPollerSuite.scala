@@ -22,7 +22,9 @@ import org.apache.spark.memory.TestMemoryManager
 
 class ExecutorMetricsPollerSuite extends SparkFunSuite {
 
-  test("SPARK-34779: stage entry shouldn't be removed before a heartbeat occurs") {
+  test(
+    "SPARK-34779: stage entry shouldn't be removed before a heartbeat occurs"
+  ) {
     val testMemoryManager = new TestMemoryManager(new SparkConf())
     val poller = new ExecutorMetricsPoller(testMemoryManager, 1000, None)
 

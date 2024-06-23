@@ -23,7 +23,6 @@ import scala.util.Random
 
 import org.apache.spark.SparkFunSuite
 
-
 class ChunkedByteBufferOutputStreamSuite extends SparkFunSuite {
 
   test("empty output") {
@@ -120,7 +119,9 @@ class ChunkedByteBufferOutputStreamSuite extends SparkFunSuite {
     assert(arrays(2).toSeq === ref.slice(20, 30))
   }
 
-  test("SPARK-36464: size returns correct positive number even with over 2GB data") {
+  test(
+    "SPARK-36464: size returns correct positive number even with over 2GB data"
+  ) {
     val data4M = 1024 * 1024 * 4
     val writeTimes = 513
     val ref = new Array[Byte](data4M)

@@ -23,32 +23,32 @@ import org.apache.spark.network.client.StreamCallbackWithID
 import org.apache.spark.serializer.SerializerManager
 import org.apache.spark.storage.BlockId
 
-/**
- * :: Experimental ::
- * An experimental trait to allow Spark to migrate shuffle blocks.
- */
+/** :: Experimental ::
+  * An experimental trait to allow Spark to migrate shuffle blocks.
+  */
 @Experimental
 @Since("3.1.0")
 trait MigratableResolver {
-  /**
-   * Get the shuffle ids that are stored locally. Used for block migrations.
-   */
+
+  /** Get the shuffle ids that are stored locally. Used for block migrations.
+    */
   def getStoredShuffles(): Seq[ShuffleBlockInfo]
 
-  /**
-   * Mark a shuffle that should not be migrated.
-   */
+  /** Mark a shuffle that should not be migrated.
+    */
   def addShuffleToSkip(shuffleId: Int): Unit = {}
 
-  /**
-   * Write a provided shuffle block as a stream. Used for block migrations.
-   * Up to the implementation to support STORAGE_REMOTE_SHUFFLE_MAX_DISK
-   */
-  def putShuffleBlockAsStream(blockId: BlockId, serializerManager: SerializerManager):
-      StreamCallbackWithID
+  /** Write a provided shuffle block as a stream. Used for block migrations.
+    * Up to the implementation to support STORAGE_REMOTE_SHUFFLE_MAX_DISK
+    */
+  def putShuffleBlockAsStream(
+      blockId: BlockId,
+      serializerManager: SerializerManager
+  ): StreamCallbackWithID
 
-  /**
-   * Get the blocks for migration for a particular shuffle and map.
-   */
-  def getMigrationBlocks(shuffleBlockInfo: ShuffleBlockInfo): List[(BlockId, ManagedBuffer)]
+  /** Get the blocks for migration for a particular shuffle and map.
+    */
+  def getMigrationBlocks(
+      shuffleBlockInfo: ShuffleBlockInfo
+  ): List[(BlockId, ManagedBuffer)]
 }

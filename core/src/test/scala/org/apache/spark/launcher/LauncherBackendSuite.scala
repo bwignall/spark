@@ -31,9 +31,8 @@ import org.apache.spark.util.Utils
 
 class LauncherBackendSuite extends SparkFunSuite with Matchers {
 
-  private val tests = Seq(
-    "local" -> "local",
-    "standalone/client" -> "local-cluster[1,1,1024]")
+  private val tests =
+    Seq("local" -> "local", "standalone/client" -> "local-cluster[1,1,1024]")
 
   tests.foreach { case (name, master) =>
     test(s"$name: launcher handle") {
@@ -48,10 +47,15 @@ class LauncherBackendSuite extends SparkFunSuite with Matchers {
     env.put("SPARK_PRINT_LAUNCH_COMMAND", "1")
     val handle = new SparkLauncher(env)
       .setSparkHome(sys.props("spark.test.home"))
-      .setConf(SparkLauncher.DRIVER_EXTRA_CLASSPATH, System.getProperty("java.class.path"))
+      .setConf(
+        SparkLauncher.DRIVER_EXTRA_CLASSPATH,
+        System.getProperty("java.class.path")
+      )
       .setConf(UI_ENABLED.key, "false")
-      .setConf(SparkLauncher.DRIVER_EXTRA_JAVA_OPTIONS,
-        s"-Dtest.appender=console -Djava.net.preferIPv6Addresses=${Utils.preferIPv6}")
+      .setConf(
+        SparkLauncher.DRIVER_EXTRA_JAVA_OPTIONS,
+        s"-Dtest.appender=console -Djava.net.preferIPv6Addresses=${Utils.preferIPv6}"
+      )
       .setMaster(master)
       .setAppResource(SparkLauncher.NO_RESOURCE)
       .setMainClass(TestApp.getClass.getName().stripSuffix("$"))
@@ -65,7 +69,7 @@ class LauncherBackendSuite extends SparkFunSuite with Matchers {
       handle.stop()
 
       eventually(timeout(30.seconds), interval(100.milliseconds)) {
-        handle.getState() should be (SparkAppHandle.State.KILLED)
+        handle.getState() should be(SparkAppHandle.State.KILLED)
       }
     } finally {
       handle.kill()

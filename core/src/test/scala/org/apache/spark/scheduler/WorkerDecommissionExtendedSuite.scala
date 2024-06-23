@@ -21,14 +21,27 @@ import scala.concurrent.duration._
 
 import org.scalatest.concurrent.Eventually.{eventually, interval, timeout}
 
-import org.apache.spark.{LocalSparkContext, SparkContext, SparkFunSuite, TestUtils}
+import org.apache.spark.{
+  LocalSparkContext,
+  SparkContext,
+  SparkFunSuite,
+  TestUtils
+}
 import org.apache.spark.LocalSparkContext.withSpark
-import org.apache.spark.internal.config.{DECOMMISSION_ENABLED, DYN_ALLOCATION_ENABLED, DYN_ALLOCATION_EXECUTOR_IDLE_TIMEOUT, DYN_ALLOCATION_INITIAL_EXECUTORS, DYN_ALLOCATION_SHUFFLE_TRACKING_ENABLED}
+import org.apache.spark.internal.config.{
+  DECOMMISSION_ENABLED,
+  DYN_ALLOCATION_ENABLED,
+  DYN_ALLOCATION_EXECUTOR_IDLE_TIMEOUT,
+  DYN_ALLOCATION_INITIAL_EXECUTORS,
+  DYN_ALLOCATION_SHUFFLE_TRACKING_ENABLED
+}
 import org.apache.spark.launcher.SparkLauncher.{EXECUTOR_MEMORY, SPARK_MASTER}
 import org.apache.spark.scheduler.cluster.StandaloneSchedulerBackend
 
 /** This test suite aims to test worker decommission with various configurations. */
-class WorkerDecommissionExtendedSuite extends SparkFunSuite with LocalSparkContext {
+class WorkerDecommissionExtendedSuite
+    extends SparkFunSuite
+    with LocalSparkContext {
   private val conf = new org.apache.spark.SparkConf()
     .setAppName(getClass.getName)
     .set(SPARK_MASTER, "local-cluster[3,1,256]")
@@ -39,7 +52,9 @@ class WorkerDecommissionExtendedSuite extends SparkFunSuite with LocalSparkConte
     .set(DECOMMISSION_ENABLED, true)
 
   test("Worker decommission and executor idle timeout") {
-    sc = new SparkContext(conf.set(DYN_ALLOCATION_EXECUTOR_IDLE_TIMEOUT.key, "10s"))
+    sc = new SparkContext(
+      conf.set(DYN_ALLOCATION_EXECUTOR_IDLE_TIMEOUT.key, "10s")
+    )
     withSpark(sc) { sc =>
       TestUtils.waitUntilExecutorsUp(sc, 3, 80000)
       val rdd1 = sc.parallelize(1 to 10, 2)
@@ -64,8 +79,11 @@ class WorkerDecommissionExtendedSuite extends SparkFunSuite with LocalSparkConte
 
       val sched = sc.schedulerBackend.asInstanceOf[StandaloneSchedulerBackend]
       sc.getExecutorIds().tail.foreach { id =>
-        sched.decommissionExecutor(id, ExecutorDecommissionInfo("", None),
-          adjustTargetNumExecutors = false)
+        sched.decommissionExecutor(
+          id,
+          ExecutorDecommissionInfo("", None),
+          adjustTargetNumExecutors = false
+        )
         assert(rdd3.sortByKey().collect().length === 100)
       }
     }

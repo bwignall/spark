@@ -33,43 +33,44 @@ import org.apache.spark.metrics.sink.{MetricsServlet, PrometheusServlet, Sink}
 import org.apache.spark.metrics.source.{Source, StaticSources}
 import org.apache.spark.util.Utils
 
-/**
- * Spark Metrics System, created by a specific "instance", combined by source,
- * sink, periodically polls source metrics data to sink destinations.
- *
- * "instance" specifies "who" (the role) uses the metrics system. In Spark, there are several roles
- * like master, worker, executor, client driver. These roles will create metrics system
- * for monitoring. So, "instance" represents these roles. Currently in Spark, several instances
- * have already implemented: master, worker, executor, driver, applications.
- *
- * "source" specifies "where" (source) to collect metrics data from. In metrics system, there exists
- * two kinds of source:
- *   1. Spark internal source, like MasterSource, WorkerSource, etc, which will collect
- *   Spark component's internal state, these sources are related to instance and will be
- *   added after a specific metrics system is created.
- *   2. Common source, like JvmSource, which will collect low level state, is configured by
- *   configuration and loaded through reflection.
- *
- * "sink" specifies "where" (destination) to output metrics data to. Several sinks can
- * coexist and metrics can be flushed to all these sinks.
- *
- * Metrics configuration format is like below:
- * [instance].[sink|source].[name].[options] = xxxx
- *
- * [instance] can be "master", "worker", "executor", "driver", "applications" which means only
- * the specified instance has this property.
- * wild card "*" can be used to replace instance name, which means all the instances will have
- * this property.
- *
- * [sink|source] means this property belongs to source or sink. This field can only be
- * source or sink.
- *
- * [name] specify the name of sink or source, if it is custom defined.
- *
- * [options] represent the specific property of this source or sink.
- */
+/** Spark Metrics System, created by a specific "instance", combined by source,
+  * sink, periodically polls source metrics data to sink destinations.
+  *
+  * "instance" specifies "who" (the role) uses the metrics system. In Spark, there are several roles
+  * like master, worker, executor, client driver. These roles will create metrics system
+  * for monitoring. So, "instance" represents these roles. Currently in Spark, several instances
+  * have already implemented: master, worker, executor, driver, applications.
+  *
+  * "source" specifies "where" (source) to collect metrics data from. In metrics system, there exists
+  * two kinds of source:
+  *   1. Spark internal source, like MasterSource, WorkerSource, etc, which will collect
+  *   Spark component's internal state, these sources are related to instance and will be
+  *   added after a specific metrics system is created.
+  *   2. Common source, like JvmSource, which will collect low level state, is configured by
+  *   configuration and loaded through reflection.
+  *
+  * "sink" specifies "where" (destination) to output metrics data to. Several sinks can
+  * coexist and metrics can be flushed to all these sinks.
+  *
+  * Metrics configuration format is like below:
+  * [instance].[sink|source].[name].[options] = xxxx
+  *
+  * [instance] can be "master", "worker", "executor", "driver", "applications" which means only
+  * the specified instance has this property.
+  * wild card "*" can be used to replace instance name, which means all the instances will have
+  * this property.
+  *
+  * [sink|source] means this property belongs to source or sink. This field can only be
+  * source or sink.
+  *
+  * [name] specify the name of sink or source, if it is custom defined.
+  *
+  * [options] represent the specific property of this source or sink.
+  */
 private[spark] class MetricsSystem private (
-    val instance: String, conf: SparkConf) extends Logging {
+    val instance: String,
+    conf: SparkConf
+) extends Logging {
 
   private[this] val metricsConfig = new MetricsConfig(conf)
 
@@ -83,11 +84,13 @@ private[spark] class MetricsSystem private (
   private var metricsServlet: Option[MetricsServlet] = None
   private var prometheusServlet: Option[PrometheusServlet] = None
 
-  /**
-   * Get any UI handlers used by this metrics system; can only be called after start().
-   */
+  /** Get any UI handlers used by this metrics system; can only be called after start().
+    */
   def getServletHandlers: Array[ServletContextHandler] = {
-    require(running, "Can only call getServletHandlers on a running MetricsSystem")
+    require(
+      running,
+      "Can only call getServletHandlers on a running MetricsSystem"
+    )
     metricsServlet.map(_.getHandlers(conf)).getOrElse(Array()) ++
       prometheusServlet.map(_.getHandlers(conf)).getOrElse(Array())
   }
@@ -95,7 +98,10 @@ private[spark] class MetricsSystem private (
   metricsConfig.initialize()
 
   def start(registerStaticSources: Boolean = true): Unit = {
-    require(!running, "Attempting to start a MetricsSystem that is already running")
+    require(
+      !running,
+      "Attempting to start a MetricsSystem that is already running"
+    )
     running = true
     if (registerStaticSources) {
       StaticSources.allSources.foreach(registerSource)
@@ -119,35 +125,43 @@ private[spark] class MetricsSystem private (
     sinks.foreach(_.report())
   }
 
-  /**
-   * Build a name that uniquely identifies each metric source.
-   * The name is structured as follows: <app ID>.<executor ID (or "driver")>.<source name>.
-   * If either ID is not available, this defaults to just using <source name>.
-   *
-   * @param source Metric source to be named by this method.
-   * @return A unique metric name for each combination of
-   *         application, executor/driver and metric source.
-   */
+  /** Build a name that uniquely identifies each metric source.
+    * The name is structured as follows: <app ID>.<executor ID (or "driver")>.<source name>.
+    * If either ID is not available, this defaults to just using <source name>.
+    *
+    * @param source Metric source to be named by this method.
+    * @return A unique metric name for each combination of
+    *         application, executor/driver and metric source.
+    */
   private[spark] def buildRegistryName(source: Source): String = {
-    val metricsNamespace = conf.get(METRICS_NAMESPACE).orElse(conf.getOption("spark.app.id"))
+    val metricsNamespace =
+      conf.get(METRICS_NAMESPACE).orElse(conf.getOption("spark.app.id"))
 
     val executorId = conf.get(EXECUTOR_ID)
     val defaultName = MetricRegistry.name(source.sourceName)
 
     if (instance == "driver" || instance == "executor") {
       if (metricsNamespace.isDefined && executorId.isDefined) {
-        MetricRegistry.name(metricsNamespace.get, executorId.get, source.sourceName)
+        MetricRegistry.name(
+          metricsNamespace.get,
+          executorId.get,
+          source.sourceName
+        )
       } else {
         // Only Driver and Executor set spark.app.id and spark.executor.id.
         // Other instance types, e.g. Master and Worker, are not related to a specific application.
         if (metricsNamespace.isEmpty) {
-          logWarning(log"Using default name ${MDC(LogKeys.DEFAULT_NAME, defaultName)} " +
-            log"for source because neither " +
-            log"${MDC(LogKeys.CONFIG, METRICS_NAMESPACE.key)} nor spark.app.id is set.")
+          logWarning(
+            log"Using default name ${MDC(LogKeys.DEFAULT_NAME, defaultName)} " +
+              log"for source because neither " +
+              log"${MDC(LogKeys.CONFIG, METRICS_NAMESPACE.key)} nor spark.app.id is set."
+          )
         }
         if (executorId.isEmpty) {
-          logWarning(log"Using default name ${MDC(LogKeys.DEFAULT_NAME, defaultName)} " +
-            log"for source because spark.executor.id is not set.")
+          logWarning(
+            log"Using default name ${MDC(LogKeys.DEFAULT_NAME, defaultName)} " +
+              log"for source because spark.executor.id is not set."
+          )
         }
         defaultName
       }
@@ -166,7 +180,8 @@ private[spark] class MetricsSystem private (
       val regName = buildRegistryName(source)
       registry.register(regName, source.metricRegistry)
     } catch {
-      case e: IllegalArgumentException => logInfo("Metrics already registered", e)
+      case e: IllegalArgumentException =>
+        logInfo("Metrics already registered", e)
     }
   }
 
@@ -175,64 +190,82 @@ private[spark] class MetricsSystem private (
       sources -= source
     }
     val regName = buildRegistryName(source)
-    registry.removeMatching((name: String, _: Metric) => name.startsWith(regName))
+    registry.removeMatching((name: String, _: Metric) =>
+      name.startsWith(regName)
+    )
   }
 
   private def registerSources(): Unit = {
     val instConfig = metricsConfig.getInstance(instance)
-    val sourceConfigs = metricsConfig.subProperties(instConfig, MetricsSystem.SOURCE_REGEX)
+    val sourceConfigs =
+      metricsConfig.subProperties(instConfig, MetricsSystem.SOURCE_REGEX)
 
     // Register all the sources related to instance
     sourceConfigs.foreach { kv =>
       val classPath = kv._2.getProperty("class")
       try {
-        val source = Utils.classForName[Source](classPath).getConstructor().newInstance()
+        val source =
+          Utils.classForName[Source](classPath).getConstructor().newInstance()
         registerSource(source)
       } catch {
         case e: Exception =>
-          logError(log"Source class ${MDC(LogKeys.CLASS_NAME, classPath)} " +
-            log"cannot be instantiated", e)
+          logError(
+            log"Source class ${MDC(LogKeys.CLASS_NAME, classPath)} " +
+              log"cannot be instantiated",
+            e
+          )
       }
     }
   }
 
   private def registerSinks(): Unit = {
     val instConfig = metricsConfig.getInstance(instance)
-    val sinkConfigs = metricsConfig.subProperties(instConfig, MetricsSystem.SINK_REGEX)
+    val sinkConfigs =
+      metricsConfig.subProperties(instConfig, MetricsSystem.SINK_REGEX)
 
     sinkConfigs.foreach { kv =>
       val classPath = kv._2.getProperty("class")
       if (null != classPath) {
         try {
           if (kv._1 == "servlet") {
-            val servlet = Utils.classForName[MetricsServlet](classPath)
+            val servlet = Utils
+              .classForName[MetricsServlet](classPath)
               .getConstructor(classOf[Properties], classOf[MetricRegistry])
               .newInstance(kv._2, registry)
             metricsServlet = Some(servlet)
           } else if (kv._1 == "prometheusServlet") {
-            val servlet = Utils.classForName[PrometheusServlet](classPath)
+            val servlet = Utils
+              .classForName[PrometheusServlet](classPath)
               .getConstructor(classOf[Properties], classOf[MetricRegistry])
               .newInstance(kv._2, registry)
             prometheusServlet = Some(servlet)
           } else {
-            val sink = try {
-              Utils.classForName[Sink](classPath)
-                .getConstructor(classOf[Properties], classOf[MetricRegistry])
-                .newInstance(kv._2, registry)
-            } catch {
-              case _: NoSuchMethodException =>
-                // Fallback to three-parameters constructor having SecurityManager
-                Utils.classForName[Sink](classPath)
-                  .getConstructor(
-                    classOf[Properties], classOf[MetricRegistry], classOf[SecurityManager])
-                  .newInstance(kv._2, registry, null)
-            }
+            val sink =
+              try {
+                Utils
+                  .classForName[Sink](classPath)
+                  .getConstructor(classOf[Properties], classOf[MetricRegistry])
+                  .newInstance(kv._2, registry)
+              } catch {
+                case _: NoSuchMethodException =>
+                  // Fallback to three-parameters constructor having SecurityManager
+                  Utils
+                    .classForName[Sink](classPath)
+                    .getConstructor(
+                      classOf[Properties],
+                      classOf[MetricRegistry],
+                      classOf[SecurityManager]
+                    )
+                    .newInstance(kv._2, registry, null)
+              }
             sinks += sink
           }
         } catch {
           case e: Exception =>
-            logError(log"Sink class ${MDC(LogKeys.CLASS_NAME, classPath)} " +
-              log"cannot be instantiated")
+            logError(
+              log"Sink class ${MDC(LogKeys.CLASS_NAME, classPath)} " +
+                log"cannot be instantiated"
+            )
             throw e
         }
       }
@@ -252,8 +285,10 @@ private[spark] object MetricsSystem {
   def checkMinimalPollingPeriod(pollUnit: TimeUnit, pollPeriod: Int): Unit = {
     val period = MINIMAL_POLL_UNIT.convert(pollPeriod, pollUnit)
     if (period < MINIMAL_POLL_PERIOD) {
-      throw new IllegalArgumentException("Polling period " + pollPeriod + " " + pollUnit +
-        " below than minimal polling period ")
+      throw new IllegalArgumentException(
+        "Polling period " + pollPeriod + " " + pollUnit +
+          " below than minimal polling period "
+      )
     }
   }
 

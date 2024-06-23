@@ -19,33 +19,37 @@ package org.apache.spark.shuffle
 
 import org.apache.spark.{ShuffleDependency, SparkEnv, TaskContext}
 import org.apache.spark.internal.{Logging, MDC}
-import org.apache.spark.internal.LogKeys.{NUM_MERGER_LOCATIONS, SHUFFLE_ID, STAGE_ID}
+import org.apache.spark.internal.LogKeys.{
+  NUM_MERGER_LOCATIONS,
+  SHUFFLE_ID,
+  STAGE_ID
+}
 import org.apache.spark.scheduler.MapStatus
 
-/**
- * The interface for customizing shuffle write process. The driver create a ShuffleWriteProcessor
- * and put it into [[ShuffleDependency]], and executors use it in each ShuffleMapTask.
- */
+/** The interface for customizing shuffle write process. The driver create a ShuffleWriteProcessor
+  * and put it into [[ShuffleDependency]], and executors use it in each ShuffleMapTask.
+  */
 private[spark] class ShuffleWriteProcessor extends Serializable with Logging {
 
-  /**
-   * Create a [[ShuffleWriteMetricsReporter]] from the task context. As the reporter is a
-   * per-row operator, here need a careful consideration on performance.
-   */
-  protected def createMetricsReporter(context: TaskContext): ShuffleWriteMetricsReporter = {
+  /** Create a [[ShuffleWriteMetricsReporter]] from the task context. As the reporter is a
+    * per-row operator, here need a careful consideration on performance.
+    */
+  protected def createMetricsReporter(
+      context: TaskContext
+  ): ShuffleWriteMetricsReporter = {
     context.taskMetrics().shuffleWriteMetrics
   }
 
-  /**
-   * The write process for particular partition, it controls the life circle of [[ShuffleWriter]]
-   * get from [[ShuffleManager]] finally return the [[MapStatus]] for this task.
-   */
+  /** The write process for particular partition, it controls the life circle of [[ShuffleWriter]]
+    * get from [[ShuffleManager]] finally return the [[MapStatus]] for this task.
+    */
   def write(
       inputs: Iterator[_],
       dep: ShuffleDependency[_, _, _],
       mapId: Long,
       mapIndex: Int,
-      context: TaskContext): MapStatus = {
+      context: TaskContext
+  ): MapStatus = {
     var writer: ShuffleWriter[Any, Any] = null
     try {
       val manager = SparkEnv.get.shuffleManager
@@ -53,7 +57,8 @@ private[spark] class ShuffleWriteProcessor extends Serializable with Logging {
         dep.shuffleHandle,
         mapId,
         context,
-        createMetricsReporter(context))
+        createMetricsReporter(context)
+      )
       writer.write(inputs.asInstanceOf[Iterator[_ <: Product2[Any, Any]]])
       val mapStatus = writer.stop(success = true)
       if (mapStatus.isDefined) {
@@ -73,14 +78,23 @@ private[spark] class ShuffleWriteProcessor extends Serializable with Logging {
         if (!dep.shuffleMergeFinalized) {
           manager.shuffleBlockResolver match {
             case resolver: IndexShuffleBlockResolver =>
-              logInfo(log"Shuffle merge enabled with" +
-                log" ${MDC(NUM_MERGER_LOCATIONS, dep.getMergerLocs.size)} merger locations" +
-                log" for stage ${MDC(STAGE_ID, context.stageId())}" +
-                log" with shuffle ID ${MDC(SHUFFLE_ID, dep.shuffleId)}")
-              logDebug(s"Starting pushing blocks for the task ${context.taskAttemptId()}")
+              logInfo(
+                log"Shuffle merge enabled with" +
+                  log" ${MDC(NUM_MERGER_LOCATIONS, dep.getMergerLocs.size)} merger locations" +
+                  log" for stage ${MDC(STAGE_ID, context.stageId())}" +
+                  log" with shuffle ID ${MDC(SHUFFLE_ID, dep.shuffleId)}"
+              )
+              logDebug(
+                s"Starting pushing blocks for the task ${context.taskAttemptId()}"
+              )
               val dataFile = resolver.getDataFile(dep.shuffleId, mapId)
               new ShuffleBlockPusher(SparkEnv.get.conf)
-                .initiateBlockPush(dataFile, writer.getPartitionLengths(), dep, mapIndex)
+                .initiateBlockPush(
+                  dataFile,
+                  writer.getPartitionLengths(),
+                  dep,
+                  mapIndex
+                )
             case _ =>
           }
         }

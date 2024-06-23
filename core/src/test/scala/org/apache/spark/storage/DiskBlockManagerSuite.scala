@@ -59,7 +59,8 @@ class DiskBlockManagerSuite extends SparkFunSuite {
     super.beforeEach()
     val conf = testConf.clone
     conf.set("spark.local.dir", rootDirs)
-    diskBlockManager = new DiskBlockManager(conf, deleteFilesOnStop = true, isDriver = false)
+    diskBlockManager =
+      new DiskBlockManager(conf, deleteFilesOnStop = true, isDriver = false)
   }
 
   override def afterEach(): Unit = {
@@ -92,7 +93,9 @@ class DiskBlockManagerSuite extends SparkFunSuite {
     assert(diskBlockManager.getAllBlocks().isEmpty)
   }
 
-  test("should still create merge directories if one already exists under a local dir") {
+  test(
+    "should still create merge directories if one already exists under a local dir"
+  ) {
     val mergeDir0 = new File(rootDir0, DiskBlockManager.MERGE_DIRECTORY)
     if (!mergeDir0.exists()) {
       Files.createDirectories(mergeDir0.toPath)
@@ -104,36 +107,50 @@ class DiskBlockManagerSuite extends SparkFunSuite {
     testConf.set("spark.local.dir", rootDirs)
     testConf.set("spark.shuffle.push.enabled", "true")
     testConf.set(config.Tests.IS_TESTING, true)
-    diskBlockManager = new DiskBlockManager(testConf, deleteFilesOnStop = true, isDriver = false)
-    assert(Utils.getConfiguredLocalDirs(testConf).map(
-      rootDir => new File(rootDir, DiskBlockManager.MERGE_DIRECTORY))
-      .filter(mergeDir => mergeDir.exists()).length === 2)
+    diskBlockManager =
+      new DiskBlockManager(testConf, deleteFilesOnStop = true, isDriver = false)
+    assert(
+      Utils
+        .getConfiguredLocalDirs(testConf)
+        .map(rootDir => new File(rootDir, DiskBlockManager.MERGE_DIRECTORY))
+        .filter(mergeDir => mergeDir.exists())
+        .length === 2
+    )
     // mergeDir0 can not be skipped even if it already exists
-    assert(mergeDir0.list().length === testConf.get(config.DISKSTORE_SUB_DIRECTORIES))
+    assert(
+      mergeDir0.list().length === testConf.get(config.DISKSTORE_SUB_DIRECTORIES)
+    )
     // Sub directories get created under mergeDir1
-    assert(mergeDir1.list().length === testConf.get(config.DISKSTORE_SUB_DIRECTORIES))
+    assert(
+      mergeDir1.list().length === testConf.get(config.DISKSTORE_SUB_DIRECTORIES)
+    )
   }
 
   test("Test dir creation with permission 770") {
     val testDir = new File("target/testDir");
     FileUtils.deleteQuietly(testDir)
-    diskBlockManager = new DiskBlockManager(testConf, deleteFilesOnStop = true, isDriver = false)
+    diskBlockManager =
+      new DiskBlockManager(testConf, deleteFilesOnStop = true, isDriver = false)
     diskBlockManager.createDirWithPermission770(testDir)
     assert(testDir.exists && testDir.isDirectory)
     val permission = PosixFilePermissions.toString(
-      Files.getPosixFilePermissions(Paths.get("target/testDir")))
+      Files.getPosixFilePermissions(Paths.get("target/testDir"))
+    )
     assert(permission.equals("rwxrwx---"))
     FileUtils.deleteQuietly(testDir)
   }
 
   test("Encode merged directory name and attemptId in shuffleManager field") {
     testConf.set(config.APP_ATTEMPT_ID, "1");
-    diskBlockManager = new DiskBlockManager(testConf, deleteFilesOnStop = true, isDriver = false)
-    val mergedShuffleMeta = diskBlockManager.getMergeDirectoryAndAttemptIDJsonString();
+    diskBlockManager =
+      new DiskBlockManager(testConf, deleteFilesOnStop = true, isDriver = false)
+    val mergedShuffleMeta =
+      diskBlockManager.getMergeDirectoryAndAttemptIDJsonString();
     val mapper: ObjectMapper = new ObjectMapper
     val typeRef: TypeReference[HashMap[String, String]] =
       new TypeReference[HashMap[String, String]]() {}
-    val metaMap: HashMap[String, String] = mapper.readValue(mergedShuffleMeta, typeRef)
+    val metaMap: HashMap[String, String] =
+      mapper.readValue(mergedShuffleMeta, typeRef)
     val mergeDir = metaMap.get(DiskBlockManager.MERGE_DIR_KEY)
     assert(mergeDir.equals(DiskBlockManager.MERGE_DIRECTORY + "_1"))
     val attemptId = metaMap.get(DiskBlockManager.ATTEMPT_ID_KEY)
@@ -147,19 +164,24 @@ class DiskBlockManagerSuite extends SparkFunSuite {
     "0" + "%o".format(prev)
   }
 
-  test("SPARK-37618: Sub dirs are group writable when removing from shuffle service enabled") {
+  test(
+    "SPARK-37618: Sub dirs are group writable when removing from shuffle service enabled"
+  ) {
     val conf = testConf.clone
     conf.set("spark.local.dir", rootDirs)
     conf.set("spark.shuffle.service.enabled", "true")
     conf.set("spark.shuffle.service.removeShuffle", "false")
     val posix = POSIXFactory.getPOSIX
 
-    assume(posix.isNative, "Skipping test for SPARK-37618, native posix support not found")
+    assume(
+      posix.isNative,
+      "Skipping test for SPARK-37618, native posix support not found"
+    )
 
     val oldUmask = getAndSetUmask(posix, "077")
     try {
-      val diskBlockManager = new DiskBlockManager(conf, deleteFilesOnStop = true,
-        isDriver = false)
+      val diskBlockManager =
+        new DiskBlockManager(conf, deleteFilesOnStop = true, isDriver = false)
       val blockId = new TestBlockId("test")
       val newFile = diskBlockManager.getFile(blockId)
       val parentDir = newFile.getParentFile()
@@ -170,8 +192,8 @@ class DiskBlockManagerSuite extends SparkFunSuite {
       assert(parentDir.delete())
 
       conf.set("spark.shuffle.service.removeShuffle", "true")
-      val diskBlockManager2 = new DiskBlockManager(conf, deleteFilesOnStop = true,
-        isDriver = false)
+      val diskBlockManager2 =
+        new DiskBlockManager(conf, deleteFilesOnStop = true, isDriver = false)
       val newFile2 = diskBlockManager2.getFile(blockId)
       val parentDir2 = newFile2.getParentFile()
       assert(parentDir2.exists && parentDir2.isDirectory)

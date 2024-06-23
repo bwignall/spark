@@ -72,7 +72,7 @@ class PercentileHeapSuite extends SparkFunSuite {
       }
       System.nanoTime() - start
     }
-    for (_ <- 0 until numRuns) kernel()  // warmup
+    for (_ <- 0 until numRuns) kernel() // warmup
 
     var elapsed: Long = 0
     for (_ <- 0 until numRuns) elapsed += kernel()

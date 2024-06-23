@@ -59,26 +59,49 @@ class ReadOnlyMasterWebUISuite extends SparkFunSuite {
   }
 
   test("/app/kill POST method is not allowed") {
-    val url = s"http://${Utils.localHostNameForURI()}:${masterWebUI.boundPort}/app/kill/"
+    val url =
+      s"http://${Utils.localHostNameForURI()}:${masterWebUI.boundPort}/app/kill/"
     val body = convPostDataToString(Map(("id", "1"), ("terminate", "true")))
-    assert(sendHttpRequest(url, "POST", body).getResponseCode === SC_METHOD_NOT_ALLOWED)
+    assert(
+      sendHttpRequest(
+        url,
+        "POST",
+        body
+      ).getResponseCode === SC_METHOD_NOT_ALLOWED
+    )
   }
 
   test("/driver/kill POST method is not allowed") {
-    val url = s"http://${Utils.localHostNameForURI()}:${masterWebUI.boundPort}/driver/kill/"
-    val body = convPostDataToString(Map(("id", "driver-0"), ("terminate", "true")))
-    assert(sendHttpRequest(url, "POST", body).getResponseCode === SC_METHOD_NOT_ALLOWED)
+    val url =
+      s"http://${Utils.localHostNameForURI()}:${masterWebUI.boundPort}/driver/kill/"
+    val body =
+      convPostDataToString(Map(("id", "driver-0"), ("terminate", "true")))
+    assert(
+      sendHttpRequest(
+        url,
+        "POST",
+        body
+      ).getResponseCode === SC_METHOD_NOT_ALLOWED
+    )
   }
 
   test("/workers/kill POST method is not allowed") {
     val hostnames = Seq(s"${Utils.localHostNameForURI()}")
-    val url = s"http://${Utils.localHostNameForURI()}:${masterWebUI.boundPort}/workers/kill/"
+    val url =
+      s"http://${Utils.localHostNameForURI()}:${masterWebUI.boundPort}/workers/kill/"
     val body = convPostDataToString(hostnames.map(("host", _)))
-    assert(sendHttpRequest(url, "POST", body).getResponseCode === SC_METHOD_NOT_ALLOWED)
+    assert(
+      sendHttpRequest(
+        url,
+        "POST",
+        body
+      ).getResponseCode === SC_METHOD_NOT_ALLOWED
+    )
   }
 
   test("SPARK-47894: /environment") {
-    val url = s"http://${Utils.localHostNameForURI()}:${masterWebUI.boundPort}/environment"
+    val url =
+      s"http://${Utils.localHostNameForURI()}:${masterWebUI.boundPort}/environment"
     val conn = sendHttpRequest(url, "GET", "")
     assert(conn.getResponseCode === SC_OK)
     val result = Source.fromInputStream(conn.getInputStream).mkString

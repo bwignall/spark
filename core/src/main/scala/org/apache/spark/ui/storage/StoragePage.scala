@@ -18,6 +18,7 @@
 package org.apache.spark.ui.storage
 
 import scala.collection.SortedMap
+import scala.xml._
 import scala.xml.Node
 
 import jakarta.servlet.http.HttpServletRequest

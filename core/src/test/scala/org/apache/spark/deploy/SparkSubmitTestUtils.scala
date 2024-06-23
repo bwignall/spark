@@ -43,9 +43,12 @@ trait SparkSubmitTestUtils extends SparkFunSuite with TimeLimits {
       sparkHomeOpt: Option[String] = None,
       timeout: Span = defaultSparkSubmitTimeout,
       isSparkTesting: Boolean = true,
-      expectFailure: Boolean = false): Int = {
+      expectFailure: Boolean = false
+  ): Int = {
     val sparkHome = sparkHomeOpt.getOrElse(
-      sys.props.getOrElse("spark.test.home", fail("spark.test.home is not set!")))
+      sys.props
+        .getOrElse("spark.test.home", fail("spark.test.home is not set!"))
+    )
     val history = ArrayBuffer.empty[String]
     val sparkSubmit = if (Utils.isWindows) {
       new File(new File(sparkHome, "bin"), "spark-submit.cmd")
@@ -55,7 +58,8 @@ trait SparkSubmitTestUtils extends SparkFunSuite with TimeLimits {
     val commands = Seq(sparkSubmit.getCanonicalPath) ++ args
     val commandLine = commands.mkString("'", "' '", "'")
 
-    val builder = new ProcessBuilder(commands: _*).directory(new File(sparkHome))
+    val builder =
+      new ProcessBuilder(commands: _*).directory(new File(sparkHome))
     val env = builder.environment()
     if (isSparkTesting) {
       env.put("SPARK_TESTING", "1")
@@ -73,8 +77,10 @@ trait SparkSubmitTestUtils extends SparkFunSuite with TimeLimits {
     }
 
     val process = builder.start()
-    new ProcessOutputCapturer(process.getInputStream, captureOutput("stdout")).start()
-    new ProcessOutputCapturer(process.getErrorStream, captureOutput("stderr")).start()
+    new ProcessOutputCapturer(process.getInputStream, captureOutput("stdout"))
+      .start()
+    new ProcessOutputCapturer(process.getErrorStream, captureOutput("stderr"))
+      .start()
 
     try {
       val exitCode = failAfter(timeout) { process.waitFor() }
@@ -95,9 +101,12 @@ trait SparkSubmitTestUtils extends SparkFunSuite with TimeLimits {
     } catch {
       case to: TestFailedDueToTimeoutException =>
         val historyLog = history.mkString("\n")
-        fail(s"Timeout of $commandLine" +
-          s" See the log4j logs for more detail." +
-          s"\n$historyLog", to)
+        fail(
+          s"Timeout of $commandLine" +
+            s" See the log4j logs for more detail." +
+            s"\n$historyLog",
+          to
+        )
       case t: Throwable => throw t
     } finally {
       // Ensure we still kill the process in case it timed out

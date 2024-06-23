@@ -29,28 +29,43 @@ import org.apache.spark.util.ArrayImplicits._
 
 class MutableURLClassLoaderSuite extends SparkFunSuite with Matchers {
 
-  val urls2 = List(TestUtils.createJarWithClasses(
+  val urls2 = List(
+    TestUtils.createJarWithClasses(
       classNames = Seq("FakeClass1", "FakeClass2", "FakeClass3"),
-      toStringValue = "2")).toArray
-  val urls = List(TestUtils.createJarWithClasses(
+      toStringValue = "2"
+    )
+  ).toArray
+  val urls = List(
+    TestUtils.createJarWithClasses(
       classNames = Seq("FakeClass1"),
-      classNamesWithBase = Seq(("FakeClass2", "FakeClass3")), // FakeClass3 is in parent
+      classNamesWithBase =
+        Seq(("FakeClass2", "FakeClass3")), // FakeClass3 is in parent
       toStringValue = "1",
-      classpathUrls = urls2.toImmutableArraySeq)).toArray
+      classpathUrls = urls2.toImmutableArraySeq
+    )
+  ).toArray
 
-  val fileUrlsChild = List(TestUtils.createJarWithFiles(Map(
-    "resource1" -> "resource1Contents-child",
-    "resource2" -> "resource2Contents"))).toArray
-  val fileUrlsParent = List(TestUtils.createJarWithFiles(Map(
-    "resource1" -> "resource1Contents-parent"))).toArray
+  val fileUrlsChild = List(
+    TestUtils.createJarWithFiles(
+      Map(
+        "resource1" -> "resource1Contents-child",
+        "resource2" -> "resource2Contents"
+      )
+    )
+  ).toArray
+  val fileUrlsParent = List(
+    TestUtils.createJarWithFiles(Map("resource1" -> "resource1Contents-parent"))
+  ).toArray
 
   test("child first") {
     val parentLoader = new URLClassLoader(urls2, null)
     val classLoader = new ChildFirstURLClassLoader(urls, parentLoader)
-    val fakeClass = classLoader.loadClass("FakeClass2").getConstructor().newInstance()
+    val fakeClass =
+      classLoader.loadClass("FakeClass2").getConstructor().newInstance()
     val fakeClassVersion = fakeClass.toString
     assert(fakeClassVersion === "1")
-    val fakeClass2 = classLoader.loadClass("FakeClass2").getConstructor().newInstance()
+    val fakeClass2 =
+      classLoader.loadClass("FakeClass2").getConstructor().newInstance()
     assert(fakeClass.getClass === fakeClass2.getClass)
     classLoader.close()
     parentLoader.close()
@@ -59,10 +74,12 @@ class MutableURLClassLoaderSuite extends SparkFunSuite with Matchers {
   test("parent first") {
     val parentLoader = new URLClassLoader(urls2, null)
     val classLoader = new MutableURLClassLoader(urls, parentLoader)
-    val fakeClass = classLoader.loadClass("FakeClass1").getConstructor().newInstance()
+    val fakeClass =
+      classLoader.loadClass("FakeClass1").getConstructor().newInstance()
     val fakeClassVersion = fakeClass.toString
     assert(fakeClassVersion === "2")
-    val fakeClass2 = classLoader.loadClass("FakeClass1").getConstructor().newInstance()
+    val fakeClass2 =
+      classLoader.loadClass("FakeClass1").getConstructor().newInstance()
     assert(fakeClass.getClass === fakeClass2.getClass)
     classLoader.close()
     parentLoader.close()
@@ -71,7 +88,8 @@ class MutableURLClassLoaderSuite extends SparkFunSuite with Matchers {
   test("child first can fall back") {
     val parentLoader = new URLClassLoader(urls2, null)
     val classLoader = new ChildFirstURLClassLoader(urls, parentLoader)
-    val fakeClass = classLoader.loadClass("FakeClass3").getConstructor().newInstance()
+    val fakeClass =
+      classLoader.loadClass("FakeClass3").getConstructor().newInstance()
     val fakeClassVersion = fakeClass.toString
     assert(fakeClassVersion === "2")
     classLoader.close()
@@ -82,7 +100,10 @@ class MutableURLClassLoaderSuite extends SparkFunSuite with Matchers {
     val parentLoader = new URLClassLoader(urls2, null)
     val classLoader = new ChildFirstURLClassLoader(urls, parentLoader)
     intercept[java.lang.ClassNotFoundException] {
-      classLoader.loadClass("FakeClassDoesNotExist").getConstructor().newInstance()
+      classLoader
+        .loadClass("FakeClassDoesNotExist")
+        .getConstructor()
+        .newInstance()
     }
     classLoader.close()
     parentLoader.close()
@@ -115,11 +136,10 @@ class MutableURLClassLoaderSuite extends SparkFunSuite with Matchers {
     assert(classLoader.getResources("resource2").asScala.size === 1)
     res1.map { res =>
       Utils.tryWithResource(scala.io.Source.fromURL(res))(_.mkString)
-    } should contain inOrderOnly("resource1Contents-child", "resource1Contents-parent")
+    } should contain inOrderOnly ("resource1Contents-child", "resource1Contents-parent")
     classLoader.close()
     parentLoader.close()
   }
-
 
   test("driver sets context class loader in local mode") {
     // Test the case where the driver program sets a context classloader and then runs a job
@@ -129,20 +149,25 @@ class MutableURLClassLoaderSuite extends SparkFunSuite with Matchers {
 
     val className = "ClassForDriverTest"
     val jar = TestUtils.createJarWithClasses(Seq(className))
-    val contextLoader = new URLClassLoader(Array(jar), Utils.getContextOrSparkClassLoader)
+    val contextLoader =
+      new URLClassLoader(Array(jar), Utils.getContextOrSparkClassLoader)
     Thread.currentThread().setContextClassLoader(contextLoader)
 
     val sc = new SparkContext("local", "driverLoaderTest")
 
     try {
-      sc.makeRDD(1 to 5, 2).mapPartitions { x =>
-        Utils.classForName[AnyRef](className, noSparkClassLoader = true).
-          getConstructor().newInstance()
-        Seq().iterator
-      }.count()
-    }
-    catch {
-      case e: SparkException if e.getMessage.contains("ClassNotFoundException") =>
+      sc.makeRDD(1 to 5, 2)
+        .mapPartitions { x =>
+          Utils
+            .classForName[AnyRef](className, noSparkClassLoader = true)
+            .getConstructor()
+            .newInstance()
+          Seq().iterator
+        }
+        .count()
+    } catch {
+      case e: SparkException
+          if e.getMessage.contains("ClassNotFoundException") =>
         fail("Local executor could not find class", e)
       case t: Throwable => fail("Unexpected exception ", t)
     }

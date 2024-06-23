@@ -21,43 +21,60 @@ import scala.jdk.CollectionConverters._
 
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.Text
-import org.apache.hadoop.mapreduce.{InputSplit, JobContext, RecordReader, TaskAttemptContext}
+import org.apache.hadoop.mapreduce.{
+  InputSplit,
+  JobContext,
+  RecordReader,
+  TaskAttemptContext
+}
 import org.apache.hadoop.mapreduce.lib.input.CombineFileInputFormat
 
-/**
- * A [[org.apache.hadoop.mapreduce.lib.input.CombineFileInputFormat CombineFileInputFormat]] for
- * reading whole text files. Each file is read as key-value pair, where the key is the file path and
- * the value is the entire content of file.
- */
+/** A [[org.apache.hadoop.mapreduce.lib.input.CombineFileInputFormat CombineFileInputFormat]] for
+  * reading whole text files. Each file is read as key-value pair, where the key is the file path and
+  * the value is the entire content of file.
+  */
 
 private[spark] class WholeTextFileInputFormat
-  extends CombineFileInputFormat[Text, Text] with Configurable {
+    extends CombineFileInputFormat[Text, Text]
+    with Configurable {
 
-  override protected def isSplitable(context: JobContext, file: Path): Boolean = false
+  override protected def isSplitable(context: JobContext, file: Path): Boolean =
+    false
 
   override def createRecordReader(
       split: InputSplit,
-      context: TaskAttemptContext): RecordReader[Text, Text] = {
+      context: TaskAttemptContext
+  ): RecordReader[Text, Text] = {
     val reader =
-      new ConfigurableCombineFileRecordReader(split, context, classOf[WholeTextFileRecordReader])
+      new ConfigurableCombineFileRecordReader(
+        split,
+        context,
+        classOf[WholeTextFileRecordReader]
+      )
     reader.setConf(getConf)
     reader
   }
 
-  /**
-   * Allow minPartitions set by end-user in order to keep compatibility with old Hadoop API,
-   * which is set through setMaxSplitSize
-   */
+  /** Allow minPartitions set by end-user in order to keep compatibility with old Hadoop API,
+    * which is set through setMaxSplitSize
+    */
   def setMinPartitions(context: JobContext, minPartitions: Int): Unit = {
     val files = listStatus(context).asScala
-    val totalLen = files.map(file => if (file.isDirectory) 0L else file.getLen).sum
-    val maxSplitSize = Math.ceil(totalLen * 1.0 /
-      (if (minPartitions == 0) 1 else minPartitions)).toLong
+    val totalLen =
+      files.map(file => if (file.isDirectory) 0L else file.getLen).sum
+    val maxSplitSize = Math
+      .ceil(
+        totalLen * 1.0 /
+          (if (minPartitions == 0) 1 else minPartitions)
+      )
+      .toLong
 
     // For small files we need to ensure the min split size per node & rack <= maxSplitSize
     val config = context.getConfiguration
-    val minSplitSizePerNode = config.getLong(CombineFileInputFormat.SPLIT_MINSIZE_PERNODE, 0L)
-    val minSplitSizePerRack = config.getLong(CombineFileInputFormat.SPLIT_MINSIZE_PERRACK, 0L)
+    val minSplitSizePerNode =
+      config.getLong(CombineFileInputFormat.SPLIT_MINSIZE_PERNODE, 0L)
+    val minSplitSizePerRack =
+      config.getLong(CombineFileInputFormat.SPLIT_MINSIZE_PERRACK, 0L)
 
     if (maxSplitSize < minSplitSizePerNode) {
       super.setMinSplitSizeNode(maxSplitSize)

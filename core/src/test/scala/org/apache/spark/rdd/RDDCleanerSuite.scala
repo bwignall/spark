@@ -27,7 +27,6 @@ import org.apache.commons.io.filefilter.TrueFileFilter
 import org.apache.spark._
 import org.apache.spark.util.Utils
 
-
 class RDDCleanerSuite extends SparkFunSuite with LocalRootDirsTest {
 
   test("RDD shuffle cleanup standalone") {
@@ -35,7 +34,10 @@ class RDDCleanerSuite extends SparkFunSuite with LocalRootDirsTest {
     val localDir = Utils.createTempDir()
     val checkpointDir = Utils.createTempDir()
     def getAllFiles: Set[File] =
-      FileUtils.listFiles(localDir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE).asScala.toSet
+      FileUtils
+        .listFiles(localDir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE)
+        .asScala
+        .toSet
     try {
       conf.set("spark.local.dir", localDir.getAbsolutePath)
       val sc = new SparkContext("local[2]", "test", conf)

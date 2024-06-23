@@ -20,19 +20,22 @@ import org.apache.spark._
 import org.apache.spark.internal.config
 import org.apache.spark.internal.config.Tests._
 
-class HealthTrackerIntegrationSuite extends SchedulerIntegrationSuite[MultiExecutorMockBackend]{
+class HealthTrackerIntegrationSuite
+    extends SchedulerIntegrationSuite[MultiExecutorMockBackend] {
 
   val badHost = "host-0"
 
-  /**
-   * This backend just always fails if the task is executed on a bad host, but otherwise succeeds
-   * all tasks.
-   */
+  /** This backend just always fails if the task is executed on a bad host, but otherwise succeeds
+    * all tasks.
+    */
   def badHostBackend(): Unit = {
     val (taskDescription, _) = backend.beginTask()
     val host = backend.executorIdToExecutor(taskDescription.executorId).host
     if (host == badHost) {
-      backend.taskFailed(taskDescription, new RuntimeException("I'm a bad host!"))
+      backend.taskFailed(
+        taskDescription,
+        new RuntimeException("I'm a bad host!")
+      )
     } else {
       backend.taskSuccess(taskDescription, 42)
     }
@@ -40,10 +43,12 @@ class HealthTrackerIntegrationSuite extends SchedulerIntegrationSuite[MultiExecu
 
   // Test demonstrating the issue -- without a config change, the scheduler keeps scheduling
   // according to locality preferences, and so the job fails
-  testScheduler("If preferred node is bad, without excludeOnFailure job will fail",
+  testScheduler(
+    "If preferred node is bad, without excludeOnFailure job will fail",
     extraConfs = Seq(
       config.EXCLUDE_ON_FAILURE_ENABLED.key -> "false"
-  )) {
+    )
+  ) {
     val rdd = new MockRDDWithLocalityPrefs(sc, 10, Nil, badHost)
     withBackend(badHostBackend _) {
       val jobFuture = submit(rdd, (0 until 10).toArray)
@@ -81,7 +86,7 @@ class HealthTrackerIntegrationSuite extends SchedulerIntegrationSuite[MultiExecu
   testScheduler(
     "Bad node with multiple executors, job will still succeed with the right confs",
     extraConfs = Seq(
-       config.EXCLUDE_ON_FAILURE_ENABLED.key -> "true",
+      config.EXCLUDE_ON_FAILURE_ENABLED.key -> "true",
       // just to avoid this test taking too long
       config.LOCALITY_WAIT.key -> "10ms"
     )
@@ -109,16 +114,21 @@ class HealthTrackerIntegrationSuite extends SchedulerIntegrationSuite[MultiExecu
   ) {
     def runBackend(): Unit = {
       val (taskDescription, _) = backend.beginTask()
-      backend.taskFailed(taskDescription, new RuntimeException("test task failure"))
+      backend.taskFailed(
+        taskDescription,
+        new RuntimeException("test task failure")
+      )
     }
     withBackend(runBackend _) {
-      val jobFuture = submit(new MockRDD(sc, 10, Nil, Nil), (0 until 10).toArray)
+      val jobFuture =
+        submit(new MockRDD(sc, 10, Nil, Nil), (0 until 10).toArray)
       awaitJobTermination(jobFuture, duration)
-      val pattern = (
-        s"""|Aborting TaskSet 0.0 because task .*
+      val pattern = (s"""|Aborting TaskSet 0.0 because task .*
             |cannot run anywhere due to node and executor excludeOnFailure""".stripMargin).r
-      assert(pattern.findFirstIn(failure.getMessage).isDefined,
-        s"Couldn't find $pattern in ${failure.getMessage()}")
+      assert(
+        pattern.findFirstIn(failure.getMessage).isDefined,
+        s"Couldn't find $pattern in ${failure.getMessage()}"
+      )
     }
     assertDataStructuresEmpty(noFailure = false)
   }
@@ -126,7 +136,8 @@ class HealthTrackerIntegrationSuite extends SchedulerIntegrationSuite[MultiExecu
 
 class MultiExecutorMockBackend(
     conf: SparkConf,
-    taskScheduler: TaskSchedulerImpl) extends MockBackend(conf, taskScheduler) {
+    taskScheduler: TaskSchedulerImpl
+) extends MockBackend(conf, taskScheduler) {
 
   val nHosts = conf.get(TEST_N_HOSTS)
   val nExecutorsPerHost = conf.get(TEST_N_EXECUTORS_HOST)
@@ -138,19 +149,25 @@ class MultiExecutorMockBackend(
       (0 until nExecutorsPerHost).map { subIdx =>
         val executorId = (hostIdx * nExecutorsPerHost + subIdx).toString
         executorId ->
-          ExecutorTaskStatus(host = hostName, executorId = executorId, nCoresPerExecutor)
+          ExecutorTaskStatus(
+            host = hostName,
+            executorId = executorId,
+            nCoresPerExecutor
+          )
       }
     }.toMap
   }
 
-  override def defaultParallelism(): Int = nHosts * nExecutorsPerHost * nCoresPerExecutor
+  override def defaultParallelism(): Int =
+    nHosts * nExecutorsPerHost * nCoresPerExecutor
 }
 
 class MockRDDWithLocalityPrefs(
     sc: SparkContext,
     numPartitions: Int,
     shuffleDeps: Seq[ShuffleDependency[Int, Int, Nothing]],
-    val preferredLoc: String) extends MockRDD(sc, numPartitions, shuffleDeps, Nil) {
+    val preferredLoc: String
+) extends MockRDD(sc, numPartitions, shuffleDeps, Nil) {
   override def getPreferredLocations(split: Partition): Seq[String] = {
     Seq(preferredLoc)
   }

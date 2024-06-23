@@ -23,7 +23,8 @@ class JavaSerializerSuite extends SparkFunSuite {
   test("JavaSerializer instances are serializable") {
     val serializer = new JavaSerializer(new SparkConf())
     val instance = serializer.newInstance()
-    val obj = instance.deserialize[JavaSerializer](instance.serialize(serializer))
+    val obj =
+      instance.deserialize[JavaSerializer](instance.serialize(serializer))
     // enforce class cast
     obj.getClass
   }
@@ -32,12 +33,15 @@ class JavaSerializerSuite extends SparkFunSuite {
     val serializer = new JavaSerializer(new SparkConf())
     val instance = serializer.newInstance()
     val obj = instance.deserialize[ContainsPrimitiveClass](
-      instance.serialize(new ContainsPrimitiveClass()))
+      instance.serialize(new ContainsPrimitiveClass())
+    )
     // enforce class cast
     obj.getClass
   }
 
-  test("SPARK-36627: Deserialize object containing a proxy Class as attribute") {
+  test(
+    "SPARK-36627: Deserialize object containing a proxy Class as attribute"
+  ) {
     var classesLoaded = Set[String]()
     val outer = Thread.currentThread.getContextClassLoader
     val inner = new ClassLoader() {
@@ -51,7 +55,9 @@ class JavaSerializerSuite extends SparkFunSuite {
     val serializer = new JavaSerializer(new SparkConf())
     val instance = serializer.newInstance()
     val obj =
-      instance.deserialize[ContainsProxyClass](instance.serialize(new ContainsProxyClass()))
+      instance.deserialize[ContainsProxyClass](
+        instance.serialize(new ContainsProxyClass())
+      )
     // enforce class cast
     obj.getClass
 

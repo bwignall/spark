@@ -21,12 +21,11 @@ import java.net.URI
 
 import org.apache.hadoop.fs.{FileStatus, Path}
 
-/**
- * A canonical representation of a file path. This class is intended to provide
- * type-safety to the way that Spark handles Paths. Paths can be represented as
- * Strings in multiple ways, which are not always compatible. Spark regularly uses
- * two ways: 1. hadoop Path.toString and java URI.toString.
- */
+/** A canonical representation of a file path. This class is intended to provide
+  * type-safety to the way that Spark handles Paths. Paths can be represented as
+  * Strings in multiple ways, which are not always compatible. Spark regularly uses
+  * two ways: 1. hadoop Path.toString and java URI.toString.
+  */
 case class SparkPath private (private val underlying: String) {
   def urlEncoded: String = underlying
   def toUri: URI = new URI(underlying)
@@ -35,21 +34,20 @@ case class SparkPath private (private val underlying: String) {
 }
 
 object SparkPath {
-  /**
-   * Creates a SparkPath from a hadoop Path string.
-   * Please be very sure that the provided string is encoded (or not encoded) in the right way.
-   *
-   * Please see the hadoop Path documentation here:
-   * https://hadoop.apache.org/docs/stable/api/org/apache/hadoop/fs/Path.html#Path-java.lang.String-
-   */
+
+  /** Creates a SparkPath from a hadoop Path string.
+    * Please be very sure that the provided string is encoded (or not encoded) in the right way.
+    *
+    * Please see the hadoop Path documentation here:
+    * https://hadoop.apache.org/docs/stable/api/org/apache/hadoop/fs/Path.html#Path-java.lang.String-
+    */
   def fromPathString(str: String): SparkPath = fromPath(new Path(str))
   def fromPath(path: Path): SparkPath = fromUri(path.toUri)
   def fromFileStatus(fs: FileStatus): SparkPath = fromPath(fs.getPath)
 
-  /**
-   * Creates a SparkPath from a url-encoded string.
-   * Note: It is the responsibility of the caller to ensure that str is a valid url-encoded string.
-   */
+  /** Creates a SparkPath from a url-encoded string.
+    * Note: It is the responsibility of the caller to ensure that str is a valid url-encoded string.
+    */
   def fromUrlString(str: String): SparkPath = SparkPath(str)
   def fromUri(uri: URI): SparkPath = fromUrlString(uri.toString)
 }

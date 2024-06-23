@@ -22,29 +22,28 @@ import scala.reflect.ClassTag
 import org.apache.spark.{PartitionEvaluatorFactory, TaskContext}
 import org.apache.spark.annotation.{DeveloperApi, Experimental, Since}
 
-/**
- * :: Experimental ::
- * Wraps an RDD in a barrier stage, which forces Spark to launch tasks of this stage together.
- * [[org.apache.spark.rdd.RDDBarrier]] instances are created by
- * [[org.apache.spark.rdd.RDD#barrier]].
- */
+/** :: Experimental ::
+  * Wraps an RDD in a barrier stage, which forces Spark to launch tasks of this stage together.
+  * [[org.apache.spark.rdd.RDDBarrier]] instances are created by
+  * [[org.apache.spark.rdd.RDD#barrier]].
+  */
 @Experimental
 @Since("2.4.0")
 class RDDBarrier[T: ClassTag] private[spark] (rdd: RDD[T]) {
 
-  /**
-   * :: Experimental ::
-   * Returns a new RDD by applying a function to each partition of the wrapped RDD,
-   * where tasks are launched together in a barrier stage.
-   * The interface is the same as [[org.apache.spark.rdd.RDD#mapPartitions]].
-   * Please see the API doc there.
-   * @see [[org.apache.spark.BarrierTaskContext]]
-   */
+  /** :: Experimental ::
+    * Returns a new RDD by applying a function to each partition of the wrapped RDD,
+    * where tasks are launched together in a barrier stage.
+    * The interface is the same as [[org.apache.spark.rdd.RDD#mapPartitions]].
+    * Please see the API doc there.
+    * @see [[org.apache.spark.BarrierTaskContext]]
+    */
   @Experimental
   @Since("2.4.0")
   def mapPartitions[S: ClassTag](
       f: Iterator[T] => Iterator[S],
-      preservesPartitioning: Boolean = false): RDD[S] = rdd.withScope {
+      preservesPartitioning: Boolean = false
+  ): RDD[S] = rdd.withScope {
     val cleanedF = rdd.sparkContext.clean(f)
     new MapPartitionsRDD(
       rdd,
@@ -54,19 +53,19 @@ class RDDBarrier[T: ClassTag] private[spark] (rdd: RDD[T]) {
     )
   }
 
-  /**
-   * :: Experimental ::
-   * Returns a new RDD by applying a function to each partition of the wrapped RDD, while tracking
-   * the index of the original partition. And all tasks are launched together in a barrier stage.
-   * The interface is the same as [[org.apache.spark.rdd.RDD#mapPartitionsWithIndex]].
-   * Please see the API doc there.
-   * @see [[org.apache.spark.BarrierTaskContext]]
-   */
+  /** :: Experimental ::
+    * Returns a new RDD by applying a function to each partition of the wrapped RDD, while tracking
+    * the index of the original partition. And all tasks are launched together in a barrier stage.
+    * The interface is the same as [[org.apache.spark.rdd.RDD#mapPartitionsWithIndex]].
+    * Please see the API doc there.
+    * @see [[org.apache.spark.BarrierTaskContext]]
+    */
   @Experimental
   @Since("3.0.0")
   def mapPartitionsWithIndex[S: ClassTag](
       f: (Int, Iterator[T]) => Iterator[S],
-      preservesPartitioning: Boolean = false): RDD[S] = rdd.withScope {
+      preservesPartitioning: Boolean = false
+  ): RDD[S] = rdd.withScope {
     val cleanedF = rdd.sparkContext.clean(f)
     new MapPartitionsRDD(
       rdd,
@@ -76,16 +75,16 @@ class RDDBarrier[T: ClassTag] private[spark] (rdd: RDD[T]) {
     )
   }
 
-  /**
-   * Return a new RDD by applying an evaluator to each partition of the wrapped RDD. The given
-   * evaluator factory will be serialized and sent to executors, and each task will create an
-   * evaluator with the factory, and use the evaluator to transform the data of the input
-   * partition.
-   */
+  /** Return a new RDD by applying an evaluator to each partition of the wrapped RDD. The given
+    * evaluator factory will be serialized and sent to executors, and each task will create an
+    * evaluator with the factory, and use the evaluator to transform the data of the input
+    * partition.
+    */
   @DeveloperApi
   @Since("3.5.0")
   def mapPartitionsWithEvaluator[U: ClassTag](
-      evaluatorFactory: PartitionEvaluatorFactory[T, U]): RDD[U] = rdd.withScope {
+      evaluatorFactory: PartitionEvaluatorFactory[T, U]
+  ): RDD[U] = rdd.withScope {
     new MapPartitionsWithEvaluatorRDD(rdd, evaluatorFactory)
   }
   // TODO: [SPARK-25247] add extra conf to RDDBarrier, e.g., timeout.

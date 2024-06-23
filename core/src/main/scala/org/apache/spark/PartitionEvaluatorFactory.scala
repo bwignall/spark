@@ -21,18 +21,16 @@ import java.io.Serializable
 
 import org.apache.spark.annotation.{DeveloperApi, Since}
 
-/**
- * A factory to create [[PartitionEvaluator]]. Spark serializes and sends
- * [[PartitionEvaluatorFactory]] to executors, and then creates [[PartitionEvaluator]] via the
- * factory at the executor side.
- */
+/** A factory to create [[PartitionEvaluator]]. Spark serializes and sends
+  * [[PartitionEvaluatorFactory]] to executors, and then creates [[PartitionEvaluator]] via the
+  * factory at the executor side.
+  */
 @DeveloperApi
 @Since("3.5.0")
 trait PartitionEvaluatorFactory[T, U] extends Serializable {
 
-  /**
-   * Creates a partition evaluator. Each RDD partition will create one evaluator instance, which
-   * means one evaluator instance will be used by only one thread.
-   */
+  /** Creates a partition evaluator. Each RDD partition will create one evaluator instance, which
+    * means one evaluator instance will be used by only one thread.
+    */
   def createEvaluator(): PartitionEvaluator[T, U]
 }

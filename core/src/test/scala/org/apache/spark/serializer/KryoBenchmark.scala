@@ -26,18 +26,17 @@ import org.apache.spark.internal.config._
 import org.apache.spark.internal.config.Kryo._
 import org.apache.spark.serializer.KryoTest._
 
-/**
- * Benchmark for Kryo Unsafe vs safe Serialization.
- * To run this benchmark:
- * {{{
- *   1. without sbt:
- *      bin/spark-submit --class <this class> <spark core test jar>
- *   2. build/sbt "core/Test/runMain <this class>"
- *   3. generate result:
- *      SPARK_GENERATE_BENCHMARK_FILES=1 build/sbt "core/Test/runMain <this class>"
- *      Results will be written to "benchmarks/KryoBenchmark-results.txt".
- * }}}
- */
+/** Benchmark for Kryo Unsafe vs safe Serialization.
+  * To run this benchmark:
+  * {{{
+  *   1. without sbt:
+  *      bin/spark-submit --class <this class> <spark core test jar>
+  *   2. build/sbt "core/Test/runMain <this class>"
+  *   3. generate result:
+  *      SPARK_GENERATE_BENCHMARK_FILES=1 build/sbt "core/Test/runMain <this class>"
+  *      Results will be written to "benchmarks/KryoBenchmark-results.txt".
+  * }}}
+  */
 object KryoBenchmark extends BenchmarkBase {
 
   val N = 1000000
@@ -81,7 +80,9 @@ object KryoBenchmark extends BenchmarkBase {
     def basicTypeArray[T: ClassTag](name: String, gen: () => T): Unit = {
       lazy val ser = createSerializer(useUnsafe)
       val arrayOfArrays: Array[Array[T]] =
-        Array.fill(arrayCount)(Array.fill[T](arrayLength + Random.nextInt(arrayLength / 4))(gen()))
+        Array.fill(arrayCount)(
+          Array.fill[T](arrayLength + Random.nextInt(arrayLength / 4))(gen())
+        )
 
       benchmark.addCase(s"Array: $name with unsafe:$useUnsafe") { _ =>
         var sum = 0L
@@ -102,12 +103,14 @@ object KryoBenchmark extends BenchmarkBase {
     // Benchmark Maps
     val mapsCount = 200
     val mapKeyLength = 20
-    val mapLength = N  / mapsCount / mapKeyLength
+    val mapLength = N / mapsCount / mapKeyLength
     lazy val ser = createSerializer(useUnsafe)
     val arrayOfMaps: Array[Map[String, Double]] = Array.fill(mapsCount) {
-      Array.fill(mapLength + Random.nextInt(mapLength / 4)) {
-        (Random.nextString(mapKeyLength), Random.nextDouble())
-      }.toMap
+      Array
+        .fill(mapLength + Random.nextInt(mapLength / 4)) {
+          (Random.nextString(mapKeyLength), Random.nextDouble())
+        }
+        .toMap
     }
 
     benchmark.addCase(s"Map of string->Double  with unsafe:$useUnsafe") { _ =>

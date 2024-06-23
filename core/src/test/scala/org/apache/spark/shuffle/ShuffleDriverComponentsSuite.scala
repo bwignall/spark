@@ -23,28 +23,52 @@ import java.util.concurrent.atomic.AtomicBoolean
 import com.google.common.collect.ImmutableMap
 import org.scalatest.Assertions._
 
-import org.apache.spark.{LocalSparkContext, SparkConf, SparkContext, SparkFunSuite}
+import org.apache.spark.{
+  LocalSparkContext,
+  SparkConf,
+  SparkContext,
+  SparkFunSuite
+}
 import org.apache.spark.internal.config.SHUFFLE_IO_PLUGIN_CLASS
-import org.apache.spark.shuffle.api.{ShuffleDataIO, ShuffleDriverComponents, ShuffleExecutorComponents, ShuffleMapOutputWriter}
+import org.apache.spark.shuffle.api.{
+  ShuffleDataIO,
+  ShuffleDriverComponents,
+  ShuffleExecutorComponents,
+  ShuffleMapOutputWriter
+}
 import org.apache.spark.shuffle.sort.io.LocalDiskShuffleDataIO
 
-class ShuffleDriverComponentsSuite extends SparkFunSuite with LocalSparkContext {
+class ShuffleDriverComponentsSuite
+    extends SparkFunSuite
+    with LocalSparkContext {
 
   test("test serialization of shuffle initialization conf to executors") {
     val testConf = new SparkConf()
       .setAppName("testing")
-      .set(ShuffleDataIOUtils.SHUFFLE_SPARK_CONF_PREFIX + "test-plugin-key", "user-set-value")
-      .set(ShuffleDataIOUtils.SHUFFLE_SPARK_CONF_PREFIX + "test-user-key", "user-set-value")
+      .set(
+        ShuffleDataIOUtils.SHUFFLE_SPARK_CONF_PREFIX + "test-plugin-key",
+        "user-set-value"
+      )
+      .set(
+        ShuffleDataIOUtils.SHUFFLE_SPARK_CONF_PREFIX + "test-user-key",
+        "user-set-value"
+      )
       .setMaster("local-cluster[2,1,1024]")
-      .set(SHUFFLE_IO_PLUGIN_CLASS, "org.apache.spark.shuffle.TestShuffleDataIO")
+      .set(
+        SHUFFLE_IO_PLUGIN_CLASS,
+        "org.apache.spark.shuffle.TestShuffleDataIO"
+      )
 
     sc = new SparkContext(testConf)
 
-    val out = sc.parallelize(Seq((1, "one"), (2, "two"), (3, "three")), 3)
+    val out = sc
+      .parallelize(Seq((1, "one"), (2, "two"), (3, "three")), 3)
       .groupByKey()
       .foreach { _ =>
         if (!TestShuffleExecutorComponentsInitialized.initialized.get()) {
-          throw new RuntimeException("TestShuffleExecutorComponents wasn't initialized")
+          throw new RuntimeException(
+            "TestShuffleExecutorComponents wasn't initialized"
+          )
         }
       }
   }
@@ -53,7 +77,8 @@ class ShuffleDriverComponentsSuite extends SparkFunSuite with LocalSparkContext 
 class TestShuffleDataIO(sparkConf: SparkConf) extends ShuffleDataIO {
   private val delegate = new LocalDiskShuffleDataIO(sparkConf)
 
-  override def driver(): ShuffleDriverComponents = new TestShuffleDriverComponents()
+  override def driver(): ShuffleDriverComponents =
+    new TestShuffleDriverComponents()
 
   override def executor(): ShuffleExecutorComponents =
     new TestShuffleExecutorComponentsInitialized(delegate.executor())
@@ -71,15 +96,20 @@ object TestShuffleExecutorComponentsInitialized {
   val initialized = new AtomicBoolean(false)
 }
 
-class TestShuffleExecutorComponentsInitialized(delegate: ShuffleExecutorComponents)
-    extends ShuffleExecutorComponents {
+class TestShuffleExecutorComponentsInitialized(
+    delegate: ShuffleExecutorComponents
+) extends ShuffleExecutorComponents {
 
   override def initializeExecutor(
       appId: String,
       execId: String,
-      extraConfigs: JMap[String, String]): Unit = {
+      extraConfigs: JMap[String, String]
+  ): Unit = {
     delegate.initializeExecutor(appId, execId, extraConfigs)
-    assert(extraConfigs.get("test-plugin-key") == "plugin-set-value", extraConfigs)
+    assert(
+      extraConfigs.get("test-plugin-key") == "plugin-set-value",
+      extraConfigs
+    )
     assert(extraConfigs.get("test-user-key") == "user-set-value")
     TestShuffleExecutorComponentsInitialized.initialized.set(true)
   }
@@ -87,7 +117,8 @@ class TestShuffleExecutorComponentsInitialized(delegate: ShuffleExecutorComponen
   override def createMapOutputWriter(
       shuffleId: Int,
       mapTaskId: Long,
-      numPartitions: Int): ShuffleMapOutputWriter = {
+      numPartitions: Int
+  ): ShuffleMapOutputWriter = {
     delegate.createMapOutputWriter(shuffleId, mapTaskId, numPartitions)
   }
 }

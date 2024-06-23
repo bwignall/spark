@@ -17,11 +17,11 @@
 
 package org.apache.spark
 
-private class SparkJobInfoImpl (
+private class SparkJobInfoImpl(
     val jobId: Int,
     val stageIds: Array[Int],
-    val status: JobExecutionStatus)
-  extends SparkJobInfo
+    val status: JobExecutionStatus
+) extends SparkJobInfo
 
 private class SparkStageInfoImpl(
     val stageId: Int,
@@ -31,8 +31,8 @@ private class SparkStageInfoImpl(
     val numTasks: Int,
     val numActiveTasks: Int,
     val numCompletedTasks: Int,
-    val numFailedTasks: Int)
-  extends SparkStageInfo
+    val numFailedTasks: Int
+) extends SparkStageInfo
 
 private class SparkExecutorInfoImpl(
     val host: String,
@@ -42,5 +42,5 @@ private class SparkExecutorInfoImpl(
     val usedOnHeapStorageMemory: Long,
     val usedOffHeapStorageMemory: Long,
     val totalOnHeapStorageMemory: Long,
-    val totalOffHeapStorageMemory: Long)
-  extends SparkExecutorInfo
+    val totalOffHeapStorageMemory: Long
+) extends SparkExecutorInfo

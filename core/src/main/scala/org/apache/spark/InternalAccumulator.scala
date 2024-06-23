@@ -17,10 +17,9 @@
 
 package org.apache.spark
 
-/**
- * A collection of fields and methods concerned with internal accumulators that represent
- * task level metrics.
- */
+/** A collection of fields and methods concerned with internal accumulators that represent
+  * task level metrics.
+  */
 private[spark] object InternalAccumulator {
   // Prefixes used in names of internal task level metrics
   val METRICS_PREFIX = "internal.metrics."
@@ -32,7 +31,8 @@ private[spark] object InternalAccumulator {
 
   // Names of internal task level metrics
   val EXECUTOR_DESERIALIZE_TIME = METRICS_PREFIX + "executorDeserializeTime"
-  val EXECUTOR_DESERIALIZE_CPU_TIME = METRICS_PREFIX + "executorDeserializeCpuTime"
+  val EXECUTOR_DESERIALIZE_CPU_TIME =
+    METRICS_PREFIX + "executorDeserializeCpuTime"
   val EXECUTOR_RUN_TIME = METRICS_PREFIX + "executorRunTime"
   val EXECUTOR_CPU_TIME = METRICS_PREFIX + "executorCpuTime"
   val RESULT_SIZE = METRICS_PREFIX + "resultSize"
@@ -48,23 +48,36 @@ private[spark] object InternalAccumulator {
 
   // Names of shuffle read metrics
   object shuffleRead {
-    val REMOTE_BLOCKS_FETCHED = SHUFFLE_READ_METRICS_PREFIX + "remoteBlocksFetched"
-    val LOCAL_BLOCKS_FETCHED = SHUFFLE_READ_METRICS_PREFIX + "localBlocksFetched"
+    val REMOTE_BLOCKS_FETCHED =
+      SHUFFLE_READ_METRICS_PREFIX + "remoteBlocksFetched"
+    val LOCAL_BLOCKS_FETCHED =
+      SHUFFLE_READ_METRICS_PREFIX + "localBlocksFetched"
     val REMOTE_BYTES_READ = SHUFFLE_READ_METRICS_PREFIX + "remoteBytesRead"
-    val REMOTE_BYTES_READ_TO_DISK = SHUFFLE_READ_METRICS_PREFIX + "remoteBytesReadToDisk"
+    val REMOTE_BYTES_READ_TO_DISK =
+      SHUFFLE_READ_METRICS_PREFIX + "remoteBytesReadToDisk"
     val LOCAL_BYTES_READ = SHUFFLE_READ_METRICS_PREFIX + "localBytesRead"
     val FETCH_WAIT_TIME = SHUFFLE_READ_METRICS_PREFIX + "fetchWaitTime"
     val RECORDS_READ = SHUFFLE_READ_METRICS_PREFIX + "recordsRead"
-    val REMOTE_REQS_DURATION = SHUFFLE_READ_METRICS_PREFIX + "remoteReqsDuration"
-    val CORRUPT_MERGED_BLOCK_CHUNKS = SHUFFLE_PUSH_READ_METRICS_PREFIX + "corruptMergedBlockChunks"
-    val MERGED_FETCH_FALLBACK_COUNT = SHUFFLE_PUSH_READ_METRICS_PREFIX + "mergedFetchFallbackCount"
-    val REMOTE_MERGED_BLOCKS_FETCHED = SHUFFLE_PUSH_READ_METRICS_PREFIX + "remoteMergedBlocksFetched"
-    val LOCAL_MERGED_BLOCKS_FETCHED = SHUFFLE_PUSH_READ_METRICS_PREFIX + "localMergedBlocksFetched"
-    val REMOTE_MERGED_CHUNKS_FETCHED = SHUFFLE_PUSH_READ_METRICS_PREFIX + "remoteMergedChunksFetched"
-    val LOCAL_MERGED_CHUNKS_FETCHED = SHUFFLE_PUSH_READ_METRICS_PREFIX + "localMergedChunksFetched"
-    val REMOTE_MERGED_BYTES_READ = SHUFFLE_PUSH_READ_METRICS_PREFIX + "remoteMergedBytesRead"
-    val LOCAL_MERGED_BYTES_READ = SHUFFLE_PUSH_READ_METRICS_PREFIX + "localMergedBytesRead"
-    val REMOTE_MERGED_REQS_DURATION = SHUFFLE_PUSH_READ_METRICS_PREFIX + "remoteMergedReqsDuration"
+    val REMOTE_REQS_DURATION =
+      SHUFFLE_READ_METRICS_PREFIX + "remoteReqsDuration"
+    val CORRUPT_MERGED_BLOCK_CHUNKS =
+      SHUFFLE_PUSH_READ_METRICS_PREFIX + "corruptMergedBlockChunks"
+    val MERGED_FETCH_FALLBACK_COUNT =
+      SHUFFLE_PUSH_READ_METRICS_PREFIX + "mergedFetchFallbackCount"
+    val REMOTE_MERGED_BLOCKS_FETCHED =
+      SHUFFLE_PUSH_READ_METRICS_PREFIX + "remoteMergedBlocksFetched"
+    val LOCAL_MERGED_BLOCKS_FETCHED =
+      SHUFFLE_PUSH_READ_METRICS_PREFIX + "localMergedBlocksFetched"
+    val REMOTE_MERGED_CHUNKS_FETCHED =
+      SHUFFLE_PUSH_READ_METRICS_PREFIX + "remoteMergedChunksFetched"
+    val LOCAL_MERGED_CHUNKS_FETCHED =
+      SHUFFLE_PUSH_READ_METRICS_PREFIX + "localMergedChunksFetched"
+    val REMOTE_MERGED_BYTES_READ =
+      SHUFFLE_PUSH_READ_METRICS_PREFIX + "remoteMergedBytesRead"
+    val LOCAL_MERGED_BYTES_READ =
+      SHUFFLE_PUSH_READ_METRICS_PREFIX + "localMergedBytesRead"
+    val REMOTE_MERGED_REQS_DURATION =
+      SHUFFLE_PUSH_READ_METRICS_PREFIX + "remoteMergedReqsDuration"
   }
 
   // Names of shuffle write metrics

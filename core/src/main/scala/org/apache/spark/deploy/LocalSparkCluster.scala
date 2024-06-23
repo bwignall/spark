@@ -28,19 +28,17 @@ import org.apache.spark.internal.{config, Logging, LogKeys, MDC}
 import org.apache.spark.rpc.RpcEnv
 import org.apache.spark.util.Utils
 
-/**
- * Testing class that creates a Spark standalone process in-cluster (that is, running the
- * spark.deploy.master.Master and spark.deploy.worker.Workers in the same JVMs). Executors launched
- * by the Workers still run in separate JVMs. This can be used to test distributed operation and
- * fault recovery without spinning up a lot of processes.
- */
-private[spark]
-class LocalSparkCluster private (
+/** Testing class that creates a Spark standalone process in-cluster (that is, running the
+  * spark.deploy.master.Master and spark.deploy.worker.Workers in the same JVMs). Executors launched
+  * by the Workers still run in separate JVMs. This can be used to test distributed operation and
+  * fault recovery without spinning up a lot of processes.
+  */
+private[spark] class LocalSparkCluster private (
     numWorkers: Int,
     coresPerWorker: Int,
     memoryPerWorker: Int,
-    conf: SparkConf)
-  extends Logging {
+    conf: SparkConf
+) extends Logging {
 
   private val localHostname = Utils.localHostName()
   private val masterRpcEnvs = ArrayBuffer[RpcEnv]()
@@ -51,19 +49,24 @@ class LocalSparkCluster private (
   private val workerDirs = ArrayBuffer[String]()
 
   def start(): Array[String] = {
-    logInfo(log"Starting a local Spark cluster with " +
-      log"${MDC(LogKeys.NUM_WORKERS, numWorkers)} workers.")
+    logInfo(
+      log"Starting a local Spark cluster with " +
+        log"${MDC(LogKeys.NUM_WORKERS, numWorkers)} workers."
+    )
 
     // Disable REST server on Master in this mode unless otherwise specified
-    val _conf = conf.clone()
+    val _conf = conf
+      .clone()
       .setIfMissing(config.MASTER_REST_SERVER_ENABLED, false)
       .set(config.SHUFFLE_SERVICE_ENABLED, false)
 
     /* Start the Master */
-    val (rpcEnv, webUiPort, _) = Master.startRpcEnvAndEndpoint(localHostname, 0, 0, _conf)
+    val (rpcEnv, webUiPort, _) =
+      Master.startRpcEnvAndEndpoint(localHostname, 0, 0, _conf)
     masterWebUIPort = webUiPort
     masterRpcEnvs += rpcEnv
-    val masterUrl = "spark://" + Utils.localHostNameForURI() + ":" + rpcEnv.address.port
+    val masterUrl =
+      "spark://" + Utils.localHostNameForURI() + ":" + rpcEnv.address.port
     val masters = Array(masterUrl)
 
     /* Start the Workers */
@@ -74,9 +77,18 @@ class LocalSparkCluster private (
       if (Utils.isTesting) {
         workerDirs += workDir
       }
-      val workerEnv = Worker.startRpcEnvAndEndpoint(localHostname, 0, 0, coresPerWorker,
-        memoryPerWorker, masters, workDir, Some(workerNum), _conf,
-        conf.get(config.Worker.SPARK_WORKER_RESOURCE_FILE))
+      val workerEnv = Worker.startRpcEnvAndEndpoint(
+        localHostname,
+        0,
+        0,
+        coresPerWorker,
+        memoryPerWorker,
+        masters,
+        workDir,
+        Some(workerNum),
+        _conf,
+        conf.get(config.Worker.SPARK_WORKER_RESOURCE_FILE)
+      )
       workerRpcEnvs += workerEnv
     }
 
@@ -85,8 +97,11 @@ class LocalSparkCluster private (
 
   def workerLogfiles(): Seq[File] = {
     workerDirs.toSeq.flatMap { dir =>
-      Utils.recursiveList(new File(dir))
-        .filter(f => f.isFile && """.*\.log$""".r.findFirstMatchIn(f.getName).isDefined)
+      Utils
+        .recursiveList(new File(dir))
+        .filter(f =>
+          f.isFile && """.*\.log$""".r.findFirstMatchIn(f.getName).isDefined
+        )
     }
   }
 
@@ -116,9 +131,11 @@ private[spark] object LocalSparkCluster {
       numWorkers: Int,
       coresPerWorker: Int,
       memoryPerWorker: Int,
-      conf: SparkConf): LocalSparkCluster = {
-    localCluster =
-      Some(new LocalSparkCluster(numWorkers, coresPerWorker, memoryPerWorker, conf))
+      conf: SparkConf
+  ): LocalSparkCluster = {
+    localCluster = Some(
+      new LocalSparkCluster(numWorkers, coresPerWorker, memoryPerWorker, conf)
+    )
     localCluster.get
   }
 }

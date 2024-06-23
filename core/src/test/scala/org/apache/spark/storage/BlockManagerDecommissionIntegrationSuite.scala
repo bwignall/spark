@@ -17,7 +17,12 @@
 
 package org.apache.spark.storage
 
-import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue, Semaphore, TimeUnit}
+import java.util.concurrent.{
+  ConcurrentHashMap,
+  ConcurrentLinkedQueue,
+  Semaphore,
+  TimeUnit
+}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration._
@@ -32,8 +37,11 @@ import org.apache.spark.scheduler.cluster.StandaloneSchedulerBackend
 import org.apache.spark.util.{ResetSystemProperties, SystemClock, ThreadUtils}
 import org.apache.spark.util.ArrayImplicits._
 
-class BlockManagerDecommissionIntegrationSuite extends SparkFunSuite with LocalSparkContext
-    with ResetSystemProperties with Eventually {
+class BlockManagerDecommissionIntegrationSuite
+    extends SparkFunSuite
+    with LocalSparkContext
+    with ResetSystemProperties
+    with Eventually {
 
   val numExecs = 3
   val numParts = 3
@@ -42,8 +50,10 @@ class BlockManagerDecommissionIntegrationSuite extends SparkFunSuite with LocalS
   val JobEnded = "JOB_ENDED"
 
   Seq(false, true).foreach { isEnabled =>
-    test(s"SPARK-32850: BlockManager decommission should respect the configuration " +
-      s"(enabled=${isEnabled})") {
+    test(
+      s"SPARK-32850: BlockManager decommission should respect the configuration " +
+        s"(enabled=${isEnabled})"
+    ) {
       val conf = new SparkConf()
         .setAppName("test-blockmanager-decommissioner")
         .setMaster("local-cluster[2, 1, 1024]")
@@ -57,38 +67,51 @@ class BlockManagerDecommissionIntegrationSuite extends SparkFunSuite with LocalS
         override def onTaskStart(taskStart: SparkListenerTaskStart): Unit = {
           // ensure Tasks launched at executors before they're marked as decommissioned by driver
           Thread.sleep(3000)
-          sc.schedulerBackend.asInstanceOf[StandaloneSchedulerBackend]
+          sc.schedulerBackend
+            .asInstanceOf[StandaloneSchedulerBackend]
             .decommissionExecutors(
               executors.map { id => (id, ExecutorDecommissionInfo("test")) },
               true,
-              false)
+              false
+            )
         }
       }
       sc.addSparkListener(decommissionListener)
 
-      val decommissionStatus: Seq[Boolean] = sc.parallelize(1 to 100, 2).mapPartitions { _ =>
-        val startTime = System.currentTimeMillis()
-        while (SparkEnv.get.blockManager.decommissioner.isEmpty &&
-          // wait at most 6 seconds for BlockManager to start to decommission (if enabled)
-          System.currentTimeMillis() - startTime < 6000) {
-          Thread.sleep(300)
+      val decommissionStatus: Seq[Boolean] = sc
+        .parallelize(1 to 100, 2)
+        .mapPartitions { _ =>
+          val startTime = System.currentTimeMillis()
+          while (
+            SparkEnv.get.blockManager.decommissioner.isEmpty &&
+            // wait at most 6 seconds for BlockManager to start to decommission (if enabled)
+            System.currentTimeMillis() - startTime < 6000
+          ) {
+            Thread.sleep(300)
+          }
+          val blockManagerDecommissionStatus =
+            if (SparkEnv.get.blockManager.decommissioner.isEmpty) false
+            else true
+          Iterator.single(blockManagerDecommissionStatus)
         }
-        val blockManagerDecommissionStatus =
-          if (SparkEnv.get.blockManager.decommissioner.isEmpty) false else true
-        Iterator.single(blockManagerDecommissionStatus)
-      }.collect().toImmutableArraySeq
+        .collect()
+        .toImmutableArraySeq
       assert(decommissionStatus.forall(_ == isEnabled))
       sc.removeSparkListener(decommissionListener)
     }
   }
 
-  testRetry("verify that an already running task which is going to cache data succeeds " +
-    "on a decommissioned executor after task start") {
+  testRetry(
+    "verify that an already running task which is going to cache data succeeds " +
+      "on a decommissioned executor after task start"
+  ) {
     runDecomTest(true, false, TaskStarted)
   }
 
-  test("verify that an already running task which is going to cache data succeeds " +
-    "on a decommissioned executor after one task ends but before job ends") {
+  test(
+    "verify that an already running task which is going to cache data succeeds " +
+      "on a decommissioned executor after one task ends but before job ends"
+  ) {
     runDecomTest(true, false, TaskEnded)
   }
 
@@ -108,7 +131,8 @@ class BlockManagerDecommissionIntegrationSuite extends SparkFunSuite with LocalS
       persist: Boolean,
       shuffle: Boolean,
       whenToDecom: String,
-      forceMapOutputBroadcast: Boolean = false): Unit = {
+      forceMapOutputBroadcast: Boolean = false
+  ): Unit = {
     val migrateDuring = whenToDecom != JobEnded
     val master = s"local-cluster[${numExecs}, 1, 1024]"
     val minBroadcastSize = if (forceMapOutputBroadcast) {
@@ -116,7 +140,9 @@ class BlockManagerDecommissionIntegrationSuite extends SparkFunSuite with LocalS
     } else {
       config.SHUFFLE_MAPOUTPUT_MIN_SIZE_FOR_BROADCAST.defaultValue.get
     }
-    val conf = new SparkConf().setAppName("test").setMaster(master)
+    val conf = new SparkConf()
+      .setAppName("test")
+      .setMaster(master)
       .set(config.DECOMMISSION_ENABLED, true)
       .set(config.STORAGE_DECOMMISSION_ENABLED, true)
       .set(config.STORAGE_DECOMMISSION_RDD_BLOCKS_ENABLED, persist)
@@ -135,9 +161,11 @@ class BlockManagerDecommissionIntegrationSuite extends SparkFunSuite with LocalS
     sc = new SparkContext(master, "test", conf)
 
     // Wait for the executors to start
-    TestUtils.waitUntilExecutorsUp(sc = sc,
+    TestUtils.waitUntilExecutorsUp(
+      sc = sc,
       numExecutors = numExecs,
-      timeout = 60000) // 60s
+      timeout = 60000
+    ) // 60s
 
     val input = sc.parallelize(1 to numParts, numParts)
     val accum = sc.longAccumulator("mapperRunAccumulator")
@@ -178,18 +206,27 @@ class BlockManagerDecommissionIntegrationSuite extends SparkFunSuite with LocalS
     val executorsActuallyStarted = new ConcurrentHashMap[String, Boolean]()
     val blocksUpdated = ArrayBuffer.empty[SparkListenerBlockUpdated]
 
-    def getCandidateExecutorToDecom: Option[String] = if (whenToDecom == TaskStarted) {
+    def getCandidateExecutorToDecom: Option[String] = if (
+      whenToDecom == TaskStarted
+    ) {
       executorsActuallyStarted.keySet().asScala.headOption
     } else {
-      taskEndEvents.asScala.filter(_.taskInfo.successful).map(_.taskInfo.executorId).headOption
+      taskEndEvents.asScala
+        .filter(_.taskInfo.successful)
+        .map(_.taskInfo.executorId)
+        .headOption
     }
 
     val listener = new SparkListener {
       var removeReasonValidated = false
 
-      override def onExecutorRemoved(execRemoved: SparkListenerExecutorRemoved): Unit = {
+      override def onExecutorRemoved(
+          execRemoved: SparkListenerExecutorRemoved
+      ): Unit = {
         executorRemovedSem.release()
-        if (execRemoved.reason == ExecutorDecommission.msgPrefix + "test msg 0") {
+        if (
+          execRemoved.reason == ExecutorDecommission.msgPrefix + "test msg 0"
+        ) {
           removeReasonValidated = true
         }
       }
@@ -198,19 +235,23 @@ class BlockManagerDecommissionIntegrationSuite extends SparkFunSuite with LocalS
         taskEndEvents.add(taskEnd)
       }
 
-      override def onBlockUpdated(blockUpdated: SparkListenerBlockUpdated): Unit = synchronized {
+      override def onBlockUpdated(
+          blockUpdated: SparkListenerBlockUpdated
+      ): Unit = synchronized {
         blocksUpdated.append(blockUpdated)
       }
 
       override def onExecutorMetricsUpdate(
-          executorMetricsUpdate: SparkListenerExecutorMetricsUpdate): Unit = {
+          executorMetricsUpdate: SparkListenerExecutorMetricsUpdate
+      ): Unit = {
         val executorId = executorMetricsUpdate.execId
         if (executorId != SparkContext.DRIVER_IDENTIFIER) {
-          val validUpdate = executorMetricsUpdate
-            .accumUpdates
+          val validUpdate = executorMetricsUpdate.accumUpdates
             .flatMap(_._4)
             .exists { accumInfo =>
-              accumInfo.name == accum.name && accumInfo.update.exists(_.asInstanceOf[Long] >= 1)
+              accumInfo.name == accum.name && accumInfo.update.exists(
+                _.asInstanceOf[Long] >= 1
+              )
             }
           if (validUpdate) {
             executorsActuallyStarted.put(executorId, java.lang.Boolean.TRUE)
@@ -255,7 +296,8 @@ class BlockManagerDecommissionIntegrationSuite extends SparkFunSuite with LocalS
     sched.decommissionExecutor(
       execToDecommission,
       ExecutorDecommissionInfo("test msg 0", None),
-      adjustTargetNumExecutors = true)
+      adjustTargetNumExecutors = true
+    )
     val decomTime = new SystemClock().getTimeMillis()
 
     // Wait for job to finish.
@@ -268,25 +310,34 @@ class BlockManagerDecommissionIntegrationSuite extends SparkFunSuite with LocalS
     val taskEndEventsCopy = taskEndEvents.asScala
     if (shuffle) {
       //  mappers & reducers which succeeded
-      assert(taskEndEventsCopy.count(_.reason == Success) === 2 * numParts,
-        s"Expected ${2 * numParts} tasks got ${taskEndEvents.size} (${taskEndEvents})")
+      assert(
+        taskEndEventsCopy.count(_.reason == Success) === 2 * numParts,
+        s"Expected ${2 * numParts} tasks got ${taskEndEvents.size} (${taskEndEvents})"
+      )
     } else {
       // only mappers which executed successfully
-      assert(taskEndEventsCopy.count(_.reason == Success) === numParts,
-        s"Expected ${numParts} tasks got ${taskEndEvents.size} (${taskEndEvents})")
+      assert(
+        taskEndEventsCopy.count(_.reason == Success) === numParts,
+        s"Expected ${numParts} tasks got ${taskEndEvents.size} (${taskEndEvents})"
+      )
     }
 
     val minTaskEndTime = taskEndEventsCopy.map(_.taskInfo.finishTime).min
     val maxTaskEndTime = taskEndEventsCopy.map(_.taskInfo.finishTime).max
 
     // Verify that the decom time matched our expectations
-    val decomAssertMsg = s"$whenToDecom: decomTime: $decomTime, minTaskEnd: $minTaskEndTime," +
-      s" maxTaskEnd: $maxTaskEndTime"
+    val decomAssertMsg =
+      s"$whenToDecom: decomTime: $decomTime, minTaskEnd: $minTaskEndTime," +
+        s" maxTaskEnd: $maxTaskEndTime"
     assert(minTaskEndTime <= maxTaskEndTime, decomAssertMsg)
     whenToDecom match {
       case TaskStarted => assert(minTaskEndTime > decomTime, decomAssertMsg)
-      case TaskEnded => assert(minTaskEndTime <= decomTime &&
-        decomTime < maxTaskEndTime, decomAssertMsg)
+      case TaskEnded =>
+        assert(
+          minTaskEndTime <= decomTime &&
+            decomTime < maxTaskEndTime,
+          decomAssertMsg
+        )
       case JobEnded => assert(maxTaskEndTime <= decomTime, decomAssertMsg)
     }
 
@@ -296,14 +347,21 @@ class BlockManagerDecommissionIntegrationSuite extends SparkFunSuite with LocalS
         // One of our blocks should have moved.
         val rddUpdates = blocksUpdated.filter { update =>
           val blockId = update.blockUpdatedInfo.blockId
-          blockId.isRDD}
+          blockId.isRDD
+        }
         val blockLocs = rddUpdates.map { update =>
-          (update.blockUpdatedInfo.blockId.name,
-            update.blockUpdatedInfo.blockManagerId)}
-        val blocksToManagers = blockLocs.groupBy(_._1).transform((_, v) => v.size)
-        assert(blocksToManagers.exists(_._2 > 1),
+          (
+            update.blockUpdatedInfo.blockId.name,
+            update.blockUpdatedInfo.blockManagerId
+          )
+        }
+        val blocksToManagers =
+          blockLocs.groupBy(_._1).transform((_, v) => v.size)
+        assert(
+          blocksToManagers.exists(_._2 > 1),
           s"We should have a block that has been on multiple BMs in rdds:\n ${rddUpdates} from:\n" +
-          s"${blocksUpdated}\n but instead we got:\n ${blocksToManagers}")
+            s"${blocksUpdated}\n but instead we got:\n ${blocksToManagers}"
+        )
       }
       // If we're migrating shuffles we look for any shuffle block updates
       // as there is no block update on the initial shuffle block write.
@@ -316,8 +374,14 @@ class BlockManagerDecommissionIntegrationSuite extends SparkFunSuite with LocalS
           val blockId = update.blockUpdatedInfo.blockId
           blockId.isInstanceOf[ShuffleIndexBlockId]
         }
-        assert(numDataLocs === 1, s"Expect shuffle data block updates in ${blocksUpdated}")
-        assert(numIndexLocs === 1, s"Expect shuffle index block updates in ${blocksUpdated}")
+        assert(
+          numDataLocs === 1,
+          s"Expect shuffle data block updates in ${blocksUpdated}"
+        )
+        assert(
+          numIndexLocs === 1,
+          s"Expect shuffle index block updates in ${blocksUpdated}"
+        )
       }
     }
 
@@ -328,16 +392,22 @@ class BlockManagerDecommissionIntegrationSuite extends SparkFunSuite with LocalS
     assert(accum.value === numParts)
 
     val storageStatus = sc.env.blockManager.master.getStorageStatus
-    val execIdToBlocksMapping = storageStatus.map(
-      status => (status.blockManagerId.executorId, status.blocks)).toMap
+    val execIdToBlocksMapping = storageStatus
+      .map(status => (status.blockManagerId.executorId, status.blocks))
+      .toMap
     // No cached blocks should be present on executor which was decommissioned
     assert(
       !execIdToBlocksMapping.contains(execToDecommission) ||
-      execIdToBlocksMapping(execToDecommission).keys.filter(_.isRDD).toSeq === Seq(),
-      "Cache blocks should be migrated")
+        execIdToBlocksMapping(execToDecommission).keys
+          .filter(_.isRDD)
+          .toSeq === Seq(),
+      "Cache blocks should be migrated"
+    )
     if (persist) {
       // There should still be all the RDD blocks cached
-      assert(execIdToBlocksMapping.values.flatMap(_.keys).count(_.isRDD) === numParts)
+      assert(
+        execIdToBlocksMapping.values.flatMap(_.keys).count(_.isRDD) === numParts
+      )
     }
 
     // Wait for the executor to be removed automatically after migration.

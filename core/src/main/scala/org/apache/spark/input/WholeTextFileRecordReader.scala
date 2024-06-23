@@ -24,11 +24,13 @@ import org.apache.hadoop.io.compress.CompressionCodecFactory
 import org.apache.hadoop.mapreduce.InputSplit
 import org.apache.hadoop.mapreduce.RecordReader
 import org.apache.hadoop.mapreduce.TaskAttemptContext
-import org.apache.hadoop.mapreduce.lib.input.{CombineFileRecordReader, CombineFileSplit}
+import org.apache.hadoop.mapreduce.lib.input.{
+  CombineFileRecordReader,
+  CombineFileSplit
+}
 
-/**
- * A trait to implement [[org.apache.hadoop.conf.Configurable Configurable]] interface.
- */
+/** A trait to implement [[org.apache.hadoop.conf.Configurable Configurable]] interface.
+  */
 private[spark] trait Configurable extends HConfigurable {
   private var conf: Configuration = _
   def setConf(c: Configuration): Unit = {
@@ -37,16 +39,16 @@ private[spark] trait Configurable extends HConfigurable {
   def getConf: Configuration = conf
 }
 
-/**
- * A [[org.apache.hadoop.mapreduce.RecordReader RecordReader]] for reading a single whole text file
- * out in a key-value pair, where the key is the file path and the value is the entire content of
- * the file.
- */
+/** A [[org.apache.hadoop.mapreduce.RecordReader RecordReader]] for reading a single whole text file
+  * out in a key-value pair, where the key is the file path and the value is the entire content of
+  * the file.
+  */
 private[spark] class WholeTextFileRecordReader(
     split: CombineFileSplit,
     context: TaskAttemptContext,
-    index: Integer)
-  extends RecordReader[Text, Text] with Configurable {
+    index: Integer
+) extends RecordReader[Text, Text]
+    with Configurable {
 
   private[this] val path = split.getPath(index)
   private[this] val fs = path.getFileSystem(context.getConfiguration)
@@ -57,7 +59,10 @@ private[spark] class WholeTextFileRecordReader(
   private[this] val key: Text = new Text(path.toString)
   private[this] var value: Text = null
 
-  override def initialize(split: InputSplit, context: TaskAttemptContext): Unit = {}
+  override def initialize(
+      split: InputSplit,
+      context: TaskAttemptContext
+  ): Unit = {}
 
   override def close(): Unit = {}
 
@@ -71,7 +76,7 @@ private[spark] class WholeTextFileRecordReader(
     if (!processed) {
       val conf = getConf
       val factory = new CompressionCodecFactory(conf)
-      val codec = factory.getCodec(path)  // infers from file ext.
+      val codec = factory.getCodec(path) // infers from file ext.
       val fileIn = fs.open(path)
       val innerBuffer = if (codec != null) {
         ByteStreams.toByteArray(codec.createInputStream(fileIn))
@@ -89,21 +94,20 @@ private[spark] class WholeTextFileRecordReader(
   }
 }
 
-
-/**
- * A [[org.apache.hadoop.mapreduce.lib.input.CombineFileRecordReader CombineFileRecordReader]]
- * that can pass Hadoop Configuration to [[org.apache.hadoop.conf.Configurable Configurable]]
- * RecordReaders.
- */
+/** A [[org.apache.hadoop.mapreduce.lib.input.CombineFileRecordReader CombineFileRecordReader]]
+  * that can pass Hadoop Configuration to [[org.apache.hadoop.conf.Configurable Configurable]]
+  * RecordReaders.
+  */
 private[spark] class ConfigurableCombineFileRecordReader[K, V](
     split: InputSplit,
     context: TaskAttemptContext,
-    recordReaderClass: Class[_ <: RecordReader[K, V] with HConfigurable])
-  extends CombineFileRecordReader[K, V](
-    split.asInstanceOf[CombineFileSplit],
-    context,
-    recordReaderClass
-  ) with Configurable {
+    recordReaderClass: Class[_ <: RecordReader[K, V] with HConfigurable]
+) extends CombineFileRecordReader[K, V](
+      split.asInstanceOf[CombineFileSplit],
+      context,
+      recordReaderClass
+    )
+    with Configurable {
 
   override def initNextRecordReader(): Boolean = {
     val r = super.initNextRecordReader()

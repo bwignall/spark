@@ -23,38 +23,40 @@ import scala.concurrent.{Future, Promise}
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
 
-import org.apache.spark.network.buffer.{FileSegmentManagedBuffer, ManagedBuffer, NioManagedBuffer}
-import org.apache.spark.network.shuffle.{BlockFetchingListener, BlockStoreClient, DownloadFileManager}
+import org.apache.spark.network.buffer.{
+  FileSegmentManagedBuffer,
+  ManagedBuffer,
+  NioManagedBuffer
+}
+import org.apache.spark.network.shuffle.{
+  BlockFetchingListener,
+  BlockStoreClient,
+  DownloadFileManager
+}
 import org.apache.spark.storage.{BlockId, EncryptedManagedBuffer, StorageLevel}
 import org.apache.spark.util.ThreadUtils
 
-/**
- * The BlockTransferService that used for fetching a set of blocks at time. Each instance of
- * BlockTransferService contains both client and server inside.
- */
-private[spark]
-abstract class BlockTransferService extends BlockStoreClient {
+/** The BlockTransferService that used for fetching a set of blocks at time. Each instance of
+  * BlockTransferService contains both client and server inside.
+  */
+private[spark] abstract class BlockTransferService extends BlockStoreClient {
 
-  /**
-   * Initialize the transfer service by giving it the BlockDataManager that can be used to fetch
-   * local blocks or put local blocks. The fetchBlocks method in [[BlockStoreClient]] also
-   * available only after this is invoked.
-   */
+  /** Initialize the transfer service by giving it the BlockDataManager that can be used to fetch
+    * local blocks or put local blocks. The fetchBlocks method in [[BlockStoreClient]] also
+    * available only after this is invoked.
+    */
   def init(blockDataManager: BlockDataManager): Unit
 
-  /**
-   * Port number the service is listening on, available only after [[init]] is invoked.
-   */
+  /** Port number the service is listening on, available only after [[init]] is invoked.
+    */
   def port: Int
 
-  /**
-   * Host name the service is listening on, available only after [[init]] is invoked.
-   */
+  /** Host name the service is listening on, available only after [[init]] is invoked.
+    */
   def hostName: String
 
-  /**
-   * Upload a single block to a remote node, available only after [[init]] is invoked.
-   */
+  /** Upload a single block to a remote node, available only after [[init]] is invoked.
+    */
   def uploadBlock(
       hostname: String,
       port: Int,
@@ -62,27 +64,38 @@ abstract class BlockTransferService extends BlockStoreClient {
       blockId: BlockId,
       blockData: ManagedBuffer,
       level: StorageLevel,
-      classTag: ClassTag[_]): Future[Unit]
+      classTag: ClassTag[_]
+  ): Future[Unit]
 
-  /**
-   * A special case of [[fetchBlocks]], as it fetches only one block and is blocking.
-   *
-   * It is also only available after [[init]] is invoked.
-   */
+  /** A special case of [[fetchBlocks]], as it fetches only one block and is blocking.
+    *
+    * It is also only available after [[init]] is invoked.
+    */
   def fetchBlockSync(
       host: String,
       port: Int,
       execId: String,
       blockId: String,
-      tempFileManager: DownloadFileManager): ManagedBuffer = {
+      tempFileManager: DownloadFileManager
+  ): ManagedBuffer = {
     // A monitor for the thread to wait on.
     val result = Promise[ManagedBuffer]()
-    fetchBlocks(host, port, execId, Array(blockId),
+    fetchBlocks(
+      host,
+      port,
+      execId,
+      Array(blockId),
       new BlockFetchingListener {
-        override def onBlockFetchFailure(blockId: String, exception: Throwable): Unit = {
+        override def onBlockFetchFailure(
+            blockId: String,
+            exception: Throwable
+        ): Unit = {
           result.failure(exception)
         }
-        override def onBlockFetchSuccess(blockId: String, data: ManagedBuffer): Unit = {
+        override def onBlockFetchSuccess(
+            blockId: String,
+            data: ManagedBuffer
+        ): Unit = {
           data match {
             case f: FileSegmentManagedBuffer =>
               result.success(f)
@@ -99,16 +112,17 @@ abstract class BlockTransferService extends BlockStoreClient {
               }
           }
         }
-      }, tempFileManager)
+      },
+      tempFileManager
+    )
     ThreadUtils.awaitResult(result.future, Duration.Inf)
   }
 
-  /**
-   * Upload a single block to a remote node, available only after [[init]] is invoked.
-   *
-   * This method is similar to [[uploadBlock]], except this one blocks the thread
-   * until the upload finishes.
-   */
+  /** Upload a single block to a remote node, available only after [[init]] is invoked.
+    *
+    * This method is similar to [[uploadBlock]], except this one blocks the thread
+    * until the upload finishes.
+    */
   @throws[java.io.IOException]
   def uploadBlockSync(
       hostname: String,
@@ -117,8 +131,10 @@ abstract class BlockTransferService extends BlockStoreClient {
       blockId: BlockId,
       blockData: ManagedBuffer,
       level: StorageLevel,
-      classTag: ClassTag[_]): Unit = {
-    val future = uploadBlock(hostname, port, execId, blockId, blockData, level, classTag)
+      classTag: ClassTag[_]
+  ): Unit = {
+    val future =
+      uploadBlock(hostname, port, execId, blockId, blockData, level, classTag)
     ThreadUtils.awaitResult(future, Duration.Inf)
   }
 }

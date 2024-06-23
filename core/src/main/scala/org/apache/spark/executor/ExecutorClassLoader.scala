@@ -17,7 +17,12 @@
 
 package org.apache.spark.executor
 
-import java.io.{ByteArrayOutputStream, FileNotFoundException, FilterInputStream, InputStream}
+import java.io.{
+  ByteArrayOutputStream,
+  FileNotFoundException,
+  FilterInputStream,
+  InputStream
+}
 import java.net.{URI, URL, URLEncoder}
 import java.nio.channels.Channels
 import java.nio.charset.StandardCharsets.UTF_8
@@ -33,27 +38,28 @@ import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.internal.{Logging, LogKeys, MDC}
 import org.apache.spark.util.ParentClassLoader
 
-/**
- * A ClassLoader that reads classes from a Hadoop FileSystem or Spark RPC endpoint, used to load
- * classes defined by the interpreter when the REPL is used. Allows the user to specify if user
- * class path should be first.
- * This class loader delegates getting/finding resources to parent loader, which makes sense because
- * the REPL never produce resources dynamically. One exception is when getting a Class file as
- * resource stream, in which case we will try to fetch the Class file in the same way as loading
- * the class, so that dynamically generated Classes from the REPL can be picked up.
- *
- * Note: [[ClassLoader]] will preferentially load class from parent. Only when parent is null or
- * the load failed, that it will call the overridden `findClass` function. To avoid the potential
- * issue caused by loading class using inappropriate class loader, we should set the parent of
- * ClassLoader to null, so that we can fully control which class loader is used. For detailed
- * discussion, see SPARK-18646.
- */
+/** A ClassLoader that reads classes from a Hadoop FileSystem or Spark RPC endpoint, used to load
+  * classes defined by the interpreter when the REPL is used. Allows the user to specify if user
+  * class path should be first.
+  * This class loader delegates getting/finding resources to parent loader, which makes sense because
+  * the REPL never produce resources dynamically. One exception is when getting a Class file as
+  * resource stream, in which case we will try to fetch the Class file in the same way as loading
+  * the class, so that dynamically generated Classes from the REPL can be picked up.
+  *
+  * Note: [[ClassLoader]] will preferentially load class from parent. Only when parent is null or
+  * the load failed, that it will call the overridden `findClass` function. To avoid the potential
+  * issue caused by loading class using inappropriate class loader, we should set the parent of
+  * ClassLoader to null, so that we can fully control which class loader is used. For detailed
+  * discussion, see SPARK-18646.
+  */
 class ExecutorClassLoader(
     conf: SparkConf,
     env: SparkEnv,
     classUri: String,
     parent: ClassLoader,
-    userClassPathFirst: Boolean) extends ClassLoader(null) with Logging {
+    userClassPathFirst: Boolean
+) extends ClassLoader(null)
+    with Logging {
   val uri = new URI(classUri)
   val directory = uri.getPath
 
@@ -65,7 +71,8 @@ class ExecutorClassLoader(
   private val fetchFn: (String) => InputStream = uri.getScheme() match {
     case "spark" => getClassFileInputStreamFromSparkRPC
     case _ =>
-      val fileSystem = FileSystem.get(uri, SparkHadoopUtil.get.newConfiguration(conf))
+      val fileSystem =
+        FileSystem.get(uri, SparkHadoopUtil.get.newConfiguration(conf))
       getClassFileInputStreamFromFileSystem(fileSystem)
   }
 
@@ -109,19 +116,20 @@ class ExecutorClassLoader(
         parentLoader.loadClass(name)
       } catch {
         case e: ClassNotFoundException =>
-          val classOption = try {
-            findClassLocally(name)
-          } catch {
-            case e: RemoteClassLoaderError =>
-              throw e
-            case NonFatal(e) =>
-              // Wrap the error to include the class name
-              // scalastyle:off throwerror
-              throw new RemoteClassLoaderError(name, e)
+          val classOption =
+            try {
+              findClassLocally(name)
+            } catch {
+              case e: RemoteClassLoaderError =>
+                throw e
+              case NonFatal(e) =>
+                // Wrap the error to include the class name
+                // scalastyle:off throwerror
+                throw new RemoteClassLoaderError(name, e)
               // scalastyle:on throwerror
-          }
+            }
           classOption match {
-            case None => throw new ClassNotFoundException(name, e)
+            case None    => throw new ClassNotFoundException(name, e)
             case Some(a) => a
           }
       }
@@ -144,22 +152,24 @@ class ExecutorClassLoader(
         try {
           fn
         } catch {
-          case e: RuntimeException if e.getMessage != null
-            && STREAM_NOT_FOUND_REGEX.matcher(e.getMessage).matches() =>
+          case e: RuntimeException
+              if e.getMessage != null
+                && STREAM_NOT_FOUND_REGEX.matcher(e.getMessage).matches() =>
             // Convert a stream not found error to ClassNotFoundException.
             // Driver sends this explicit acknowledgment to tell us that the class was missing.
             throw new ClassNotFoundException(path, e)
           case NonFatal(e) =>
             // scalastyle:off throwerror
             throw new RemoteClassLoaderError(path, e)
-            // scalastyle:on throwerror
+          // scalastyle:on throwerror
         }
       }
     }
   }
 
-  private def getClassFileInputStreamFromFileSystem(fileSystem: FileSystem)(
-      pathInDirectory: String): InputStream = {
+  private def getClassFileInputStreamFromFileSystem(
+      fileSystem: FileSystem
+  )(pathInDirectory: String): InputStream = {
     val path = new Path(directory, pathInDirectory)
     try {
       fileSystem.open(path)
@@ -183,8 +193,11 @@ class ExecutorClassLoader(
         None
       case e: Exception =>
         // Something bad happened while checking if the class exists
-        logError(log"Failed to check existence of class ${MDC(LogKeys.CLASS_NAME, name)} " +
-          log"on REPL class server at ${MDC(LogKeys.URI, uri)}", e)
+        logError(
+          log"Failed to check existence of class ${MDC(LogKeys.CLASS_NAME, name)} " +
+            log"on REPL class server at ${MDC(LogKeys.URI, uri)}",
+          e
+        )
         if (userClassPathFirst) {
           // Allow to try to load from "parentLoader"
           None
@@ -211,7 +224,8 @@ class ExecutorClassLoader(
       // be initialized later through reflection when it is used in a task.
       val cr = new ClassReader(in)
       val cw = new ClassWriter(
-        ClassWriter.COMPUTE_FRAMES + ClassWriter.COMPUTE_MAXS)
+        ClassWriter.COMPUTE_FRAMES + ClassWriter.COMPUTE_MAXS
+      )
       val cleaner = new ConstructorCleaner(name, cw)
       cr.accept(cleaner, 0)
       cw.toByteArray
@@ -232,18 +246,25 @@ class ExecutorClassLoader(
     }
   }
 
-  /**
-   * URL-encode a string, preserving only slashes
-   */
+  /** URL-encode a string, preserving only slashes
+    */
   def urlEncode(str: String): String = {
-    str.split('/').map(part => URLEncoder.encode(part, UTF_8.name())).mkString("/")
+    str
+      .split('/')
+      .map(part => URLEncoder.encode(part, UTF_8.name()))
+      .mkString("/")
   }
 }
 
 class ConstructorCleaner(className: String, cv: ClassVisitor)
-extends ClassVisitor(ASM9, cv) {
-  override def visitMethod(access: Int, name: String, desc: String,
-      sig: String, exceptions: Array[String]): MethodVisitor = {
+    extends ClassVisitor(ASM9, cv) {
+  override def visitMethod(
+      access: Int,
+      name: String,
+      desc: String,
+      sig: String,
+      exceptions: Array[String]
+  ): MethodVisitor = {
     val mv = cv.visitMethod(access, name, desc, sig, exceptions)
     if (name == "<init>" && (access & ACC_STATIC) == 0) {
       // This is the constructor, time to clean it; just output some new
@@ -251,7 +272,13 @@ extends ClassVisitor(ASM9, cv) {
       // field in the class to point to it, but do nothing otherwise.
       mv.visitCode()
       mv.visitVarInsn(ALOAD, 0) // load this
-      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false)
+      mv.visitMethodInsn(
+        INVOKESPECIAL,
+        "java/lang/Object",
+        "<init>",
+        "()V",
+        false
+      )
       mv.visitVarInsn(ALOAD, 0) // load this
       // val classType = className.replace('.', '/')
       // mv.visitFieldInsn(PUTSTATIC, classType, "MODULE$", "L" + classType + ";")
@@ -265,10 +292,11 @@ extends ClassVisitor(ASM9, cv) {
   }
 }
 
-/**
- * An error when we cannot load a class due to exceptions. We don't know if this class exists, so
- * throw a special one that's neither [[LinkageError]] nor [[ClassNotFoundException]] to make JVM
- * retry to load this class later.
- */
-private[executor] class RemoteClassLoaderError(className: String, cause: Throwable)
-  extends Error(className, cause)
+/** An error when we cannot load a class due to exceptions. We don't know if this class exists, so
+  * throw a special one that's neither [[LinkageError]] nor [[ClassNotFoundException]] to make JVM
+  * retry to load this class later.
+  */
+private[executor] class RemoteClassLoaderError(
+    className: String,
+    cause: Throwable
+) extends Error(className, cause)

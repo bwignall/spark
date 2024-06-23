@@ -29,7 +29,9 @@ import org.apache.spark.{SparkConf, SparkEnv, SparkFunSuite}
 import org.apache.spark.internal.config
 import org.apache.spark.util.io.ChunkedByteBuffer
 
-class ChunkedByteBufferFileRegionSuite extends SparkFunSuite with MockitoSugar
+class ChunkedByteBufferFileRegionSuite
+    extends SparkFunSuite
+    with MockitoSugar
     with BeforeAndAfterEach {
 
   override protected def beforeEach(): Unit = {
@@ -44,7 +46,10 @@ class ChunkedByteBufferFileRegionSuite extends SparkFunSuite with MockitoSugar
     SparkEnv.set(null)
   }
 
-  private def generateChunkedByteBuffer(nChunks: Int, perChunk: Int): ChunkedByteBuffer = {
+  private def generateChunkedByteBuffer(
+      nChunks: Int,
+      perChunk: Int
+  ): ChunkedByteBuffer = {
     val bytes = (0 until nChunks).map { chunkIdx =>
       val bb = ByteBuffer.allocate(perChunk)
       (0 until perChunk).foreach { idx =>
@@ -109,7 +114,8 @@ class ChunkedByteBufferFileRegionSuite extends SparkFunSuite with MockitoSugar
     logInfo(s"seed = $seed")
     rng.setSeed(seed)
     val chunkSize = 1e4.toInt
-    SparkEnv.get.conf.set(config.BUFFER_WRITE_CHUNK_SIZE, rng.nextInt(chunkSize).toLong)
+    SparkEnv.get.conf
+      .set(config.BUFFER_WRITE_CHUNK_SIZE, rng.nextInt(chunkSize).toLong)
 
     val cbb = generateChunkedByteBuffer(50, chunkSize)
     val fileRegion = cbb.toNetty
@@ -123,11 +129,11 @@ class ChunkedByteBufferFileRegionSuite extends SparkFunSuite with MockitoSugar
     assert(0 === fileRegion.transferTo(targetChannel, targetChannel.pos))
   }
 
-  /**
-   * This mocks a channel which only accepts a limited number of bytes at a time.  It also verifies
-   * the written data matches our expectations as the data is received.
-   */
-  private class LimitedWritableByteChannel(maxWriteSize: Int) extends WritableByteChannel {
+  /** This mocks a channel which only accepts a limited number of bytes at a time.  It also verifies
+    * the written data matches our expectations as the data is received.
+    */
+  private class LimitedWritableByteChannel(maxWriteSize: Int)
+      extends WritableByteChannel {
     val bytes = new Array[Byte](maxWriteSize)
     var acceptNBytes = 0
     var pos = 0
@@ -138,7 +144,10 @@ class ChunkedByteBufferFileRegionSuite extends SparkFunSuite with MockitoSugar
       acceptNBytes -= length
       // verify we got the right data
       (0 until length).foreach { idx =>
-        assert(bytes(idx) === (pos + idx).toByte, s"; wrong data at ${pos + idx}")
+        assert(
+          bytes(idx) === (pos + idx).toByte,
+          s"; wrong data at ${pos + idx}"
+        )
       }
       pos += length
       length

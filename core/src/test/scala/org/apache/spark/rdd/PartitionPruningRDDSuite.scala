@@ -17,7 +17,12 @@
 
 package org.apache.spark.rdd
 
-import org.apache.spark.{Partition, SharedSparkContext, SparkFunSuite, TaskContext}
+import org.apache.spark.{
+  Partition,
+  SharedSparkContext,
+  SparkFunSuite,
+  TaskContext
+}
 
 class PartitionPruningRDDSuite extends SparkFunSuite with SharedSparkContext {
 
@@ -28,7 +33,8 @@ class PartitionPruningRDDSuite extends SparkFunSuite with SharedSparkContext {
         Array[Partition](
           new TestPartition(0, 1),
           new TestPartition(1, 1),
-          new TestPartition(2, 1))
+          new TestPartition(2, 1)
+        )
       }
 
       def compute(split: Partition, context: TaskContext) = {
@@ -42,7 +48,6 @@ class PartitionPruningRDDSuite extends SparkFunSuite with SharedSparkContext {
     assert(p.asInstanceOf[PartitionPruningRDDPartition].parentSplit.index == 2)
   }
 
-
   test("Pruned Partitions can be unioned ") {
 
     val rdd = new RDD[Int](sc, Nil) {
@@ -50,7 +55,8 @@ class PartitionPruningRDDSuite extends SparkFunSuite with SharedSparkContext {
         Array[Partition](
           new TestPartition(0, 4),
           new TestPartition(1, 5),
-          new TestPartition(2, 6))
+          new TestPartition(2, 6)
+        )
       }
 
       def compute(split: Partition, context: TaskContext) = {
@@ -58,7 +64,6 @@ class PartitionPruningRDDSuite extends SparkFunSuite with SharedSparkContext {
       }
     }
     val prunedRDD1 = PartitionPruningRDD.create(rdd, _ == 0)
-
 
     val prunedRDD2 = PartitionPruningRDD.create(rdd, _ == 2)
 

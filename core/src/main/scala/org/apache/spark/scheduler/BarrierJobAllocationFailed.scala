@@ -20,24 +20,27 @@ package org.apache.spark.scheduler
 import org.apache.spark.SparkException
 import org.apache.spark.internal.config.DYN_ALLOCATION_ENABLED
 
-/**
- * Exception thrown when submit a job with barrier stage(s) failing a required check.
- */
-private[spark] class BarrierJobAllocationFailed(message: String) extends SparkException(message)
+/** Exception thrown when submit a job with barrier stage(s) failing a required check.
+  */
+private[spark] class BarrierJobAllocationFailed(message: String)
+    extends SparkException(message)
 
 private[spark] class BarrierJobUnsupportedRDDChainException
-  extends BarrierJobAllocationFailed(
-    BarrierJobAllocationFailed.ERROR_MESSAGE_RUN_BARRIER_WITH_UNSUPPORTED_RDD_CHAIN_PATTERN)
+    extends BarrierJobAllocationFailed(
+      BarrierJobAllocationFailed.ERROR_MESSAGE_RUN_BARRIER_WITH_UNSUPPORTED_RDD_CHAIN_PATTERN
+    )
 
 private[spark] class BarrierJobRunWithDynamicAllocationException
-  extends BarrierJobAllocationFailed(
-    BarrierJobAllocationFailed.ERROR_MESSAGE_RUN_BARRIER_WITH_DYN_ALLOCATION)
+    extends BarrierJobAllocationFailed(
+      BarrierJobAllocationFailed.ERROR_MESSAGE_RUN_BARRIER_WITH_DYN_ALLOCATION
+    )
 
 private[spark] class BarrierJobSlotsNumberCheckFailed(
     val requiredConcurrentTasks: Int,
-    val maxConcurrentTasks: Int)
-  extends BarrierJobAllocationFailed(
-    BarrierJobAllocationFailed.ERROR_MESSAGE_BARRIER_REQUIRE_MORE_SLOTS_THAN_CURRENT_TOTAL_NUMBER)
+    val maxConcurrentTasks: Int
+) extends BarrierJobAllocationFailed(
+      BarrierJobAllocationFailed.ERROR_MESSAGE_BARRIER_REQUIRE_MORE_SLOTS_THAN_CURRENT_TOTAL_NUMBER
+    )
 
 private[spark] object BarrierJobAllocationFailed {
 

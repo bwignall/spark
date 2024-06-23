@@ -22,15 +22,16 @@ import org.apache.spark.network.ssl.SslSampleConfigs
 
 object SslTestUtils {
 
-  /**
-   * Updates a SparkConf to contain SSL configurations
-   *
-   * @param conf The config to update
-   * @return The passed in SparkConf with SSL configurations added
-   */
+  /** Updates a SparkConf to contain SSL configurations
+    *
+    * @param conf The config to update
+    * @return The passed in SparkConf with SSL configurations added
+    */
   def updateWithSSLConfig(conf: SparkConf): SparkConf = {
-    SslSampleConfigs.createDefaultConfigMap().entrySet().
-      forEach(entry => conf.set(entry.getKey, entry.getValue))
+    SslSampleConfigs
+      .createDefaultConfigMap()
+      .entrySet()
+      .forEach(entry => conf.set(entry.getKey, entry.getValue))
     conf
   }
 }

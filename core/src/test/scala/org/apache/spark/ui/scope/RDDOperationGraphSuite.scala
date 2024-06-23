@@ -28,8 +28,16 @@ class RDDOperationGraphSuite extends SparkFunSuite with PrivateMethodTester {
     val c1 = new RDDOperationCluster("1", false, "Bender")
     val c2 = new RDDOperationCluster("2", false, "Hal")
     c1.attachChildCluster(c2)
-    c1.attachChildNode(new RDDOperationNode(3, "Marvin", false, false, "collect!",
-      DeterministicLevel.DETERMINATE))
+    c1.attachChildNode(
+      new RDDOperationNode(
+        3,
+        "Marvin",
+        false,
+        false,
+        "collect!",
+        DeterministicLevel.DETERMINATE
+      )
+    )
 
     // create an equal cluster, but without the child node
     val c1copy = new RDDOperationCluster("1", false, "Bender")
@@ -39,7 +47,9 @@ class RDDOperationGraphSuite extends SparkFunSuite with PrivateMethodTester {
     assert(c1 == c1copy)
   }
 
-  test("SPARK-43441: makeDotNode should not fail when DeterministicLevel is absent") {
+  test(
+    "SPARK-43441: makeDotNode should not fail when DeterministicLevel is absent"
+  ) {
     val node = new RDDOperationNode(0, "", false, false, "", null)
     val _makeDotNode = PrivateMethod[String](Symbol("makeDotNode"))
     RDDOperationGraph.invokePrivate(_makeDotNode(node))

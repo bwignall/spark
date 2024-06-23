@@ -19,18 +19,16 @@ package org.apache.spark
 
 import org.apache.spark.annotation.{DeveloperApi, Since}
 
-/**
- * An evaluator for computing RDD partitions. Spark serializes and sends
- * [[PartitionEvaluatorFactory]] to executors, and then creates [[PartitionEvaluator]] via the
- * factory at the executor side.
- */
+/** An evaluator for computing RDD partitions. Spark serializes and sends
+  * [[PartitionEvaluatorFactory]] to executors, and then creates [[PartitionEvaluator]] via the
+  * factory at the executor side.
+  */
 @DeveloperApi
 @Since("3.5.0")
 trait PartitionEvaluator[T, U] {
 
-  /**
-   * Evaluates the RDD partition at the given index. There can be more than one input iterator,
-   * if the RDD was zipped from multiple RDDs.
-   */
+  /** Evaluates the RDD partition at the given index. There can be more than one input iterator,
+    * if the RDD was zipped from multiple RDDs.
+    */
   def eval(partitionIndex: Int, inputs: Iterator[T]*): Iterator[U]
 }

@@ -26,22 +26,25 @@ import org.apache.spark._
 import org.apache.spark.internal.config.STORAGE_REPLICATION_TOPOLOGY_FILE
 import org.apache.spark.util.Utils
 
-class TopologyMapperSuite  extends SparkFunSuite
-  with Matchers
-  with BeforeAndAfter
-  with LocalSparkContext {
+class TopologyMapperSuite
+    extends SparkFunSuite
+    with Matchers
+    with BeforeAndAfter
+    with LocalSparkContext {
 
   test("File based Topology Mapper") {
     val numHosts = 100
     val numRacks = 4
-    val props = (1 to numHosts).map{i => s"host-$i" -> s"rack-${i % numRacks}"}.toMap
+    val props = (1 to numHosts).map { i =>
+      s"host-$i" -> s"rack-${i % numRacks}"
+    }.toMap
     val propsFile = createPropertiesFile(props)
 
     val sparkConf = (new SparkConf(false))
     sparkConf.set(STORAGE_REPLICATION_TOPOLOGY_FILE, propsFile.getAbsolutePath)
     val topologyMapper = new FileBasedTopologyMapper(sparkConf)
 
-    props.foreach {case (host, topology) =>
+    props.foreach { case (host, topology) =>
       val obtainedTopology = topologyMapper.getTopologyForHost(host)
       assert(obtainedTopology.isDefined)
       assert(obtainedTopology.get === topology)
@@ -54,17 +57,22 @@ class TopologyMapperSuite  extends SparkFunSuite
   }
 
   def createPropertiesFile(props: Map[String, String]): File = {
-    val testFile = new File(Utils.createTempDir(), "TopologyMapperSuite-test").getAbsoluteFile
+    val testFile = new File(
+      Utils.createTempDir(),
+      "TopologyMapperSuite-test"
+    ).getAbsoluteFile
     val fileOS = new FileOutputStream(testFile)
-    props.foreach{case (k, v) => fileOS.write(s"$k=$v\n".getBytes)}
+    props.foreach { case (k, v) => fileOS.write(s"$k=$v\n".getBytes) }
     fileOS.close
     testFile
   }
 
   def cleanup(testFile: File): Unit = {
-    testFile.getParentFile.listFiles.filter { file =>
-      file.getName.startsWith(testFile.getName)
-    }.foreach { _.delete() }
+    testFile.getParentFile.listFiles
+      .filter { file =>
+        file.getName.startsWith(testFile.getName)
+      }
+      .foreach { _.delete() }
   }
 
 }

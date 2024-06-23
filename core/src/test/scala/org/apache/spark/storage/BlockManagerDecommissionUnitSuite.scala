@@ -47,33 +47,52 @@ class BlockManagerDecommissionUnitSuite extends SparkFunSuite with Matchers {
 
   private def registerShuffleBlocks(
       mockMigratableShuffleResolver: MigratableResolver,
-      ids: Set[(Int, Long, Int)]): Unit = {
+      ids: Set[(Int, Long, Int)]
+  ): Unit = {
 
     when(mockMigratableShuffleResolver.getStoredShuffles())
-      .thenReturn(ids.map(triple => ShuffleBlockInfo(triple._1, triple._2)).toSeq)
+      .thenReturn(
+        ids.map(triple => ShuffleBlockInfo(triple._1, triple._2)).toSeq
+      )
 
     ids.foreach { case (shuffleId: Int, mapId: Long, reduceId: Int) =>
       when(mockMigratableShuffleResolver.getMigrationBlocks(mc.any()))
-        .thenReturn(List(
-          (ShuffleIndexBlockId(shuffleId, mapId, reduceId), mock(classOf[ManagedBuffer])),
-          (ShuffleDataBlockId(shuffleId, mapId, reduceId), mock(classOf[ManagedBuffer]))))
+        .thenReturn(
+          List(
+            (
+              ShuffleIndexBlockId(shuffleId, mapId, reduceId),
+              mock(classOf[ManagedBuffer])
+            ),
+            (
+              ShuffleDataBlockId(shuffleId, mapId, reduceId),
+              mock(classOf[ManagedBuffer])
+            )
+          )
+        )
     }
   }
 
-  /**
-   * Validate a given configuration with the mocks.
-   * The fail variable controls if we expect migration to fail, in which case we expect
-   * a constant Long.MaxValue timestamp.
-   */
-  private def validateDecommissionTimestamps(conf: SparkConf, bm: BlockManager,
-      fail: Boolean = false, assertDone: Boolean = true) = {
+  /** Validate a given configuration with the mocks.
+    * The fail variable controls if we expect migration to fail, in which case we expect
+    * a constant Long.MaxValue timestamp.
+    */
+  private def validateDecommissionTimestamps(
+      conf: SparkConf,
+      bm: BlockManager,
+      fail: Boolean = false,
+      assertDone: Boolean = true
+  ) = {
     // Verify the decommissioning manager timestamps and status
     val bmDecomManager = new BlockManagerDecommissioner(conf, bm)
     validateDecommissionTimestampsOnManager(bmDecomManager, fail, assertDone)
   }
 
-  private def validateDecommissionTimestampsOnManager(bmDecomManager: BlockManagerDecommissioner,
-      fail: Boolean = false, assertDone: Boolean = true, numShuffles: Option[Int] = None) = {
+  private def validateDecommissionTimestampsOnManager(
+      bmDecomManager: BlockManagerDecommissioner,
+      fail: Boolean = false,
+      assertDone: Boolean = true,
+      numShuffles: Option[Int] = None
+  ) = {
     var previousTime: Option[Long] = None
     try {
       bmDecomManager.start()
@@ -157,7 +176,6 @@ class BlockManagerDecommissionUnitSuite extends SparkFunSuite with Matchers {
     validateDecommissionTimestamps(sparkConf, bm, fail = true)
   }
 
-
   test("block decom manager with only shuffle files time moves forward") {
     // Set up the mocks so we return one shuffle block
     val bm = mock(classOf[BlockManager])
@@ -186,7 +204,11 @@ class BlockManagerDecommissionUnitSuite extends SparkFunSuite with Matchers {
     val bmDecomManager = new BlockManagerDecommissioner(sparkConf, bm)
     bmDecomManager.migratingShuffles += ShuffleBlockInfo(10, 10)
 
-    validateDecommissionTimestampsOnManager(bmDecomManager, fail = false, assertDone = false)
+    validateDecommissionTimestampsOnManager(
+      bmDecomManager,
+      fail = false,
+      assertDone = false
+    )
   }
 
   test("SPARK-40168: block decom manager handles shuffle file not found") {
@@ -201,7 +223,9 @@ class BlockManagerDecommissionUnitSuite extends SparkFunSuite with Matchers {
       .thenReturn(
         List(
           (ShuffleIndexBlockId(1, 1, 1), mock(classOf[ManagedBuffer])),
-          (ShuffleDataBlockId(1, 1, 1), mock(classOf[ManagedBuffer]))))
+          (ShuffleDataBlockId(1, 1, 1), mock(classOf[ManagedBuffer]))
+        )
+      )
       .thenReturn(List())
 
     when(bm.migratableResolver).thenReturn(migratableShuffleBlockResolver)
@@ -214,12 +238,36 @@ class BlockManagerDecommissionUnitSuite extends SparkFunSuite with Matchers {
     // Simulate FileNotFoundException wrap inside SparkException
     when(
       blockTransferService
-        .uploadBlock(mc.any(), mc.any(), mc.any(), mc.any(), mc.any(), mc.any(), mc.isNull()))
-      .thenReturn(Future.failed(
-        new java.io.IOException("boop", new FileNotFoundException("file not found"))))
+        .uploadBlock(
+          mc.any(),
+          mc.any(),
+          mc.any(),
+          mc.any(),
+          mc.any(),
+          mc.any(),
+          mc.isNull()
+        )
+    )
+      .thenReturn(
+        Future.failed(
+          new java.io.IOException(
+            "boop",
+            new FileNotFoundException("file not found")
+          )
+        )
+      )
     when(
       blockTransferService
-        .uploadBlockSync(mc.any(), mc.any(), mc.any(), mc.any(), mc.any(), mc.any(), mc.isNull()))
+        .uploadBlockSync(
+          mc.any(),
+          mc.any(),
+          mc.any(),
+          mc.any(),
+          mc.any(),
+          mc.any(),
+          mc.isNull()
+        )
+    )
       .thenCallRealMethod()
 
     when(bm.blockTransferService).thenReturn(blockTransferService)
@@ -228,13 +276,15 @@ class BlockManagerDecommissionUnitSuite extends SparkFunSuite with Matchers {
     val bmDecomManager = new BlockManagerDecommissioner(sparkConf, bm)
     validateDecommissionTimestampsOnManager(
       bmDecomManager,
-      numShuffles = Option(1))
+      numShuffles = Option(1)
+    )
   }
 
-  test("SPARK-44126: block decom manager handles BlockSavedOnDecommissionedBlockManagerException") {
+  test(
+    "SPARK-44126: block decom manager handles BlockSavedOnDecommissionedBlockManagerException"
+  ) {
     // Set up the mocks so we return one shuffle block
-    val conf = sparkConf
-      .clone
+    val conf = sparkConf.clone
       .set(config.STORAGE_DECOMMISSION_MAX_REPLICATION_FAILURE_PER_BLOCK, 1)
     val bm = mock(classOf[BlockManager])
     val migratableShuffleBlockResolver = mock(classOf[MigratableResolver])
@@ -249,13 +299,35 @@ class BlockManagerDecommissionUnitSuite extends SparkFunSuite with Matchers {
 
     val blockTransferService = mock(classOf[BlockTransferService])
     // Simulate BlockSavedOnDecommissionedBlockManagerException
-    when(blockTransferService.uploadBlock(
-      mc.any(), mc.any(), mc.eq(exe1.executorId), mc.any(), mc.any(), mc.any(), mc.isNull()))
-      .thenReturn(
-        Future.failed(new RuntimeException("BlockSavedOnDecommissionedBlockManagerException"))
+    when(
+      blockTransferService.uploadBlock(
+        mc.any(),
+        mc.any(),
+        mc.eq(exe1.executorId),
+        mc.any(),
+        mc.any(),
+        mc.any(),
+        mc.isNull()
       )
-    when(blockTransferService.uploadBlockSync(
-      mc.any(), mc.any(), mc.any(), mc.any(), mc.any(), mc.any(), mc.isNull()))
+    )
+      .thenReturn(
+        Future.failed(
+          new RuntimeException(
+            "BlockSavedOnDecommissionedBlockManagerException"
+          )
+        )
+      )
+    when(
+      blockTransferService.uploadBlockSync(
+        mc.any(),
+        mc.any(),
+        mc.any(),
+        mc.any(),
+        mc.any(),
+        mc.any(),
+        mc.isNull()
+      )
+    )
       .thenCallRealMethod()
 
     when(bm.blockTransferService).thenReturn(blockTransferService)
@@ -264,11 +336,25 @@ class BlockManagerDecommissionUnitSuite extends SparkFunSuite with Matchers {
     val bmDecomManager = new BlockManagerDecommissioner(conf, bm)
     validateDecommissionTimestampsOnManager(bmDecomManager)
     verify(blockTransferService, times(1))
-      .uploadBlock(mc.any(), mc.any(), mc.eq(exe1.executorId),
-        mc.any(), mc.any(), mc.any(), mc.isNull())
+      .uploadBlock(
+        mc.any(),
+        mc.any(),
+        mc.eq(exe1.executorId),
+        mc.any(),
+        mc.any(),
+        mc.any(),
+        mc.isNull()
+      )
     verify(blockTransferService, times(1))
-      .uploadBlock(mc.any(), mc.any(), mc.eq(exe2.executorId),
-        mc.any(), mc.any(), mc.any(), mc.isNull())
+      .uploadBlock(
+        mc.any(),
+        mc.any(),
+        mc.eq(exe2.executorId),
+        mc.any(),
+        mc.any(),
+        mc.any(),
+        mc.isNull()
+      )
   }
 
   test("block decom manager handles IO failures") {
@@ -284,8 +370,17 @@ class BlockManagerDecommissionUnitSuite extends SparkFunSuite with Matchers {
 
     val blockTransferService = mock(classOf[BlockTransferService])
     // Simulate an ambiguous IO error (e.g. block could be gone, connection failed, etc.)
-    when(blockTransferService.uploadBlockSync(
-      mc.any(), mc.any(), mc.any(), mc.any(), mc.any(), mc.any(), mc.isNull())).thenThrow(
+    when(
+      blockTransferService.uploadBlockSync(
+        mc.any(),
+        mc.any(),
+        mc.any(),
+        mc.any(),
+        mc.any(),
+        mc.any(),
+        mc.isNull()
+      )
+    ).thenThrow(
       new java.io.IOException("boop")
     )
 
@@ -305,9 +400,12 @@ class BlockManagerDecommissionUnitSuite extends SparkFunSuite with Matchers {
       .thenReturn(Seq(ShuffleBlockInfo(1, 1)))
       .thenReturn(Seq())
     when(migratableShuffleBlockResolver.getMigrationBlocks(mc.any()))
-      .thenReturn(List(
-        (ShuffleIndexBlockId(1, 1, 1), mock(classOf[ManagedBuffer])),
-        (ShuffleDataBlockId(1, 1, 1), mock(classOf[ManagedBuffer]))))
+      .thenReturn(
+        List(
+          (ShuffleIndexBlockId(1, 1, 1), mock(classOf[ManagedBuffer])),
+          (ShuffleDataBlockId(1, 1, 1), mock(classOf[ManagedBuffer]))
+        )
+      )
       .thenReturn(List())
 
     when(bm.migratableResolver).thenReturn(migratableShuffleBlockResolver)
@@ -318,8 +416,17 @@ class BlockManagerDecommissionUnitSuite extends SparkFunSuite with Matchers {
 
     val blockTransferService = mock(classOf[BlockTransferService])
     // Simulate an ambiguous IO error (e.g. block could be gone, connection failed, etc.)
-    when(blockTransferService.uploadBlockSync(
-      mc.any(), mc.any(), mc.any(), mc.any(), mc.any(), mc.any(), mc.isNull())).thenThrow(
+    when(
+      blockTransferService.uploadBlockSync(
+        mc.any(),
+        mc.any(),
+        mc.any(),
+        mc.any(),
+        mc.any(),
+        mc.any(),
+        mc.isNull()
+      )
+    ).thenThrow(
       new java.io.IOException("boop")
     )
 
@@ -327,8 +434,11 @@ class BlockManagerDecommissionUnitSuite extends SparkFunSuite with Matchers {
 
     // Verify the decom manager handles this correctly
     val bmDecomManager = new BlockManagerDecommissioner(sparkConf, bm)
-    validateDecommissionTimestampsOnManager(bmDecomManager, fail = false,
-      numShuffles = Some(1))
+    validateDecommissionTimestampsOnManager(
+      bmDecomManager,
+      fail = false,
+      numShuffles = Some(1)
+    )
   }
 
   test("test shuffle and cached rdd migration without any error") {
@@ -337,7 +447,11 @@ class BlockManagerDecommissionUnitSuite extends SparkFunSuite with Matchers {
 
     val storedBlockId1 = RDDBlockId(0, 0)
     val storedBlock1 =
-      new ReplicateBlock(storedBlockId1, Seq(BlockManagerId("replicaHolder", "host1", bmPort)), 1)
+      new ReplicateBlock(
+        storedBlockId1,
+        Seq(BlockManagerId("replicaHolder", "host1", bmPort)),
+        1
+      )
 
     val migratableShuffleBlockResolver = mock(classOf[MigratableResolver])
     registerShuffleBlocks(migratableShuffleBlockResolver, Set((1, 1L, 1)))
@@ -362,10 +476,21 @@ class BlockManagerDecommissionUnitSuite extends SparkFunSuite with Matchers {
         assert(bmDecomManager.shufflesToMigrate.isEmpty === true)
         assert(bmDecomManager.numMigratedShuffles.get() === 1)
         verify(bm, least(1)).replicateBlock(
-          mc.eq(storedBlockId1), mc.any(), mc.any(), mc.eq(Some(3)))
+          mc.eq(storedBlockId1),
+          mc.any(),
+          mc.any(),
+          mc.eq(Some(3))
+        )
         verify(blockTransferService, times(2))
-          .uploadBlockSync(mc.eq("host2"), mc.eq(bmPort), mc.eq("exec2"), mc.any(), mc.any(),
-            mc.eq(StorageLevel.DISK_ONLY), mc.isNull())
+          .uploadBlockSync(
+            mc.eq("host2"),
+            mc.eq(bmPort),
+            mc.eq("exec2"),
+            mc.any(),
+            mc.any(),
+            mc.eq(StorageLevel.DISK_ONLY),
+            mc.isNull()
+          )
         // Since we never "finish" the RDD blocks, make sure the time is always moving forward.
         assert(bmDecomManager.rddBlocksLeft)
         previousRDDTime match {
@@ -387,7 +512,7 @@ class BlockManagerDecommissionUnitSuite extends SparkFunSuite with Matchers {
         }
       }
     } finally {
-        bmDecomManager.stop()
+      bmDecomManager.stop()
     }
   }
 
@@ -397,7 +522,11 @@ class BlockManagerDecommissionUnitSuite extends SparkFunSuite with Matchers {
 
     val storedBlockId1 = RDDBlockId(0, 0)
     val storedBlock1 =
-      new ReplicateBlock(storedBlockId1, Seq(BlockManagerId("replicaHolder", "host1", bmPort)), 1)
+      new ReplicateBlock(
+        storedBlockId1,
+        Seq(BlockManagerId("replicaHolder", "host1", bmPort)),
+        1
+      )
 
     val migratableShuffleBlockResolver = mock(classOf[MigratableResolver])
     registerShuffleBlocks(migratableShuffleBlockResolver, Set())
@@ -415,7 +544,11 @@ class BlockManagerDecommissionUnitSuite extends SparkFunSuite with Matchers {
       bmDecomManager.start()
       eventually(timeout(100.second), interval(10.milliseconds)) {
         verify(bm, never()).replicateBlock(
-          mc.eq(storedBlockId1), mc.any(), mc.any(), mc.eq(Some(3)))
+          mc.eq(storedBlockId1),
+          mc.any(),
+          mc.any(),
+          mc.eq(Some(3))
+        )
         assert(bmDecomManager.rddBlocksLeft)
         assert(bmDecomManager.stoppedRDD)
       }

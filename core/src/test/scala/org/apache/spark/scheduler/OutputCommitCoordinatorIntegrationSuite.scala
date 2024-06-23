@@ -21,17 +21,22 @@ import org.apache.hadoop.mapred.{FileOutputCommitter, TaskAttemptContext}
 import org.scalatest.concurrent.{Signaler, ThreadSignaler, TimeLimits}
 import org.scalatest.time.{Seconds, Span}
 
-import org.apache.spark.{LocalSparkContext, SparkConf, SparkContext, SparkFunSuite, TaskContext}
+import org.apache.spark.{
+  LocalSparkContext,
+  SparkConf,
+  SparkContext,
+  SparkFunSuite,
+  TaskContext
+}
 
-/**
- * Integration tests for the OutputCommitCoordinator.
- *
- * See also: [[OutputCommitCoordinatorSuite]] for unit tests that use mocks.
- */
+/** Integration tests for the OutputCommitCoordinator.
+  *
+  * See also: [[OutputCommitCoordinatorSuite]] for unit tests that use mocks.
+  */
 class OutputCommitCoordinatorIntegrationSuite
-  extends SparkFunSuite
-  with LocalSparkContext
-  with TimeLimits {
+    extends SparkFunSuite
+    with LocalSparkContext
+    with TimeLimits {
 
   // Necessary to make ScalaTest 3.x interrupt a thread on the JVM like ScalaTest 2.2.x
   implicit val defaultSignaler: Signaler = ThreadSignaler
@@ -40,8 +45,10 @@ class OutputCommitCoordinatorIntegrationSuite
     super.beforeAll()
     val conf = new SparkConf()
       .set("spark.hadoop.outputCommitCoordination.enabled", "true")
-      .set("spark.hadoop.mapred.output.committer.class",
-        classOf[ThrowExceptionOnFirstAttemptOutputCommitter].getCanonicalName)
+      .set(
+        "spark.hadoop.mapred.output.committer.class",
+        classOf[ThrowExceptionOnFirstAttemptOutputCommitter].getCanonicalName
+      )
     sc = new SparkContext("local[2, 4]", "test", conf)
   }
 
@@ -49,13 +56,16 @@ class OutputCommitCoordinatorIntegrationSuite
     // Regression test for SPARK-10381
     failAfter(Span(60, Seconds)) {
       withTempDir { tempDir =>
-        sc.parallelize(1 to 4, 2).map(_.toString).saveAsTextFile(tempDir.getAbsolutePath + "/out")
+        sc.parallelize(1 to 4, 2)
+          .map(_.toString)
+          .saveAsTextFile(tempDir.getAbsolutePath + "/out")
       }
     }
   }
 }
 
-private class ThrowExceptionOnFirstAttemptOutputCommitter extends FileOutputCommitter {
+private class ThrowExceptionOnFirstAttemptOutputCommitter
+    extends FileOutputCommitter {
   override def commitTask(context: TaskAttemptContext): Unit = {
     val ctx = TaskContext.get()
     if (ctx.attemptNumber() < 1) {

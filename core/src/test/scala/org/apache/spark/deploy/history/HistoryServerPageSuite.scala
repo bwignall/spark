@@ -64,7 +64,9 @@ class HistoryServerPageSuite extends SparkFunSuite with BeforeAndAfter {
     server = None
   }
 
-  private def callApplicationsAPI(requestedIncomplete: Boolean): Seq[JObject] = {
+  private def callApplicationsAPI(
+      requestedIncomplete: Boolean
+  ): Seq[JObject] = {
     val param = if (requestedIncomplete) {
       ApplicationStatus.RUNNING.toString.toLowerCase()
     } else {
@@ -85,7 +87,9 @@ class HistoryServerPageSuite extends SparkFunSuite with BeforeAndAfter {
     stopHistoryServer()
   }
 
-  test("SPARK-39620: should behaves the same as REST API when filtering applications") {
+  test(
+    "SPARK-39620: should behaves the same as REST API when filtering applications"
+  ) {
     logDirs.foreach { logDir =>
       startHistoryServer(logDir)
       val page = new HistoryPage(server.get)

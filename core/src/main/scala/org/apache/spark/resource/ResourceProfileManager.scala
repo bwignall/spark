@@ -26,20 +26,25 @@ import org.apache.spark.annotation.Evolving
 import org.apache.spark.internal.{config, Logging, MDC}
 import org.apache.spark.internal.LogKeys
 import org.apache.spark.internal.config.Tests._
-import org.apache.spark.scheduler.{LiveListenerBus, SparkListenerResourceProfileAdded}
+import org.apache.spark.scheduler.{
+  LiveListenerBus,
+  SparkListenerResourceProfileAdded
+}
 import org.apache.spark.util.Utils
 import org.apache.spark.util.Utils.isTesting
 
-/**
- * Manager of resource profiles. The manager allows one place to keep the actual ResourceProfiles
- * and everywhere else we can use the ResourceProfile Id to save on space.
- * Note we never remove a resource profile at this point. Its expected this number is small
- * so this shouldn't be much overhead.
- */
+/** Manager of resource profiles. The manager allows one place to keep the actual ResourceProfiles
+  * and everywhere else we can use the ResourceProfile Id to save on space.
+  * Note we never remove a resource profile at this point. Its expected this number is small
+  * so this shouldn't be much overhead.
+  */
 @Evolving
-private[spark] class ResourceProfileManager(sparkConf: SparkConf,
-    listenerBus: LiveListenerBus) extends Logging {
-  private val resourceProfileIdToResourceProfile = new HashMap[Int, ResourceProfile]()
+private[spark] class ResourceProfileManager(
+    sparkConf: SparkConf,
+    listenerBus: LiveListenerBus
+) extends Logging {
+  private val resourceProfileIdToResourceProfile =
+    new HashMap[Int, ResourceProfile]()
 
   private val (readLock, writeLock) = {
     val lock = new ReentrantReadWriteLock()
@@ -51,31 +56,37 @@ private[spark] class ResourceProfileManager(sparkConf: SparkConf,
   private val isYarn = master.isDefined && master.get.equals("yarn")
   private val isK8s = master.isDefined && master.get.startsWith("k8s://")
   private val isStandaloneOrLocalCluster = master.isDefined && (
-      master.get.startsWith("spark://") || master.get.startsWith("local-cluster")
-    )
+    master.get.startsWith("spark://") || master.get.startsWith("local-cluster")
+  )
   private val notRunningUnitTests = !isTesting
-  private val testExceptionThrown = sparkConf.get(RESOURCE_PROFILE_MANAGER_TESTING)
+  private val testExceptionThrown =
+    sparkConf.get(RESOURCE_PROFILE_MANAGER_TESTING)
 
-  private val defaultProfile = ResourceProfile.getOrCreateDefaultProfile(sparkConf)
+  private val defaultProfile =
+    ResourceProfile.getOrCreateDefaultProfile(sparkConf)
   addResourceProfile(defaultProfile)
 
   def defaultResourceProfile: ResourceProfile = defaultProfile
 
-  /**
-   * If we use anything except the default profile, it's supported on YARN, Kubernetes and
-   * Standalone with dynamic allocation enabled, and task resource profile with dynamic allocation
-   * disabled on Standalone. Throw an exception if not supported.
-   */
+  /** If we use anything except the default profile, it's supported on YARN, Kubernetes and
+    * Standalone with dynamic allocation enabled, and task resource profile with dynamic allocation
+    * disabled on Standalone. Throw an exception if not supported.
+    */
   private[spark] def isSupported(rp: ResourceProfile): Boolean = {
     assert(master != null)
     if (rp.isInstanceOf[TaskResourceProfile] && !dynamicEnabled) {
-      if ((notRunningUnitTests || testExceptionThrown) &&
-        !(isStandaloneOrLocalCluster || isYarn || isK8s)) {
-        throw new SparkException("TaskResourceProfiles are only supported for Standalone, " +
-          "Yarn and Kubernetes cluster for now when dynamic allocation is disabled.")
+      if (
+        (notRunningUnitTests || testExceptionThrown) &&
+        !(isStandaloneOrLocalCluster || isYarn || isK8s)
+      ) {
+        throw new SparkException(
+          "TaskResourceProfiles are only supported for Standalone, " +
+            "Yarn and Kubernetes cluster for now when dynamic allocation is disabled."
+        )
       }
     } else {
-      val isNotDefaultProfile = rp.id != ResourceProfile.DEFAULT_RESOURCE_PROFILE_ID
+      val isNotDefaultProfile =
+        rp.id != ResourceProfile.DEFAULT_RESOURCE_PROFILE_ID
       val notYarnOrK8sOrStandaloneAndNotDefaultProfile =
         isNotDefaultProfile && !(isYarn || isK8s || isStandaloneOrLocalCluster)
       val YarnOrK8sOrStandaloneNotDynAllocAndNotDefaultProfile =
@@ -84,45 +95,58 @@ private[spark] class ResourceProfileManager(sparkConf: SparkConf,
       // We want the exception to be thrown only when we are specifically testing for the
       // exception or in a real application. Otherwise in all other testing scenarios we want
       // to skip throwing the exception so that we can test in other modes to make testing easier.
-      if ((notRunningUnitTests || testExceptionThrown) &&
+      if (
+        (notRunningUnitTests || testExceptionThrown) &&
         (notYarnOrK8sOrStandaloneAndNotDefaultProfile ||
-          YarnOrK8sOrStandaloneNotDynAllocAndNotDefaultProfile)) {
-        throw new SparkException("ResourceProfiles are only supported on YARN and Kubernetes " +
-          "and Standalone with dynamic allocation enabled.")
+          YarnOrK8sOrStandaloneNotDynAllocAndNotDefaultProfile)
+      ) {
+        throw new SparkException(
+          "ResourceProfiles are only supported on YARN and Kubernetes " +
+            "and Standalone with dynamic allocation enabled."
+        )
       }
 
-      if (isStandaloneOrLocalCluster && dynamicEnabled && rp.getExecutorCores.isEmpty &&
-        sparkConf.getOption(config.EXECUTOR_CORES.key).isEmpty) {
-        logWarning("Neither executor cores is set for resource profile, nor spark.executor.cores " +
-          "is explicitly set, you may get more executors allocated than expected. " +
-          "It's recommended to set executor cores explicitly. " +
-          "Please check SPARK-30299 for more details.")
+      if (
+        isStandaloneOrLocalCluster && dynamicEnabled && rp.getExecutorCores.isEmpty &&
+        sparkConf.getOption(config.EXECUTOR_CORES.key).isEmpty
+      ) {
+        logWarning(
+          "Neither executor cores is set for resource profile, nor spark.executor.cores " +
+            "is explicitly set, you may get more executors allocated than expected. " +
+            "It's recommended to set executor cores explicitly. " +
+            "Please check SPARK-30299 for more details."
+        )
       }
     }
 
     true
   }
 
-  /**
-   * Check whether a task with specific taskRpId can be scheduled to executors
-   * with executorRpId.
-   *
-   * Here are the rules:
-   * 1. When dynamic allocation is disabled, only [[TaskResourceProfile]] is supported,
-   *    and tasks with [[TaskResourceProfile]] can be scheduled to executors with default
-   *    resource profile.
-   * 2. For other scenarios(when dynamic allocation is enabled), tasks can be scheduled to
-   *    executors where resource profile exactly matches.
-   */
-  private[spark] def canBeScheduled(taskRpId: Int, executorRpId: Int): Boolean = {
-    assert(resourceProfileIdToResourceProfile.contains(taskRpId) &&
-      resourceProfileIdToResourceProfile.contains(executorRpId),
-      "Tasks and executors must have valid resource profile id")
+  /** Check whether a task with specific taskRpId can be scheduled to executors
+    * with executorRpId.
+    *
+    * Here are the rules:
+    * 1. When dynamic allocation is disabled, only [[TaskResourceProfile]] is supported,
+    *    and tasks with [[TaskResourceProfile]] can be scheduled to executors with default
+    *    resource profile.
+    * 2. For other scenarios(when dynamic allocation is enabled), tasks can be scheduled to
+    *    executors where resource profile exactly matches.
+    */
+  private[spark] def canBeScheduled(
+      taskRpId: Int,
+      executorRpId: Int
+  ): Boolean = {
+    assert(
+      resourceProfileIdToResourceProfile.contains(taskRpId) &&
+        resourceProfileIdToResourceProfile.contains(executorRpId),
+      "Tasks and executors must have valid resource profile id"
+    )
     val taskRp = resourceProfileFromId(taskRpId)
 
     // When dynamic allocation disabled, tasks with TaskResourceProfile can always reuse
     // all the executors with default resource profile.
-    taskRpId == executorRpId || (!dynamicEnabled && taskRp.isInstanceOf[TaskResourceProfile])
+    taskRpId == executorRpId || (!dynamicEnabled && taskRp
+      .isInstanceOf[TaskResourceProfile])
   }
 
   def addResourceProfile(rp: ResourceProfile): Unit = {
@@ -141,7 +165,9 @@ private[spark] class ResourceProfileManager(sparkConf: SparkConf,
     if (putNewProfile) {
       // force the computation of maxTasks and limitingResource now so we don't have cost later
       rp.limitingResource(sparkConf)
-      logInfo(log"Added ResourceProfile id: ${MDC(LogKeys.RESOURCE_PROFILE_ID, rp.id)}")
+      logInfo(
+        log"Added ResourceProfile id: ${MDC(LogKeys.RESOURCE_PROFILE_ID, rp.id)}"
+      )
       listenerBus.post(SparkListenerResourceProfileAdded(rp))
     }
   }
@@ -153,7 +179,8 @@ private[spark] class ResourceProfileManager(sparkConf: SparkConf,
   def resourceProfileFromId(rpId: Int): ResourceProfile = {
     readLock.lock()
     try {
-      resourceProfileIdToResourceProfile.getOrElse(rpId,
+      resourceProfileIdToResourceProfile.getOrElse(
+        rpId,
         throw new SparkException(s"ResourceProfileId $rpId not found!")
       )
     } finally {
@@ -168,9 +195,11 @@ private[spark] class ResourceProfileManager(sparkConf: SparkConf,
   def getEquivalentProfile(rp: ResourceProfile): Option[ResourceProfile] = {
     readLock.lock()
     try {
-      resourceProfileIdToResourceProfile.find { case (_, rpEntry) =>
-        rpEntry.resourcesEqual(rp)
-      }.map(_._2)
+      resourceProfileIdToResourceProfile
+        .find { case (_, rpEntry) =>
+          rpEntry.resourcesEqual(rp)
+        }
+        .map(_._2)
     } finally {
       readLock.unlock()
     }

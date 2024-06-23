@@ -35,7 +35,8 @@ class StoragePageSuite extends SparkFunSuite {
   val request = mock(classOf[HttpServletRequest])
 
   test("rddTable") {
-    val rdd1 = new RDDStorageInfo(1,
+    val rdd1 = new RDDStorageInfo(
+      1,
       "rdd1",
       10,
       10,
@@ -43,9 +44,11 @@ class StoragePageSuite extends SparkFunSuite {
       100L,
       0L,
       None,
-      None)
+      None
+    )
 
-    val rdd2 = new RDDStorageInfo(2,
+    val rdd2 = new RDDStorageInfo(
+      2,
       "rdd2",
       1000,
       56,
@@ -53,9 +56,11 @@ class StoragePageSuite extends SparkFunSuite {
       0L,
       200L,
       None,
-      None)
+      None
+    )
 
-    val rdd3 = new RDDStorageInfo(3,
+    val rdd3 = new RDDStorageInfo(
+      3,
       "rdd3",
       1000,
       103,
@@ -63,7 +68,8 @@ class StoragePageSuite extends SparkFunSuite {
       400L,
       500L,
       None,
-      None)
+      None
+    )
 
     val xmlNodes = storagePage.rddTable(request, Seq(rdd1, rdd2, rdd3))
 
@@ -74,7 +80,8 @@ class StoragePageSuite extends SparkFunSuite {
       "Cached Partitions",
       "Fraction Cached",
       "Size in Memory",
-      "Size on Disk")
+      "Size on Disk"
+    )
 
     val headerRow: Seq[Node] = {
       headers.zipWithIndex.map { x =>
@@ -92,24 +99,59 @@ class StoragePageSuite extends SparkFunSuite {
     assert((xmlNodes \\ "th").map(_.text) === headerRow.map(_.text))
 
     assert((xmlNodes \\ "tr").size === 3)
-    assert(((xmlNodes \\ "tr")(0) \\ "td").map(_.text.trim) ===
-      Seq("1", "rdd1", "Memory Deserialized 1x Replicated", "10", "100.00%", "100.0 B", "0.0 B"))
+    assert(
+      ((xmlNodes \\ "tr")(0) \\ "td").map(_.text.trim) ===
+        Seq(
+          "1",
+          "rdd1",
+          "Memory Deserialized 1x Replicated",
+          "10",
+          "100.00%",
+          "100.0 B",
+          "0.0 B"
+        )
+    )
     // Check the url
-    assert(((xmlNodes \\ "tr")(0) \\ "td" \ "a")(0).attribute("href").map(_.text) ===
-      Some("http://localhost:4040/storage/rdd/?id=1"))
+    assert(
+      ((xmlNodes \\ "tr")(0) \\ "td" \ "a")(0).attribute("href").map(_.text) ===
+        Some("http://localhost:4040/storage/rdd/?id=1")
+    )
 
-    assert(((xmlNodes \\ "tr")(1) \\ "td").map(_.text.trim) ===
-      Seq("2", "rdd2", "Disk Serialized 1x Replicated", "56", "5.60%", "0.0 B", "200.0 B"))
+    assert(
+      ((xmlNodes \\ "tr")(1) \\ "td").map(_.text.trim) ===
+        Seq(
+          "2",
+          "rdd2",
+          "Disk Serialized 1x Replicated",
+          "56",
+          "5.60%",
+          "0.0 B",
+          "200.0 B"
+        )
+    )
     // Check the url
-    assert(((xmlNodes \\ "tr")(1) \\ "td" \ "a")(0).attribute("href").map(_.text) ===
-      Some("http://localhost:4040/storage/rdd/?id=2"))
+    assert(
+      ((xmlNodes \\ "tr")(1) \\ "td" \ "a")(0).attribute("href").map(_.text) ===
+        Some("http://localhost:4040/storage/rdd/?id=2")
+    )
 
-    assert(((xmlNodes \\ "tr")(2) \\ "td").map(_.text.trim) ===
-      Seq("3", "rdd3", "Disk Memory Serialized 1x Replicated", "103", "10.30%", "400.0 B",
-        "500.0 B"))
+    assert(
+      ((xmlNodes \\ "tr")(2) \\ "td").map(_.text.trim) ===
+        Seq(
+          "3",
+          "rdd3",
+          "Disk Memory Serialized 1x Replicated",
+          "103",
+          "10.30%",
+          "400.0 B",
+          "500.0 B"
+        )
+    )
     // Check the url
-    assert(((xmlNodes \\ "tr")(2) \\ "td" \ "a")(0).attribute("href").map(_.text) ===
-      Some("http://localhost:4040/storage/rdd/?id=3"))
+    assert(
+      ((xmlNodes \\ "tr")(2) \\ "td" \ "a")(0).attribute("href").map(_.text) ===
+        Some("http://localhost:4040/storage/rdd/?id=3")
+    )
   }
 
   test("empty rddTable") {
@@ -117,7 +159,8 @@ class StoragePageSuite extends SparkFunSuite {
   }
 
   test("streamBlockStorageLevelDescriptionAndSize") {
-    val memoryBlock = new StreamBlockData("0",
+    val memoryBlock = new StreamBlockData(
+      "0",
       "0",
       "localhost:1111",
       StorageLevel.MEMORY_ONLY.description,
@@ -125,10 +168,16 @@ class StoragePageSuite extends SparkFunSuite {
       false,
       true,
       100,
-      0)
-    assert(("Memory", 100) === storagePage.streamBlockStorageLevelDescriptionAndSize(memoryBlock))
+      0
+    )
+    assert(
+      ("Memory", 100) === storagePage.streamBlockStorageLevelDescriptionAndSize(
+        memoryBlock
+      )
+    )
 
-    val memorySerializedBlock = new StreamBlockData("0",
+    val memorySerializedBlock = new StreamBlockData(
+      "0",
       "0",
       "localhost:1111",
       StorageLevel.MEMORY_ONLY_SER.description,
@@ -136,11 +185,17 @@ class StoragePageSuite extends SparkFunSuite {
       false,
       false,
       memSize = 100,
-      diskSize = 0)
-    assert(("Memory Serialized", 100) ===
-      storagePage.streamBlockStorageLevelDescriptionAndSize(memorySerializedBlock))
+      diskSize = 0
+    )
+    assert(
+      ("Memory Serialized", 100) ===
+        storagePage.streamBlockStorageLevelDescriptionAndSize(
+          memorySerializedBlock
+        )
+    )
 
-    val diskBlock = new StreamBlockData("0",
+    val diskBlock = new StreamBlockData(
+      "0",
       "0",
       "localhost:1111",
       StorageLevel.DISK_ONLY.description,
@@ -148,13 +203,19 @@ class StoragePageSuite extends SparkFunSuite {
       true,
       false,
       0,
-      100)
-    assert(("Disk", 100) === storagePage.streamBlockStorageLevelDescriptionAndSize(diskBlock))
+      100
+    )
+    assert(
+      ("Disk", 100) === storagePage.streamBlockStorageLevelDescriptionAndSize(
+        diskBlock
+      )
+    )
   }
 
   test("receiverBlockTables") {
     val blocksForExecutor0 = Seq(
-      new StreamBlockData(StreamBlockId(0, 0).name,
+      new StreamBlockData(
+        StreamBlockId(0, 0).name,
         "0",
         "localhost:10000",
         StorageLevel.MEMORY_ONLY.description,
@@ -162,8 +223,10 @@ class StoragePageSuite extends SparkFunSuite {
         false,
         true,
         100,
-        0),
-      new StreamBlockData(StreamBlockId(1, 1).name,
+        0
+      ),
+      new StreamBlockData(
+        StreamBlockId(1, 1).name,
         "0",
         "localhost:10000",
         StorageLevel.DISK_ONLY.description,
@@ -171,11 +234,13 @@ class StoragePageSuite extends SparkFunSuite {
         true,
         false,
         0,
-        100)
+        100
+      )
     )
 
     val blocksForExecutor1 = Seq(
-      new StreamBlockData(StreamBlockId(0, 0).name,
+      new StreamBlockData(
+        StreamBlockId(0, 0).name,
         "1",
         "localhost:10001",
         StorageLevel.MEMORY_ONLY.description,
@@ -183,8 +248,10 @@ class StoragePageSuite extends SparkFunSuite {
         false,
         true,
         memSize = 100,
-        diskSize = 0),
-      new StreamBlockData(StreamBlockId(1, 1).name,
+        diskSize = 0
+      ),
+      new StreamBlockData(
+        StreamBlockId(1, 1).name,
         "1",
         "localhost:10001",
         StorageLevel.MEMORY_ONLY_SER.description,
@@ -192,10 +259,12 @@ class StoragePageSuite extends SparkFunSuite {
         false,
         false,
         100,
-        0)
+        0
+      )
     )
 
-    val xmlNodes = storagePage.receiverBlockTables(blocksForExecutor0 ++ blocksForExecutor1)
+    val xmlNodes =
+      storagePage.receiverBlockTables(blocksForExecutor0 ++ blocksForExecutor1)
 
     val executorTable = (xmlNodes \\ "table")(0)
     val executorHeaders = Seq(
@@ -203,42 +272,67 @@ class StoragePageSuite extends SparkFunSuite {
       "Address",
       "Total Size in Memory",
       "Total Size on Disk",
-      "Stream Blocks")
+      "Stream Blocks"
+    )
     assert((executorTable \\ "th").map(_.text) === executorHeaders)
 
     assert((executorTable \\ "tr").size === 2)
-    assert(((executorTable \\ "tr")(0) \\ "td").map(_.text.trim) ===
-      Seq("0", "localhost:10000", "100.0 B", "100.0 B", "2"))
-    assert(((executorTable \\ "tr")(1) \\ "td").map(_.text.trim) ===
-      Seq("1", "localhost:10001", "200.0 B", "0.0 B", "2"))
+    assert(
+      ((executorTable \\ "tr")(0) \\ "td").map(_.text.trim) ===
+        Seq("0", "localhost:10000", "100.0 B", "100.0 B", "2")
+    )
+    assert(
+      ((executorTable \\ "tr")(1) \\ "td").map(_.text.trim) ===
+        Seq("1", "localhost:10001", "200.0 B", "0.0 B", "2")
+    )
 
     val blockTable = (xmlNodes \\ "table")(1)
-    val blockHeaders = Seq(
-      "Block ID",
-      "Replication Level",
-      "Location",
-      "Storage Level",
-      "Size")
+    val blockHeaders =
+      Seq("Block ID", "Replication Level", "Location", "Storage Level", "Size")
     assert((blockTable \\ "th").map(_.text) === blockHeaders)
 
     assert((blockTable \\ "tr").size === 4)
-    assert(((blockTable \\ "tr")(0) \\ "td").map(_.text.trim) ===
-      Seq("input-0-0", "2", "localhost:10000", "Memory", "100.0 B"))
+    assert(
+      ((blockTable \\ "tr")(0) \\ "td").map(_.text.trim) ===
+        Seq("input-0-0", "2", "localhost:10000", "Memory", "100.0 B")
+    )
     // Check "rowspan=2" for the first 2 columns
-    assert(((blockTable \\ "tr")(0) \\ "td")(0).attribute("rowspan").map(_.text) === Some("2"))
-    assert(((blockTable \\ "tr")(0) \\ "td")(1).attribute("rowspan").map(_.text) === Some("2"))
+    assert(
+      ((blockTable \\ "tr")(0) \\ "td")(0)
+        .attribute("rowspan")
+        .map(_.text) === Some("2")
+    )
+    assert(
+      ((blockTable \\ "tr")(0) \\ "td")(1)
+        .attribute("rowspan")
+        .map(_.text) === Some("2")
+    )
 
-    assert(((blockTable \\ "tr")(1) \\ "td").map(_.text.trim) ===
-      Seq("localhost:10001", "Memory", "100.0 B"))
+    assert(
+      ((blockTable \\ "tr")(1) \\ "td").map(_.text.trim) ===
+        Seq("localhost:10001", "Memory", "100.0 B")
+    )
 
-    assert(((blockTable \\ "tr")(2) \\ "td").map(_.text.trim) ===
-      Seq("input-1-1", "2", "localhost:10000", "Disk", "100.0 B"))
+    assert(
+      ((blockTable \\ "tr")(2) \\ "td").map(_.text.trim) ===
+        Seq("input-1-1", "2", "localhost:10000", "Disk", "100.0 B")
+    )
     // Check "rowspan=2" for the first 2 columns
-    assert(((blockTable \\ "tr")(2) \\ "td")(0).attribute("rowspan").map(_.text) === Some("2"))
-    assert(((blockTable \\ "tr")(2) \\ "td")(1).attribute("rowspan").map(_.text) === Some("2"))
+    assert(
+      ((blockTable \\ "tr")(2) \\ "td")(0)
+        .attribute("rowspan")
+        .map(_.text) === Some("2")
+    )
+    assert(
+      ((blockTable \\ "tr")(2) \\ "td")(1)
+        .attribute("rowspan")
+        .map(_.text) === Some("2")
+    )
 
-    assert(((blockTable \\ "tr")(3) \\ "td").map(_.text.trim) ===
-      Seq("localhost:10001", "Memory Serialized", "100.0 B"))
+    assert(
+      ((blockTable \\ "tr")(3) \\ "td").map(_.text.trim) ===
+        Seq("localhost:10001", "Memory Serialized", "100.0 B")
+    )
   }
 
   test("empty receiverBlockTables") {

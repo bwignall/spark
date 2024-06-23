@@ -47,10 +47,14 @@ class ResourceProfileManagerSuite extends SparkFunSuite {
     val rpmanager = new ResourceProfileManager(conf, listenerBus)
     val defaultProf = rpmanager.defaultResourceProfile
     assert(defaultProf.id === ResourceProfile.DEFAULT_RESOURCE_PROFILE_ID)
-    assert(defaultProf.executorResources.size === 3,
-      "Executor resources should contain cores, heap and offheap memory by default")
-    assert(defaultProf.executorResources(ResourceProfile.CORES).amount === 4,
-      s"Executor resources should have 4 cores")
+    assert(
+      defaultProf.executorResources.size === 3,
+      "Executor resources should contain cores, heap and offheap memory by default"
+    )
+    assert(
+      defaultProf.executorResources(ResourceProfile.CORES).amount === 4,
+      s"Executor resources should have 4 cores"
+    )
   }
 
   test("isSupported yarn no dynamic allocation") {
@@ -67,9 +71,12 @@ class ResourceProfileManagerSuite extends SparkFunSuite {
       rpmanager.isSupported(immrprof)
     }.getMessage()
 
-    assert(error.contains(
-      "ResourceProfiles are only supported on YARN and Kubernetes and Standalone" +
-        " with dynamic allocation"))
+    assert(
+      error.contains(
+        "ResourceProfiles are only supported on YARN and Kubernetes and Standalone" +
+          " with dynamic allocation"
+      )
+    )
   }
 
   test("isSupported yarn with dynamic allocation") {
@@ -137,8 +144,10 @@ class ResourceProfileManagerSuite extends SparkFunSuite {
     val error = intercept[SparkException] {
       rpmanager.isSupported(taskProf)
     }.getMessage
-    assert(error === "TaskResourceProfiles are only supported for Standalone, " +
-      "Yarn and Kubernetes cluster for now when dynamic allocation is disabled.")
+    assert(
+      error === "TaskResourceProfiles are only supported for Standalone, " +
+        "Yarn and Kubernetes cluster for now when dynamic allocation is disabled."
+    )
 
     // Local cluster: supports task resource profile.
     conf.setMaster("local-cluster[1, 1, 1024]")
@@ -183,9 +192,12 @@ class ResourceProfileManagerSuite extends SparkFunSuite {
       rpmanager.isSupported(immrprof)
     }.getMessage()
 
-    assert(error.contains(
-      "ResourceProfiles are only supported on YARN and Kubernetes and Standalone" +
-        " with dynamic allocation"))
+    assert(
+      error.contains(
+        "ResourceProfiles are only supported on YARN and Kubernetes and Standalone" +
+          " with dynamic allocation"
+      )
+    )
   }
 
   test("ResourceProfileManager has equivalent profile") {
@@ -205,8 +217,10 @@ class ResourceProfileManagerSuite extends SparkFunSuite {
       if (i == checkId) rpAlreadyExist = Some(rprof)
     }
     val rpNotMatch = new ResourceProfileBuilder().build()
-    assert(rpmanager.getEquivalentProfile(rpNotMatch).isEmpty,
-      s"resourceProfile should not have existed")
+    assert(
+      rpmanager.getEquivalentProfile(rpNotMatch).isEmpty,
+      s"resourceProfile should not have existed"
+    )
 
     val rprofBuilder = new ResourceProfileBuilder()
     val ereqs = new ExecutorResourceRequests()
@@ -218,6 +232,9 @@ class ResourceProfileManagerSuite extends SparkFunSuite {
 
     val equivProf = rpmanager.getEquivalentProfile(rpShouldMatch)
     assert(equivProf.nonEmpty)
-    assert(equivProf.get.id == rpAlreadyExist.get.id, s"resourceProfile should have existed")
+    assert(
+      equivProf.get.id == rpAlreadyExist.get.id,
+      s"resourceProfile should have existed"
+    )
   }
 }

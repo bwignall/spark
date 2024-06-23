@@ -33,19 +33,20 @@ class AccumulatorSourceSuite extends SparkFunSuite {
     val mockMetricSystem = mock(classOf[MetricsSystem])
     when(mockEnvironment.metricsSystem) thenReturn (mockMetricSystem)
     when(mockContext.env) thenReturn (mockEnvironment)
-    val accs = Map("my-accumulator-1" -> acc1,
-                   "my-accumulator-2" -> acc2)
+    val accs = Map("my-accumulator-1" -> acc1, "my-accumulator-2" -> acc2)
     LongAccumulatorSource.register(mockContext, accs)
     val captor = ArgumentCaptor.forClass(classOf[AccumulatorSource])
     verify(mockMetricSystem, times(1)).registerSource(captor.capture())
     val source = captor.getValue()
     val gauges = source.metricRegistry.getGauges()
-    assert (gauges.size == 2)
-    assert (gauges.firstKey == "my-accumulator-1")
-    assert (gauges.lastKey == "my-accumulator-2")
+    assert(gauges.size == 2)
+    assert(gauges.firstKey == "my-accumulator-1")
+    assert(gauges.lastKey == "my-accumulator-2")
   }
 
-  test("the accumulators value property is checked when the gauge's value is requested") {
+  test(
+    "the accumulators value property is checked when the gauge's value is requested"
+  ) {
     val acc1 = new LongAccumulator()
     acc1.add(123)
     val acc2 = new LongAccumulator()
@@ -55,8 +56,7 @@ class AccumulatorSourceSuite extends SparkFunSuite {
     val mockMetricSystem = mock(classOf[MetricsSystem])
     when(mockEnvironment.metricsSystem) thenReturn (mockMetricSystem)
     when(mockContext.env) thenReturn (mockEnvironment)
-    val accs = Map("my-accumulator-1" -> acc1,
-                   "my-accumulator-2" -> acc2)
+    val accs = Map("my-accumulator-1" -> acc1, "my-accumulator-2" -> acc2)
     LongAccumulatorSource.register(mockContext, accs)
     val captor = ArgumentCaptor.forClass(classOf[AccumulatorSource])
     verify(mockMetricSystem, times(1)).registerSource(captor.capture())
@@ -66,7 +66,9 @@ class AccumulatorSourceSuite extends SparkFunSuite {
     assert(gauges.get("my-accumulator-2").getValue() == 456)
   }
 
-  test("the double accumulators value property is checked when the gauge's value is requested") {
+  test(
+    "the double accumulators value property is checked when the gauge's value is requested"
+  ) {
     val acc1 = new DoubleAccumulator()
     acc1.add(123.123)
     val acc2 = new DoubleAccumulator()
@@ -76,9 +78,7 @@ class AccumulatorSourceSuite extends SparkFunSuite {
     val mockMetricSystem = mock(classOf[MetricsSystem])
     when(mockEnvironment.metricsSystem) thenReturn (mockMetricSystem)
     when(mockContext.env) thenReturn (mockEnvironment)
-    val accs = Map(
-      "my-accumulator-1" -> acc1,
-      "my-accumulator-2" -> acc2)
+    val accs = Map("my-accumulator-1" -> acc1, "my-accumulator-2" -> acc2)
     DoubleAccumulatorSource.register(mockContext, accs)
     val captor = ArgumentCaptor.forClass(classOf[AccumulatorSource])
     verify(mockMetricSystem, times(1)).registerSource(captor.capture())

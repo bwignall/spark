@@ -28,16 +28,27 @@ import org.scalatest.time.SpanSugar._
 import org.scalatestplus.selenium.WebBrowser
 
 import org.apache.spark._
-import org.apache.spark.internal.config.{EVENT_LOG_STAGE_EXECUTOR_METRICS, EXECUTOR_PROCESS_TREE_METRICS_ENABLED}
-import org.apache.spark.internal.config.History.{HISTORY_LOG_DIR, HYBRID_STORE_DISK_BACKEND, HybridStoreDiskBackend, LOCAL_STORE_DIR, UPDATE_INTERVAL_S}
+import org.apache.spark.internal.config.{
+  EVENT_LOG_STAGE_EXECUTOR_METRICS,
+  EXECUTOR_PROCESS_TREE_METRICS_ENABLED
+}
+import org.apache.spark.internal.config.History.{
+  HISTORY_LOG_DIR,
+  HYBRID_STORE_DISK_BACKEND,
+  HybridStoreDiskBackend,
+  LOCAL_STORE_DIR,
+  UPDATE_INTERVAL_S
+}
 import org.apache.spark.internal.config.Tests.IS_TESTING
 import org.apache.spark.util.{ResetSystemProperties, Utils}
 
-/**
- * Tests for HistoryServer with real web browsers.
- */
+/** Tests for HistoryServer with real web browsers.
+  */
 abstract class RealBrowserUIHistoryServerSuite(val driverProp: String)
-  extends SparkFunSuite with WebBrowser with Matchers with ResetSystemProperties {
+    extends SparkFunSuite
+    with WebBrowser
+    with Matchers
+    with ResetSystemProperties {
 
   implicit var webDriver: WebDriver
 
@@ -56,7 +67,8 @@ abstract class RealBrowserUIHistoryServerSuite(val driverProp: String)
     assume(
       sys.props(driverPropPrefix + driverProp) !== null,
       "System property " + driverPropPrefix + driverProp +
-        " should be set to the corresponding driver path.")
+        " should be set to the corresponding driver path."
+    )
     sys.props(driverProp) = sys.props(driverPropPrefix + driverProp)
   }
 
@@ -99,7 +111,9 @@ abstract class RealBrowserUIHistoryServerSuite(val driverProp: String)
     server = null
   }
 
-  test("ajax rendered relative links are prefixed with uiRoot (spark.ui.proxyBase)") {
+  test(
+    "ajax rendered relative links are prefixed with uiRoot (spark.ui.proxyBase)"
+  ) {
     val uiRoot = "/testwebproxybase"
     System.setProperty("spark.ui.proxyBase", uiRoot)
 
@@ -144,7 +158,8 @@ abstract class RealBrowserUIHistoryServerSuite(val driverProp: String)
         .map(_.attribute("href"))
         .filter(_.isDefined)
         .map(_.get)
-        .filter(_.startsWith(url)).toList
+        .filter(_.startsWith(url))
+        .toList
 
       // there are at least some URL links that were generated via javascript,
       // and they all contain the spark.ui.proxyBase (uiRoot)

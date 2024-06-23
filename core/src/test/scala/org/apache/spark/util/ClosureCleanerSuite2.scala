@@ -24,11 +24,13 @@ import org.scalatest.{BeforeAndAfterAll, PrivateMethodTester}
 import org.apache.spark.{SparkContext, SparkException, SparkFunSuite}
 import org.apache.spark.serializer.SerializerInstance
 
-/**
- * Another test suite for the closure cleaner that is finer-grained.
- * For tests involving end-to-end Spark jobs, see {{ClosureCleanerSuite}}.
- */
-class ClosureCleanerSuite2 extends SparkFunSuite with BeforeAndAfterAll with PrivateMethodTester {
+/** Another test suite for the closure cleaner that is finer-grained.
+  * For tests involving end-to-end Spark jobs, see {{ClosureCleanerSuite}}.
+  */
+class ClosureCleanerSuite2
+    extends SparkFunSuite
+    with BeforeAndAfterAll
+    with PrivateMethodTester {
 
   // Start a SparkContext so that the closure serializer is accessible
   // We do not actually use this explicitly otherwise
@@ -58,7 +60,10 @@ class ClosureCleanerSuite2 extends SparkFunSuite with BeforeAndAfterAll with Pri
   private def someNonSerializableMethod() = new NonSerializable
 
   /** Assert that the given closure is serializable (or not). */
-  private def assertSerializable(closure: AnyRef, serializable: Boolean): Unit = {
+  private def assertSerializable(
+      closure: AnyRef,
+      serializable: Boolean
+  ): Unit = {
     if (serializable) {
       closureSerializer.serialize(closure)
     } else {
@@ -68,22 +73,32 @@ class ClosureCleanerSuite2 extends SparkFunSuite with BeforeAndAfterAll with Pri
     }
   }
 
-  /**
-   * Helper method for testing whether closure cleaning works as expected.
-   * This cleans the given closure twice, with and without transitive cleaning.
-   *
-   * @param closure closure to test cleaning with
-   * @param serializableBefore if true, verify that the closure is serializable
-   *                           before cleaning, otherwise assert that it is not
-   * @param serializableAfter if true, assert that the closure is serializable
-   *                          after cleaning otherwise assert that it is not
-   */
+  /** Helper method for testing whether closure cleaning works as expected.
+    * This cleans the given closure twice, with and without transitive cleaning.
+    *
+    * @param closure closure to test cleaning with
+    * @param serializableBefore if true, verify that the closure is serializable
+    *                           before cleaning, otherwise assert that it is not
+    * @param serializableAfter if true, assert that the closure is serializable
+    *                          after cleaning otherwise assert that it is not
+    */
   private def verifyCleaning(
       closure: AnyRef,
       serializableBefore: Boolean,
-      serializableAfter: Boolean): Unit = {
-    verifyCleaning(closure, serializableBefore, serializableAfter, transitive = true)
-    verifyCleaning(closure, serializableBefore, serializableAfter, transitive = false)
+      serializableAfter: Boolean
+  ): Unit = {
+    verifyCleaning(
+      closure,
+      serializableBefore,
+      serializableAfter,
+      transitive = true
+    )
+    verifyCleaning(
+      closure,
+      serializableBefore,
+      serializableAfter,
+      transitive = false
+    )
   }
 
   /** Helper method for testing whether closure cleaning works as expected. */
@@ -91,7 +106,8 @@ class ClosureCleanerSuite2 extends SparkFunSuite with BeforeAndAfterAll with Pri
       closure: AnyRef,
       serializableBefore: Boolean,
       serializableAfter: Boolean,
-      transitive: Boolean): Unit = {
+      transitive: Boolean
+  ): Unit = {
     assertSerializable(closure, serializableBefore)
     // If the resulting closure is not serializable even after
     // cleaning, we expect ClosureCleaner to throw a SparkException
@@ -111,18 +127,40 @@ class ClosureCleanerSuite2 extends SparkFunSuite with BeforeAndAfterAll with Pri
     val closure2 = () => Array[String]("a", "b", "c")
     val closure3 = (s: String, arr: Array[Long]) => s + arr.mkString(", ")
     val closure4 = () => localValue
-    val closure5 = () => new NonSerializable(5) // we're just serializing the class information
+    val closure5 =
+      () =>
+        new NonSerializable(5) // we're just serializing the class information
     val closure1r = closure1()
     val closure2r = closure2()
     val closure3r = closure3("g", Array(1, 5, 8))
     val closure4r = closure4()
     val closure5r = closure5()
 
-    verifyCleaning(closure1, serializableBefore = true, serializableAfter = true)
-    verifyCleaning(closure2, serializableBefore = true, serializableAfter = true)
-    verifyCleaning(closure3, serializableBefore = true, serializableAfter = true)
-    verifyCleaning(closure4, serializableBefore = true, serializableAfter = true)
-    verifyCleaning(closure5, serializableBefore = true, serializableAfter = true)
+    verifyCleaning(
+      closure1,
+      serializableBefore = true,
+      serializableAfter = true
+    )
+    verifyCleaning(
+      closure2,
+      serializableBefore = true,
+      serializableAfter = true
+    )
+    verifyCleaning(
+      closure3,
+      serializableBefore = true,
+      serializableAfter = true
+    )
+    verifyCleaning(
+      closure4,
+      serializableBefore = true,
+      serializableAfter = true
+    )
+    verifyCleaning(
+      closure5,
+      serializableBefore = true,
+      serializableAfter = true
+    )
 
     // Verify that closures can still be invoked and the result still the same
     assert(closure1() === closure1r)
@@ -140,11 +178,31 @@ class ClosureCleanerSuite2 extends SparkFunSuite with BeforeAndAfterAll with Pri
     val closure2 = () => someNonSerializableMethod()
 
     // These are not cleanable because they ultimately reference the ClosureCleanerSuite2
-    verifyCleaning(closure1, serializableBefore = false, serializableAfter = false)
-    verifyCleaning(closure2, serializableBefore = false, serializableAfter = false)
-    verifyCleaning(closure3, serializableBefore = false, serializableAfter = false)
-    verifyCleaning(closure4, serializableBefore = false, serializableAfter = false)
-    verifyCleaning(closure5, serializableBefore = false, serializableAfter = false)
+    verifyCleaning(
+      closure1,
+      serializableBefore = false,
+      serializableAfter = false
+    )
+    verifyCleaning(
+      closure2,
+      serializableBefore = false,
+      serializableAfter = false
+    )
+    verifyCleaning(
+      closure3,
+      serializableBefore = false,
+      serializableAfter = false
+    )
+    verifyCleaning(
+      closure4,
+      serializableBefore = false,
+      serializableAfter = false
+    )
+    verifyCleaning(
+      closure5,
+      serializableBefore = false,
+      serializableAfter = false
+    )
   }
 
   test("clean basic nested serializable closures") {
@@ -159,16 +217,28 @@ class ClosureCleanerSuite2 extends SparkFunSuite with BeforeAndAfterAll with Pri
     }
     val closure3 = (k: Int, l: Int, m: Int) => {
       (1 to k).flatMap(closure2) ++ // 4 levels
-      (1 to l).flatMap(closure1) ++ // 3 levels
-      (1 to m).map { x => x + 1 } // 2 levels
+        (1 to l).flatMap(closure1) ++ // 3 levels
+        (1 to m).map { x => x + 1 } // 2 levels
     }
     val closure1r = closure1(1)
     val closure2r = closure2(2)
     val closure3r = closure3(3, 4, 5)
 
-    verifyCleaning(closure1, serializableBefore = true, serializableAfter = true)
-    verifyCleaning(closure2, serializableBefore = true, serializableAfter = true)
-    verifyCleaning(closure3, serializableBefore = true, serializableAfter = true)
+    verifyCleaning(
+      closure1,
+      serializableBefore = true,
+      serializableAfter = true
+    )
+    verifyCleaning(
+      closure2,
+      serializableBefore = true,
+      serializableAfter = true
+    )
+    verifyCleaning(
+      closure3,
+      serializableBefore = true,
+      serializableAfter = true
+    )
 
     // Verify that closures can still be invoked and the result still the same
     assert(closure1(1) === closure1r)
@@ -181,11 +251,19 @@ class ClosureCleanerSuite2 extends SparkFunSuite with BeforeAndAfterAll with Pri
     val localNonSerializableValue = someNonSerializableValue
     // These closures ultimately reference the ClosureCleanerSuite2
     // Note that even accessing `val` that is an instance variable involves a method call
-    val closure1 = (i: Int) => { (1 to i).map { x => x + someSerializableValue } }
-    val closure2 = (j: Int) => { (1 to j).map { x => x + someSerializableMethod() } }
-    val closure4 = (k: Int) => { (1 to k).map { x => x + localSerializableMethod() } }
+    val closure1 = (i: Int) => {
+      (1 to i).map { x => x + someSerializableValue }
+    }
+    val closure2 = (j: Int) => {
+      (1 to j).map { x => x + someSerializableMethod() }
+    }
+    val closure4 = (k: Int) => {
+      (1 to k).map { x => x + localSerializableMethod() }
+    }
     // This closure references a local non-serializable value
-    val closure3 = (l: Int) => { (1 to l).map { _ => localNonSerializableValue } }
+    val closure3 = (l: Int) => {
+      (1 to l).map { _ => localNonSerializableValue }
+    }
     // This is non-serializable no matter how many levels we nest it
     val closure5 = (m: Int) => {
       (1 to m).foreach { x =>
@@ -197,11 +275,31 @@ class ClosureCleanerSuite2 extends SparkFunSuite with BeforeAndAfterAll with Pri
       }
     }
 
-    verifyCleaning(closure1, serializableBefore = false, serializableAfter = false)
-    verifyCleaning(closure2, serializableBefore = false, serializableAfter = false)
-    verifyCleaning(closure3, serializableBefore = false, serializableAfter = false)
-    verifyCleaning(closure4, serializableBefore = false, serializableAfter = false)
-    verifyCleaning(closure5, serializableBefore = false, serializableAfter = false)
+    verifyCleaning(
+      closure1,
+      serializableBefore = false,
+      serializableAfter = false
+    )
+    verifyCleaning(
+      closure2,
+      serializableBefore = false,
+      serializableAfter = false
+    )
+    verifyCleaning(
+      closure3,
+      serializableBefore = false,
+      serializableAfter = false
+    )
+    verifyCleaning(
+      closure4,
+      serializableBefore = false,
+      serializableAfter = false
+    )
+    verifyCleaning(
+      closure5,
+      serializableBefore = false,
+      serializableAfter = false
+    )
   }
 
   test("clean complicated nested serializable closures") {
@@ -238,8 +336,16 @@ class ClosureCleanerSuite2 extends SparkFunSuite with BeforeAndAfterAll with Pri
 
     val closure1r = closure1(1)
     val closure2r = closure2(2)
-    verifyCleaning(closure1, serializableBefore = true, serializableAfter = true)
-    verifyCleaning(closure2, serializableBefore = true, serializableAfter = true)
+    verifyCleaning(
+      closure1,
+      serializableBefore = true,
+      serializableAfter = true
+    )
+    verifyCleaning(
+      closure2,
+      serializableBefore = true,
+      serializableAfter = true
+    )
     assert(closure1(1) == closure1r)
     assert(closure2(2) == closure2r)
   }
@@ -258,11 +364,19 @@ class ClosureCleanerSuite2 extends SparkFunSuite with BeforeAndAfterAll with Pri
 
       // This closure explicitly references a non-serializable field
       // There is no way to clean it
-      verifyCleaning(inner1, serializableBefore = false, serializableAfter = false)
+      verifyCleaning(
+        inner1,
+        serializableBefore = false,
+        serializableAfter = false
+      )
 
       // This closure is serializable to begin with since it does not need a pointer to
       // the outer closure (it only references local variables)
-      verifyCleaning(inner2, serializableBefore = true, serializableAfter = true)
+      verifyCleaning(
+        inner2,
+        serializableBefore = true,
+        serializableAfter = true
+      )
     }
 
     // Same as above, but the `val a` becomes `def a`
@@ -274,9 +388,16 @@ class ClosureCleanerSuite2 extends SparkFunSuite with BeforeAndAfterAll with Pri
       val inner2 = (x: Int) => x + a
 
       // As before, this closure is neither serializable nor cleanable
-      verifyCleaning(inner1, serializableBefore = false, serializableAfter = false)
       verifyCleaning(
-        inner2, serializableBefore = true, serializableAfter = true)
+        inner1,
+        serializableBefore = false,
+        serializableAfter = false
+      )
+      verifyCleaning(
+        inner2,
+        serializableBefore = true,
+        serializableAfter = true
+      )
     }
 
     // Same as above, but with more levels of nesting

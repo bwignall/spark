@@ -23,7 +23,6 @@ import org.apache.spark._
 import org.apache.spark.storage.{BlockStatus, StorageLevel, TestBlockId}
 import org.apache.spark.util.AccumulatorV2
 
-
 class TaskMetricsSuite extends SparkFunSuite {
   import StorageLevel._
 
@@ -206,8 +205,10 @@ class TaskMetricsSuite extends SparkFunSuite {
     tm.registerAccumulator(acc4)
     acc1.add(1)
     acc2.add(2)
-    val newUpdates = tm.accumulators()
-      .map(a => (a.id, a.asInstanceOf[AccumulatorV2[Any, Any]])).toMap
+    val newUpdates = tm
+      .accumulators()
+      .map(a => (a.id, a.asInstanceOf[AccumulatorV2[Any, Any]]))
+      .toMap
     assert(newUpdates.contains(acc1.id))
     assert(newUpdates.contains(acc2.id))
     assert(newUpdates.contains(acc3.id))
@@ -226,16 +227,15 @@ class TaskMetricsSuite extends SparkFunSuite {
   }
 }
 
-
 private[spark] object TaskMetricsSuite extends Assertions {
 
-  /**
-   * Assert that two lists of accumulator updates are equal.
-   * Note: this does NOT check accumulator ID equality.
-   */
+  /** Assert that two lists of accumulator updates are equal.
+    * Note: this does NOT check accumulator ID equality.
+    */
   def assertUpdatesEquals(
       updates1: Seq[AccumulatorV2[_, _]],
-      updates2: Seq[AccumulatorV2[_, _]]): Unit = {
+      updates2: Seq[AccumulatorV2[_, _]]
+  ): Unit = {
     assert(updates1.size === updates2.size)
     updates1.zip(updates2).foreach { case (acc1, acc2) =>
       // do not assert ID equals here

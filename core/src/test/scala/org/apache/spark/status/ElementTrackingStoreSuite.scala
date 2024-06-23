@@ -32,8 +32,11 @@ class ElementTrackingStoreSuite extends SparkFunSuite with Eventually {
 
   test("asynchronous tracking single-fire") {
     val store = mock(classOf[KVStore])
-    val tracking = new ElementTrackingStore(store, new SparkConf()
-      .set(ASYNC_TRACKING_ENABLED, true))
+    val tracking = new ElementTrackingStore(
+      store,
+      new SparkConf()
+        .set(ASYNC_TRACKING_ENABLED, true)
+    )
 
     val done = new AtomicBoolean(false)
     val type1 = new AtomicInteger(0)
@@ -74,8 +77,11 @@ class ElementTrackingStoreSuite extends SparkFunSuite with Eventually {
 
   test("tracking for multiple types") {
     val store = mock(classOf[KVStore])
-    val tracking = new ElementTrackingStore(store, new SparkConf()
-      .set(ASYNC_TRACKING_ENABLED, false))
+    val tracking = new ElementTrackingStore(
+      store,
+      new SparkConf()
+        .set(ASYNC_TRACKING_ENABLED, false)
+    )
 
     var type1 = 0L
     var type2 = 0L

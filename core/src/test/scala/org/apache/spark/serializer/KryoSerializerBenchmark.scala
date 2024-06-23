@@ -31,18 +31,17 @@ import org.apache.spark.internal.config.Tests.IS_TESTING
 import org.apache.spark.serializer.KryoTest._
 import org.apache.spark.util.ThreadUtils
 
-/**
- * Benchmark for KryoPool vs old "pool of 1".
- * To run this benchmark:
- * {{{
- *   1. without sbt:
- *      bin/spark-submit --class <this class> <spark core test jar>
- *   2. build/sbt "core/Test/runMain <this class>"
- *   3. generate result:
- *      SPARK_GENERATE_BENCHMARK_FILES=1 build/sbt "core/Test/runMain <this class>"
- *      Results will be written to "benchmarks/KryoSerializerBenchmark-results.txt".
- * }}}
- */
+/** Benchmark for KryoPool vs old "pool of 1".
+  * To run this benchmark:
+  * {{{
+  *   1. without sbt:
+  *      bin/spark-submit --class <this class> <spark core test jar>
+  *   2. build/sbt "core/Test/runMain <this class>"
+  *   3. generate result:
+  *      SPARK_GENERATE_BENCHMARK_FILES=1 build/sbt "core/Test/runMain <this class>"
+  *      Results will be written to "benchmarks/KryoSerializerBenchmark-results.txt".
+  * }}}
+  */
 object KryoSerializerBenchmark extends BenchmarkBase {
 
   var sc: SparkContext = null

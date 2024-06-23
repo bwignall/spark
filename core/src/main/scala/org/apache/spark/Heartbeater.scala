@@ -22,30 +22,37 @@ import java.util.concurrent.TimeUnit
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.{ThreadUtils, Utils}
 
-/**
- * Creates a heartbeat thread which will call the specified reportHeartbeat function at
- * intervals of intervalMs.
- *
- * @param reportHeartbeat the heartbeat reporting function to call.
- * @param name the thread name for the heartbeater.
- * @param intervalMs the interval between heartbeats.
- */
+/** Creates a heartbeat thread which will call the specified reportHeartbeat function at
+  * intervals of intervalMs.
+  *
+  * @param reportHeartbeat the heartbeat reporting function to call.
+  * @param name the thread name for the heartbeater.
+  * @param intervalMs the interval between heartbeats.
+  */
 private[spark] class Heartbeater(
     reportHeartbeat: () => Unit,
     name: String,
-    intervalMs: Long) extends Logging {
+    intervalMs: Long
+) extends Logging {
   // Executor for the heartbeat task
-  private val heartbeater = ThreadUtils.newDaemonSingleThreadScheduledExecutor(name)
+  private val heartbeater =
+    ThreadUtils.newDaemonSingleThreadScheduledExecutor(name)
 
   /** Schedules a task to report a heartbeat. */
   def start(): Unit = {
     // Wait a random interval so the heartbeats don't end up in sync
-    val initialDelay = intervalMs + (math.random() * intervalMs).asInstanceOf[Int]
+    val initialDelay =
+      intervalMs + (math.random() * intervalMs).asInstanceOf[Int]
 
     val heartbeatTask = new Runnable() {
       override def run(): Unit = Utils.logUncaughtExceptions(reportHeartbeat())
     }
-    heartbeater.scheduleAtFixedRate(heartbeatTask, initialDelay, intervalMs, TimeUnit.MILLISECONDS)
+    heartbeater.scheduleAtFixedRate(
+      heartbeatTask,
+      initialDelay,
+      intervalMs,
+      TimeUnit.MILLISECONDS
+    )
   }
 
   /** Stops the heartbeat thread. */

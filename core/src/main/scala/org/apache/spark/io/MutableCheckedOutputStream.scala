@@ -20,11 +20,11 @@ package org.apache.spark.io
 import java.io.OutputStream
 import java.util.zip.Checksum
 
-/**
- * A variant of [[java.util.zip.CheckedOutputStream]] which can
- * change the checksum calculator at runtime.
- */
-private[spark] class MutableCheckedOutputStream(out: OutputStream) extends OutputStream {
+/** A variant of [[java.util.zip.CheckedOutputStream]] which can
+  * change the checksum calculator at runtime.
+  */
+private[spark] class MutableCheckedOutputStream(out: OutputStream)
+    extends OutputStream {
   private var checksum: Checksum = _
 
   def setChecksum(c: Checksum): Unit = {

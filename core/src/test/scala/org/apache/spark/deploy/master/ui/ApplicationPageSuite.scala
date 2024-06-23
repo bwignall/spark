@@ -24,21 +24,33 @@ import org.mockito.Mockito.{mock, when}
 
 import org.apache.spark.SparkFunSuite
 import org.apache.spark.deploy.ApplicationDescription
-import org.apache.spark.deploy.DeployMessages.{MasterStateResponse, RequestMasterState}
-import org.apache.spark.deploy.master.{ApplicationInfo, ApplicationState, Master}
+import org.apache.spark.deploy.DeployMessages.{
+  MasterStateResponse,
+  RequestMasterState
+}
+import org.apache.spark.deploy.master.{
+  ApplicationInfo,
+  ApplicationState,
+  Master
+}
 import org.apache.spark.resource.ResourceProfile
 import org.apache.spark.rpc.RpcEndpointRef
 
 class ApplicationPageSuite extends SparkFunSuite {
 
   private val master = mock(classOf[Master])
-  when(master.historyServerUrl).thenReturn(Some("http://my-history-server:18080"))
+  when(master.historyServerUrl).thenReturn(
+    Some("http://my-history-server:18080")
+  )
 
   private val rp = new ResourceProfile(Map.empty, Map.empty)
-  private val desc = ApplicationDescription("name", Some(4), null, "appUiUrl", rp)
-  private val appFinished = new ApplicationInfo(0, "app-finished", desc, new Date, null, 1)
+  private val desc =
+    ApplicationDescription("name", Some(4), null, "appUiUrl", rp)
+  private val appFinished =
+    new ApplicationInfo(0, "app-finished", desc, new Date, null, 1)
   appFinished.markFinished(ApplicationState.FINISHED)
-  private val appLive = new ApplicationInfo(0, "app-live", desc, new Date, null, 1)
+  private val appLive =
+    new ApplicationInfo(0, "app-live", desc, new Date, null, 1)
 
   private val state = mock(classOf[MasterStateResponse])
   when(state.completedApps).thenReturn(Array(appFinished))
