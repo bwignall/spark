@@ -19,7 +19,7 @@ package org.apache.spark.sql.util
 
 import scala.jdk.CollectionConverters._
 
-import org.apache.spark.annotation.DeveloperApi
+import org.apache.spark.annotation.DeveloperApiJVM
 import org.apache.spark.internal.Logging
 import org.apache.spark.scheduler.{SparkListener, SparkListenerEvent}
 import org.apache.spark.sql.SparkSession
